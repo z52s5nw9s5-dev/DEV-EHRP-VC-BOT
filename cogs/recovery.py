@@ -4,6 +4,7 @@ import asyncio
 import discord
 from discord import app_commands
 from discord.ext import commands
+from utils.checks import ensure_dev
 
 
 # Nur Änderungen unseres kaputten Design-Systems
@@ -386,13 +387,9 @@ class Recovery(commands.Cog):
         interaction: discord.Interaction,
     ):
 
-        if not interaction.user.guild_permissions.administrator:
-
-            await interaction.response.send_message(
-                "❌ Nur Administratoren dürfen "
-                "die Recovery starten.",
-                ephemeral=True,
-            )
+        if not await ensure_dev(interaction):
+    return
+        
 
             return
 
