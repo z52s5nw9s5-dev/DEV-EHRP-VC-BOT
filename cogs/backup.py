@@ -76,7 +76,7 @@ class Backup(commands.Cog):
         arr=sorted(BACKUPS.glob("*.json"),reverse=True)[:15]
         await interaction.response.send_message(embed=base_embed("💾 Backups","\n".join(f"• `{p.name}`" for p in arr) or "Keine Backups."),ephemeral=True)
 
-    @app_commands.command(name="restore_missing",description="Stellt fehlende Rollen/Kategorien/Channels aus dem neuesten Backup wieder her, ohne Bestehendes zu löschen.")
+    @app_commands.command(name="restore_missing", description="Stellt fehlende Serverdaten aus dem letzten Backup wieder her.")
     async def restore_missing(self,interaction:discord.Interaction):
         if not await ensure_dev(interaction): return
         arr=sorted(BACKUPS.glob("*.json"),reverse=True)
