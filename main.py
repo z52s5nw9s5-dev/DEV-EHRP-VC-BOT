@@ -1,7 +1,7 @@
 import os
 import discord
 from discord.ext import commands
-
+from health_server import start_health_server
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -32,5 +32,5 @@ bot = RecoveryBot()
 async def on_ready():
     print(f"✅ Online als {bot.user}")
 
-
+start_health_server()
 bot.run(TOKEN)
