@@ -387,11 +387,9 @@ class Recovery(commands.Cog):
         interaction: discord.Interaction,
     ):
 
-        if not await ensure_dev(interaction):
-    return
+  if not await ensure_dev(interaction):
+      return
         
-
-            return
 
         if not interaction.guild.me.guild_permissions.view_audit_log:
 
