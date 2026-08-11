@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(
 EXTENSIONS = [
     "cogs.core", "cogs.setup", "cogs.server_scan", "cogs.server_tools",
     "cogs.backup", "cogs.undo", "cogs.templates", "cogs.projects",
-    "cogs.voice", "cogs.team", "cogs.embeds", "cogs.logs", "cogs.stats"
+    "cogs.voice", "cogs.team", "cogs.embeds", "cogs.logs", "cogs.stats", "cogs.design",
 ]
 
 class DevBot(commands.Bot):
