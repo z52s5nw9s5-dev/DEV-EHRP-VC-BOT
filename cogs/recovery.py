@@ -1,43 +1,43 @@
 from __future__ import annotations
 
-import json
-from datetime import datetime, timezone
-from pathlib import Path
-
+import asyncio
 import discord
 from discord import app_commands
 from discord.ext import commands
 
-from config import BACKUP_DIR
-from utils.checks import ensure_dev
 
-
-RECOVERY_DIR = Path(BACKUP_DIR) / "recovery"
-RECOVERY_DIR.mkdir(parents=True, exist_ok=True)
-
-RECOVERY_PLAN = {}
-
-REASONS = (
+# Nur Änderungen unseres kaputten Design-Systems
+RECOVERY_REASON_WORDS = (
     "redesign",
-    "rollback",
-    "ehrp server redesign",
+    "design rollback",
+    "server redesign",
     "ehrp redesign",
 )
 
 
-def is_recovery_related(entry: discord.AuditLogEntry) -> bool:
+def is_design_change(entry: discord.AuditLogEntry) -> bool:
     reason = (entry.reason or "").lower()
-    return any(x in reason for x in REASONS)
+
+    return any(
+        word in reason
+        for word in RECOVERY_REASON_WORDS
+    )
 
 
-async def collect_entries(guild: discord.Guild, bot_id: int):
+async def collect_changes(
+    guild: discord.Guild,
+    bot_id: int,
+):
     entries = []
 
     async for entry in guild.audit_logs(
         limit=None,
         user=discord.Object(id=bot_id),
     ):
-        if entry.user is None or entry.user.id != bot_id:
+        if entry.user is None:
+            continue
+
+        if entry.user.id != bot_id:
             continue
 
         if entry.action not in (
@@ -46,7 +46,7 @@ async def collect_entries(guild: discord.Guild, bot_id: int):
         ):
             continue
 
-        if not is_recovery_related(entry):
+        if not is_design_change(entry):
             continue
 
         entries.append(entry)
@@ -54,25 +54,38 @@ async def collect_entries(guild: discord.Guild, bot_id: int):
     return entries
 
 
-def get_attr(diff, name):
-    if hasattr(diff, name):
-        return getattr(diff, name)
-    return None
-
-
-def build_original_plan(entries):
+def build_original_states(entries):
     """
-    Wir wollen den ALLERERSTEN Zustand vor der kompletten Serie.
+    Discord Audit-Log:
+    älteste Änderung zuerst.
 
-    Discord Audit Log kommt newest -> oldest.
-    Wir sortieren oldest -> newest und merken uns pro Objekt
-    den ersten bekannten BEFORE-Wert jedes Feldes.
+    Für jedes Objekt und jedes Feld merken wir uns
+    den allerersten BEFORE-Wert.
     """
-    ordered = sorted(entries, key=lambda e: e.created_at)
+
+    entries = sorted(
+        entries,
+        key=lambda e: e.created_at,
+    )
 
     objects = {}
 
-    for entry in ordered:
+    supported_fields = (
+        "name",
+        "topic",
+        "position",
+        "category",
+        "slowmode_delay",
+        "nsfw",
+        "user_limit",
+        "bitrate",
+        "colour",
+        "hoist",
+        "mentionable",
+        "permissions",
+    )
+
+    for entry in entries:
         target = entry.target
 
         if target is None:
@@ -85,196 +98,155 @@ def build_original_plan(entries):
                 "id": target_id,
                 "type": (
                     "role"
-                    if entry.action == discord.AuditLogAction.role_update
+                    if entry.action
+                    == discord.AuditLogAction.role_update
                     else "channel"
                 ),
                 "fields": {},
-                "first_seen": entry.created_at.isoformat(),
             }
 
         item = objects[target_id]
-        before = entry.before
 
-        supported = (
-            "name",
-            "topic",
-            "position",
-            "category",
-            "slowmode_delay",
-            "nsfw",
-            "user_limit",
-            "bitrate",
-            "colour",
-            "hoist",
-            "mentionable",
-            "permissions",
-        )
+        for field in supported_fields:
 
-        for field in supported:
             if field in item["fields"]:
                 continue
 
-            if hasattr(before, field):
-                value = getattr(before, field)
+            if not hasattr(entry.before, field):
+                continue
 
-                if field == "category":
-                    item["fields"][field] = (
-                        value.id if value is not None else None
-                    )
-                elif field == "colour":
-                    item["fields"][field] = (
-                        value.value if value is not None else None
-                    )
-                elif field == "permissions":
-                    item["fields"][field] = (
-                        value.value if value is not None else None
-                    )
-                else:
-                    item["fields"][field] = value
+            value = getattr(entry.before, field)
+
+            if field == "category":
+                value = (
+                    value.id
+                    if value is not None
+                    else None
+                )
+
+            elif field == "colour":
+                value = (
+                    value.value
+                    if value is not None
+                    else 0
+                )
+
+            elif field == "permissions":
+                value = (
+                    value.value
+                    if value is not None
+                    else 0
+                )
+
+            item["fields"][field] = value
 
     return objects
 
 
-def save_current_state(guild: discord.Guild) -> Path:
-    data = {
-        "guild_id": guild.id,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "channels": [],
-        "roles": [],
-    }
+async def restore_channel(
+    guild: discord.Guild,
+    item: dict,
+):
+    channel = guild.get_channel(item["id"])
 
-    for ch in guild.channels:
-        item = {
-            "id": ch.id,
-            "name": ch.name,
-            "position": ch.position,
-            "category_id": getattr(ch, "category_id", None),
-            "type": str(ch.type),
-        }
-
-        if isinstance(ch, discord.TextChannel):
-            item.update({
-                "topic": ch.topic,
-                "slowmode_delay": ch.slowmode_delay,
-                "nsfw": ch.nsfw,
-            })
-
-        if isinstance(ch, discord.VoiceChannel):
-            item.update({
-                "user_limit": ch.user_limit,
-                "bitrate": ch.bitrate,
-            })
-
-        data["channels"].append(item)
-
-    for role in guild.roles:
-        if role.is_default():
-            continue
-
-        data["roles"].append({
-            "id": role.id,
-            "name": role.name,
-            "position": role.position,
-            "colour": role.colour.value,
-            "hoist": role.hoist,
-            "mentionable": role.mentionable,
-            "permissions": role.permissions.value,
-        })
-
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    path = RECOVERY_DIR / f"before_full_recovery_{guild.id}_{stamp}.json"
-
-    path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-
-    return path
-
-
-async def restore_channel(guild, item):
-    ch = guild.get_channel(item["id"])
-
-    if ch is None:
-        return False, "Channel existiert nicht mehr"
+    if channel is None:
+        return False
 
     fields = item["fields"]
+
     kwargs = {}
 
     if "name" in fields:
         kwargs["name"] = fields["name"]
 
-    if isinstance(ch, discord.TextChannel):
+    if isinstance(channel, discord.TextChannel):
+
         if "topic" in fields:
             kwargs["topic"] = fields["topic"]
 
         if "slowmode_delay" in fields:
-            kwargs["slowmode_delay"] = fields["slowmode_delay"]
+            kwargs["slowmode_delay"] = fields[
+                "slowmode_delay"
+            ]
 
         if "nsfw" in fields:
             kwargs["nsfw"] = fields["nsfw"]
 
-    if isinstance(ch, discord.VoiceChannel):
+    if isinstance(channel, discord.VoiceChannel):
+
         if "user_limit" in fields:
-            kwargs["user_limit"] = fields["user_limit"]
+            kwargs["user_limit"] = fields[
+                "user_limit"
+            ]
 
         if "bitrate" in fields:
             kwargs["bitrate"] = fields["bitrate"]
 
     if "category" in fields:
+
         category_id = fields["category"]
 
         kwargs["category"] = (
             guild.get_channel(category_id)
-            if category_id is not None
+            if category_id
             else None
         )
 
     try:
+
         if kwargs:
-            await ch.edit(
+            await channel.edit(
                 **kwargs,
-                reason="EHRP FULL RECOVERY",
+                reason="EHRP FINAL RECOVERY",
             )
 
         if "position" in fields:
-            await ch.edit(
+            await channel.edit(
                 position=fields["position"],
-                reason="EHRP FULL RECOVERY",
+                reason="EHRP FINAL RECOVERY",
             )
 
-        return True, None
+        return True
 
-    except discord.Forbidden:
-        return False, "Fehlende Berechtigung"
+    except Exception as error:
+        print(
+            f"❌ Channel {channel.id}: {error}"
+        )
 
-    except discord.HTTPException as e:
-        return False, str(e)
+        return False
 
 
-async def restore_role(guild, item):
+async def restore_role(
+    guild: discord.Guild,
+    item: dict,
+):
     role = guild.get_role(item["id"])
 
     if role is None:
-        return False, "Rolle existiert nicht mehr"
+        return False
 
     if role.managed:
-        return False, "Managed-Rolle"
+        return False
 
     fields = item["fields"]
+
     kwargs = {}
 
     if "name" in fields:
         kwargs["name"] = fields["name"]
 
     if "colour" in fields:
-        kwargs["colour"] = discord.Colour(fields["colour"])
+        kwargs["colour"] = discord.Colour(
+            fields["colour"]
+        )
 
     if "hoist" in fields:
         kwargs["hoist"] = fields["hoist"]
 
     if "mentionable" in fields:
-        kwargs["mentionable"] = fields["mentionable"]
+        kwargs["mentionable"] = fields[
+            "mentionable"
+        ]
 
     if "permissions" in fields:
         kwargs["permissions"] = discord.Permissions(
@@ -282,10 +254,11 @@ async def restore_role(guild, item):
         )
 
     try:
+
         if kwargs:
             await role.edit(
                 **kwargs,
-                reason="EHRP FULL RECOVERY",
+                reason="EHRP FINAL RECOVERY",
             )
 
         if "position" in fields:
@@ -293,200 +266,197 @@ async def restore_role(guild, item):
                 positions={
                     role: fields["position"]
                 },
-                reason="EHRP FULL RECOVERY",
+                reason="EHRP FINAL RECOVERY",
             )
 
-        return True, None
+        return True
 
-    except discord.Forbidden:
-        return False, "Fehlende Berechtigung"
+    except Exception as error:
+        print(
+            f"❌ Rolle {role.id}: {error}"
+        )
 
-    except discord.HTTPException as e:
-        return False, str(e)
-
-
-async def execute_recovery(guild, plan):
-    restored = 0
-    failed = []
-
-    for item in plan.values():
-        if item["type"] == "channel":
-            ok, error = await restore_channel(guild, item)
-        else:
-            ok, error = await restore_role(guild, item)
-
-        if ok:
-            restored += 1
-        else:
-            failed.append({
-                "id": item["id"],
-                "error": error,
-            })
-
-    return restored, failed
+        return False
 
 
-def preview_text(plan, entries):
-    channel_count = sum(
-        1 for x in plan.values()
-        if x["type"] == "channel"
-    )
+class ConfirmRecovery(discord.ui.View):
 
-    role_count = sum(
-        1 for x in plan.values()
-        if x["type"] == "role"
-    )
-
-    lines = [
-        "🛡️ **FULL RECOVERY BEREIT**",
-        "",
-        f"Audit-Einträge analysiert: **{len(entries)}**",
-        f"Eindeutige Objekte: **{len(plan)}**",
-        f"📁 Channels/Kategorien: **{channel_count}**",
-        f"🎭 Rollen: **{role_count}**",
-        "",
-        "Der Bot wird NICHT alle 656 Schritte einzeln zurückspielen.",
-        "Er setzt jedes Objekt direkt auf den frühesten bekannten Zustand zurück.",
-        "",
-        "💾 Vorher wird der jetzige Zustand zusätzlich gespeichert.",
-        "",
-        "⚠️ Gelöschte Channels/Nachrichten können damit nicht wiederhergestellt werden.",
-    ]
-
-    return "\n".join(lines)
-
-
-class RecoveryConfirm(discord.ui.View):
-    def __init__(self, owner_id, guild_id):
-        super().__init__(timeout=600)
+    def __init__(
+        self,
+        owner_id: int,
+        plan: dict,
+    ):
+        super().__init__(timeout=300)
 
         self.owner_id = owner_id
-        self.guild_id = guild_id
+        self.plan = plan
 
-    async def interaction_check(self, interaction):
+    async def interaction_check(
+        self,
+        interaction: discord.Interaction,
+    ):
+
         if interaction.user.id != self.owner_id:
+
             await interaction.response.send_message(
-                "❌ Nur der Developer darf das starten.",
+                "❌ Nur du kannst das bestätigen.",
                 ephemeral=True,
             )
+
             return False
 
         return True
 
     @discord.ui.button(
-        label="ALLES WIEDERHERSTELLEN",
-        emoji="🛡️",
+        label="JA – ALLES ZURÜCKSETZEN",
+        emoji="↩️",
         style=discord.ButtonStyle.danger,
     )
-    async def recover(self, interaction, button):
-        data = RECOVERY_PLAN.get(self.guild_id)
+    async def confirm(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button,
+    ):
 
-        if not data:
-            await interaction.response.send_message(
-                "❌ Recovery-Plan nicht mehr vorhanden. "
-                "Bitte `/full_recovery_scan` erneut ausführen.",
-                ephemeral=True,
-            )
-            return
-
-        await interaction.response.defer(ephemeral=True)
-
-        save_current_state(interaction.guild)
-
-        restored, failed = await execute_recovery(
-            interaction.guild,
-            data["plan"],
+        await interaction.response.defer(
+            ephemeral=True
         )
+
+        restored = 0
+        failed = 0
+
+        for item in self.plan.values():
+
+            if item["type"] == "channel":
+
+                ok = await restore_channel(
+                    interaction.guild,
+                    item,
+                )
+
+            else:
+
+                ok = await restore_role(
+                    interaction.guild,
+                    item,
+                )
+
+            if ok:
+                restored += 1
+            else:
+                failed += 1
+
+            # Discord nicht mit Requests bombardieren
+            await asyncio.sleep(0.35)
 
         for child in self.children:
             child.disabled = True
 
         try:
-            await interaction.message.edit(view=self)
-        except discord.HTTPException:
+            await interaction.message.edit(
+                view=self
+            )
+        except Exception:
             pass
 
-        text = (
-            "🛡️ **FULL RECOVERY BEENDET**\n\n"
-            f"✅ Wiederhergestellt: **{restored} Objekte**\n"
-            f"⚠️ Fehler: **{len(failed)}**"
-        )
-
         await interaction.followup.send(
-            text,
+            (
+                "✅ **WIEDERHERSTELLUNG BEENDET**\n\n"
+                f"↩️ Wiederhergestellt: **{restored}**\n"
+                f"⚠️ Nicht möglich: **{failed}**"
+            ),
             ephemeral=True,
-        )
-
-    @discord.ui.button(
-        label="Abbrechen",
-        emoji="❌",
-        style=discord.ButtonStyle.secondary,
-    )
-    async def cancel(self, interaction, button):
-        for child in self.children:
-            child.disabled = True
-
-        await interaction.response.edit_message(
-            content="❌ Recovery abgebrochen. Es wurde nichts verändert.",
-            view=self,
         )
 
 
 class Recovery(commands.Cog):
+
     def __init__(self, bot):
         self.bot = bot
 
     @app_commands.command(
-        name="full_recovery_scan",
-        description="Berechnet den ursprünglichen Zustand vor dem DEV-Redesign.",
+        name="alles_zuruecksetzen",
+        description=(
+            "Stellt den Zustand vor dem "
+            "DEV-Redesign wieder her."
+        ),
     )
-    async def full_recovery_scan(
+    async def alles_zuruecksetzen(
         self,
         interaction: discord.Interaction,
     ):
-        if not await ensure_dev(interaction):
-            return
 
-        guild = interaction.guild
+        if not interaction.user.guild_permissions.administrator:
 
-        if guild is None:
-            return
-
-        me = guild.me
-
-        if me is None or not me.guild_permissions.view_audit_log:
             await interaction.response.send_message(
-                "❌ Mir fehlt Audit-Log anzeigen.",
+                "❌ Nur Administratoren dürfen "
+                "die Recovery starten.",
                 ephemeral=True,
             )
+
             return
 
-        await interaction.response.defer(ephemeral=True)
+        if not interaction.guild.me.guild_permissions.view_audit_log:
 
-        entries = await collect_entries(
-            guild,
+            await interaction.response.send_message(
+                "❌ Dem Bot fehlt "
+                "**Audit-Log anzeigen**.",
+                ephemeral=True,
+            )
+
+            return
+
+        await interaction.response.defer(
+            ephemeral=True
+        )
+
+        entries = await collect_changes(
+            interaction.guild,
             self.bot.user.id,
         )
 
         if not entries:
+
             await interaction.followup.send(
-                "❌ Keine passenden Änderungen gefunden.",
+                "❌ Keine Redesign-Änderungen gefunden.",
                 ephemeral=True,
             )
+
             return
 
-        plan = build_original_plan(entries)
+        plan = build_original_states(entries)
 
-        RECOVERY_PLAN[guild.id] = {
-            "plan": plan,
-            "entries": entries,
-        }
+        channels = sum(
+            1
+            for item in plan.values()
+            if item["type"] == "channel"
+        )
+
+        roles = sum(
+            1
+            for item in plan.values()
+            if item["type"] == "role"
+        )
+
+        text = (
+            "🛡️ **ALLES ZURÜCKSETZEN**\n\n"
+            f"Gefundene Audit-Änderungen: "
+            f"**{len(entries)}**\n"
+            f"Betroffene Channels/Kategorien: "
+            f"**{channels}**\n"
+            f"Betroffene Rollen: "
+            f"**{roles}**\n\n"
+            "Der Bot setzt jedes Objekt direkt "
+            "auf den ältesten Zustand vor dem "
+            "Redesign zurück.\n\n"
+            "⚠️ Jetzt wirklich ausführen?"
+        )
 
         await interaction.followup.send(
-            preview_text(plan, entries),
-            view=RecoveryConfirm(
+            text,
+            view=ConfirmRecovery(
                 interaction.user.id,
-                guild.id,
+                plan,
             ),
             ephemeral=True,
         )
