@@ -13,6 +13,7 @@ RP_ROLE_ID = 1526957918128443533
 
 intents = discord.Intents.default()
 intents.guilds = True
+intents.members = True
 
 RP_TEXT = """**EHRP/VC – RP START**
 Der RP-Server ist jetzt geöffnet!
@@ -44,14 +45,15 @@ class RecoveryBot(commands.Bot):
         )
 
     async def setup_hook(self):
-        await self.load_extension("cogs.recovery")
+    await self.load_extension("cogs.recovery")
+    await self.load_extension("cogs.team")
+    await self.load_extension("cogs.tickets")
 
-        synced = await self.tree.sync()
-        print(f"✅ Synced {len(synced)} command(s)")
+    synced = await self.tree.sync()
+    print(f"✅ Synced {len(synced)} command(s)")
 
-        if not daily_rp_start.is_running():
-            daily_rp_start.start()
-
+    if not daily_rp_start.is_running():
+        daily_rp_start.start()
 
 bot = RecoveryBot()
 
