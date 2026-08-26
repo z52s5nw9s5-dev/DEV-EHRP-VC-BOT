@@ -44,7 +44,7 @@ class RecoveryBot(commands.Bot):
             intents=intents,
         )
 
-        async def setup_hook(self):
+            async def setup_hook(self):
         await self.load_extension("cogs.recovery")
         await self.load_extension("cogs.team")
         await self.load_extension("cogs.tickets")
@@ -54,6 +54,7 @@ class RecoveryBot(commands.Bot):
 
         if not daily_rp_start.is_running():
             daily_rp_start.start()
+
 bot = RecoveryBot()
 
 
