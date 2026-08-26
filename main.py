@@ -44,17 +44,16 @@ class RecoveryBot(commands.Bot):
             intents=intents,
         )
 
-    async def setup_hook(self):
-    await self.load_extension("cogs.recovery")
-    await self.load_extension("cogs.team")
-    await self.load_extension("cogs.tickets")
+        async def setup_hook(self):
+        await self.load_extension("cogs.recovery")
+        await self.load_extension("cogs.team")
+        await self.load_extension("cogs.tickets")
 
-    synced = await self.tree.sync()
-    print(f"✅ Synced {len(synced)} command(s)")
+        synced = await self.tree.sync()
+        print(f"✅ Synced {len(synced)} command(s)")
 
-    if not daily_rp_start.is_running():
-        daily_rp_start.start()
-
+        if not daily_rp_start.is_running():
+            daily_rp_start.start()
 bot = RecoveryBot()
 
 
