@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 import discord
 from discord import app_commands
@@ -13,6 +14,18 @@ from config import DEV_ROLE_ID
 # EHRP | SYSTEM — TEAM CONFIG
 # ============================================================
 
+SYSTEM_COLOR = 0x5865F2
+SUCCESS_COLOR = 0x57F287
+WARNING_COLOR = 0xFEE75C
+ERROR_COLOR = 0xED4245
+
+TEAM_FOOTER_MARKER = "EHRP_TEAM_SYSTEM_V3"
+
+
+# ============================================================
+# TEAMSTRUKTUR + DEINE KÜRZEL
+# ============================================================
+
 TEAM_STRUCTURE = [
     (
         "👑 Leitung",
@@ -21,6 +34,7 @@ TEAM_STRUCTURE = [
             ("Co-Founder", "[Co. FD]"),
         ],
     ),
+
     (
         "⚜️ Leaderebene",
         [
@@ -31,6 +45,7 @@ TEAM_STRUCTURE = [
             ("Hauptverwaltung", "[HV]"),
         ],
     ),
+
     (
         "💎 Kernteam",
         [
@@ -40,6 +55,7 @@ TEAM_STRUCTURE = [
             ("Jr. Teamkoordinator", "[Jr. T. K]"),
         ],
     ),
+
     (
         "🛡️ Teamverwaltung",
         [
@@ -49,6 +65,7 @@ TEAM_STRUCTURE = [
             ("Stv. Manager", "[Stv. M]"),
         ],
     ),
+
     (
         "⚙️ Management",
         [
@@ -58,6 +75,7 @@ TEAM_STRUCTURE = [
             ("Jr. Administrator", "[Jr. ADM]"),
         ],
     ),
+
     (
         "🔨 Administration",
         [
@@ -67,8 +85,9 @@ TEAM_STRUCTURE = [
             ("Jr. Moderator", "[Jr. MOD]"),
         ],
     ),
+
     (
-        "🎧 Moderation & Support",
+        "🎧 Moderatoren",
         [
             ("Sup-Koordinator", "[SUP. K]"),
             ("Support-Spezialist", "[SUP. S]"),
@@ -82,19 +101,13 @@ TEAM_STRUCTURE = [
 ABSENCE_KEYWORDS = (
     "abgemeldet",
     "abwesen",
+    "abwesenheit",
     "absence",
 )
 
-TEAM_EMBED_TITLE = "👥 EHRP | SYSTEM • TEAMLISTE"
-TEAM_FOOTER_MARKER = "EHRP_TEAMLIST_V2"
-
-SYSTEM_COLOR = 0x5865F2
-SUCCESS_COLOR = 0x57F287
-WARNING_COLOR = 0xFEE75C
-
 
 # ============================================================
-# ACCESS
+# DEV CHECK
 # ============================================================
 
 async def ensure_dev(
@@ -102,7 +115,7 @@ async def ensure_dev(
 ) -> bool:
 
     if (
-        not interaction.guild
+        interaction.guild is None
         or not isinstance(
             interaction.user,
             discord.Member,
@@ -118,9 +131,7 @@ async def ensure_dev(
         return True
 
     try:
-        dev_role_id = int(
-            DEV_ROLE_ID
-        )
+        dev_role_id = int(DEV_ROLE_ID)
     except (TypeError, ValueError):
         dev_role_id = 0
 
@@ -129,7 +140,7 @@ async def ensure_dev(
     )
 
     if (
-        dev_role
+        dev_role is not None
         and dev_role in interaction.user.roles
     ):
         return True
@@ -143,56 +154,267 @@ async def ensure_dev(
 
 
 # ============================================================
-# NORMALIZATION
+# ROBUSTE ROLLEN-NORMALISIERUNG
 # ============================================================
 
-def normalize(
+def normalize_role_name(
     value: str,
 ) -> str:
 
-    value = value.lower().strip()
-
-    value = (
-        value
-        .replace("»", "")
-        .replace("➡", "")
-        .replace("↪", "")
-        .replace("→", "")
-        .replace("•", "")
-        .replace("|", "")
-        .replace("—", "")
+    # Unicode vereinheitlichen
+    value = unicodedata.normalize(
+        "NFKC",
+        value,
     )
 
+    value = value.casefold()
+
+    # unsichtbare Unicode-Zeichen entfernen
+    value = "".join(
+        char
+        for char in value
+        if unicodedata.category(char)
+        not in (
+            "Cf",
+            "Cc",
+        )
+    )
+
+    # alles außer Buchstaben/Zahlen wird Leerzeichen
     value = re.sub(
         r"[^a-z0-9äöüß]+",
         " ",
         value,
     )
 
-    return " ".join(
-        value.split()
+    value = re.sub(
+        r"\s+",
+        " ",
+        value,
     )
 
+    return value.strip()
 
-def find_role(
-    guild: discord.Guild,
-    wanted_name: str,
-) -> discord.Role | None:
 
-    wanted = normalize(
-        wanted_name
+def compact_role_name(
+    value: str,
+) -> str:
+
+    return normalize_role_name(
+        value
+    ).replace(" ", "")
+
+
+# ============================================================
+# FLACHE RANGLISTE
+# ============================================================
+
+def all_rank_entries():
+    entries = []
+
+    for section, roles in TEAM_STRUCTURE:
+        for role_name, prefix in roles:
+            entries.append(
+                {
+                    "section": section,
+                    "role_name": role_name,
+                    "prefix": prefix,
+                    "normal": normalize_role_name(
+                        role_name
+                    ),
+                    "compact": compact_role_name(
+                        role_name
+                    ),
+                }
+            )
+
+    # längste Namen zuerst
+    # verhindert z.B. Administrator statt Jr. Administrator
+    entries.sort(
+        key=lambda item: len(
+            item["compact"]
+        ),
+        reverse=True,
     )
 
-    for role in guild.roles:
+    return entries
 
-        if normalize(role.name) == wanted:
-            return role
+
+RANK_ENTRIES = all_rank_entries()
+
+
+# ============================================================
+# ROLLE ERKENNEN
+# ============================================================
+
+def match_known_rank(
+    discord_role_name: str,
+):
+
+    role_normal = normalize_role_name(
+        discord_role_name
+    )
+
+    role_compact = compact_role_name(
+        discord_role_name
+    )
+
+    if not role_compact:
+        return None
+
+    # 1. exakter Match
+    for entry in RANK_ENTRIES:
+
+        if (
+            role_normal == entry["normal"]
+            or role_compact == entry["compact"]
+        ):
+            return entry
+
+    # 2. Rollenname kann vorne Server-Deko/Text enthalten
+    # Beispiel:
+    # "team obervorstand"
+    # "ehrp jr administrator"
+    #
+    # längste Rangnamen werden zuerst geprüft
+    for entry in RANK_ENTRIES:
+
+        target_normal = entry["normal"]
+        target_compact = entry["compact"]
+
+        if role_normal.endswith(
+            " " + target_normal
+        ):
+            return entry
+
+        if role_compact.endswith(
+            target_compact
+        ):
+            # Schutz vor gefährlichen Teilmatches
+            #
+            # Administrator soll NICHT
+            # Systemadministrator matchen,
+            # da Systemadministrator vorher
+            # als längerer Rank geprüft wurde.
+
+            return entry
 
     return None
 
 
+def find_discord_role(
+    guild: discord.Guild,
+    rank_name: str,
+):
+
+    wanted_entry = None
+
+    for entry in RANK_ENTRIES:
+
+        if entry["role_name"] == rank_name:
+            wanted_entry = entry
+            break
+
+    if wanted_entry is None:
+        return None
+
+    matches = []
+
+    for role in guild.roles:
+
+        detected = match_known_rank(
+            role.name
+        )
+
+        if (
+            detected
+            and detected["role_name"]
+            == wanted_entry["role_name"]
+        ):
+            matches.append(
+                role
+            )
+
+    if not matches:
+        return None
+
+    # höchste Discord-Rolle verwenden
+    matches.sort(
+        key=lambda role: role.position,
+        reverse=True,
+    )
+
+    return matches[0]
+
+
 # ============================================================
-# ABSENCE
+# TEAMRANG EINES MEMBERS
+# ============================================================
+
+def get_member_team_rank(
+    member: discord.Member,
+):
+
+    matches = []
+
+    for role in member.roles:
+
+        detected = match_known_rank(
+            role.name
+        )
+
+        if detected:
+
+            matches.append(
+                {
+                    **detected,
+                    "discord_role": role,
+                }
+            )
+
+    if not matches:
+        return None
+
+    # Reihenfolge aus TEAM_STRUCTURE bestimmt,
+    # welcher Rang höher ist.
+    priority = {}
+
+    index = 0
+
+    for section, roles in TEAM_STRUCTURE:
+
+        for role_name, _ in roles:
+
+            priority[
+                role_name
+            ] = index
+
+            index += 1
+
+    matches.sort(
+        key=lambda item: priority.get(
+            item["role_name"],
+            9999,
+        )
+    )
+
+    return matches[0]
+
+
+def is_team_member(
+    member: discord.Member,
+) -> bool:
+
+    return (
+        get_member_team_rank(
+            member
+        )
+        is not None
+    )
+
+
+# ============================================================
+# ABWESENHEIT
 # ============================================================
 
 def member_is_absent(
@@ -201,162 +423,188 @@ def member_is_absent(
 
     for role in member.roles:
 
-        role_name = normalize(
+        normalized = normalize_role_name(
             role.name
         )
 
-        if any(
-            keyword in role_name
-            for keyword in ABSENCE_KEYWORDS
-        ):
-            return True
+        compact = normalized.replace(
+            " ",
+            ""
+        )
+
+        for keyword in ABSENCE_KEYWORDS:
+
+            keyword_compact = keyword.replace(
+                " ",
+                ""
+            )
+
+            if keyword_compact in compact:
+                return True
 
     return False
 
 
 # ============================================================
-# TEAM ROLE DETECTION
+# NICKNAME CLEANUP
 # ============================================================
 
-def get_team_role_data(
-    member: discord.Member,
-):
-    """
-    Gibt den höchsten Teamrang zurück.
-
-    Rückgabe:
-    {
-        "section": "...",
-        "role_name": "...",
-        "role": discord.Role,
-        "prefix": "[...]"
-    }
-
-    oder None.
-    """
-
-    for section_name, roles in TEAM_STRUCTURE:
-
-        for role_name, prefix in roles:
-
-            wanted = normalize(
-                role_name
-            )
-
-            for member_role in member.roles:
-
-                if normalize(
-                    member_role.name
-                ) == wanted:
-
-                    return {
-                        "section": section_name,
-                        "role_name": role_name,
-                        "role": member_role,
-                        "prefix": prefix,
-                    }
-
-    return None
-
-
-def is_team_member(
-    member: discord.Member,
-) -> bool:
-
-    return (
-        get_team_role_data(member)
-        is not None
-    )
-
-
-# ============================================================
-# NICKNAMES
-# ============================================================
-
-def clean_member_name(
-    member: discord.Member,
+def remove_team_prefix(
+    name: str,
 ) -> str:
 
-    name = (
-        member.nick
-        or member.global_name
-        or member.name
-    )
+    name = name.strip()
 
     # Abgemeldet entfernen
     name = re.sub(
-        r"\s*-\s*abgemeldet\s*$",
+        r"\s*[-|•]\s*abgemeldet\s*$",
         "",
         name,
         flags=re.IGNORECASE,
     )
 
-    # Alte bekannte Präfixe entfernen
+    # bekannte Kürzel entfernen
+    all_prefixes = []
+
     for _, roles in TEAM_STRUCTURE:
 
         for _, prefix in roles:
 
-            if name.startswith(
+            all_prefixes.append(
                 prefix
-            ):
-                name = name[
-                    len(prefix):
-                ].strip()
+            )
 
-    # Falls vorher ähnliche [...] Kürzel gesetzt wurden
-    name = re.sub(
-        r"^\[[^\]]{1,20}\]\s*",
-        "",
-        name,
+    all_prefixes.sort(
+        key=len,
+        reverse=True,
     )
+
+    for prefix in all_prefixes:
+
+        if name.lower().startswith(
+            prefix.lower()
+        ):
+
+            name = name[
+                len(prefix):
+            ].strip()
+
+            break
 
     return (
         name.strip()
+        or "User"
+    )
+
+
+def base_member_name(
+    member: discord.Member,
+) -> str:
+
+    current_name = (
+        member.nick
+        or member.global_name
+        or member.name
+    )
+
+    cleaned = remove_team_prefix(
+        current_name
+    )
+
+    return (
+        cleaned
         or member.name
     )
 
 
-def desired_nickname(
+def desired_team_nickname(
     member: discord.Member,
-) -> str | None:
+):
 
-    team_data = get_team_role_data(
+    rank = get_member_team_rank(
         member
     )
 
-    if not team_data:
+    if rank is None:
         return None
 
-    base_name = clean_member_name(
+    name = base_member_name(
         member
     )
 
-    nickname = (
-        f"{team_data['prefix']} "
-        f"{base_name}"
+    new_name = (
+        f"{rank['prefix']} {name}"
     )
 
-    if member_is_absent(member):
-        nickname += " - Abgemeldet"
+    if member_is_absent(
+        member
+    ):
+        new_name += " - Abgemeldet"
 
-    return nickname[:32]
+    return new_name[:32]
 
 
-async def update_member_nickname(
+# ============================================================
+# NICKNAME ÄNDERN
+# ============================================================
+
+async def sync_member_nickname(
     member: discord.Member,
 ) -> bool:
 
     if member.bot:
         return False
 
-    team_data = get_team_role_data(
+    rank = get_member_team_rank(
         member
     )
 
-    if not team_data:
-        return False
+    # Mitglied ist kein Teammitglied mehr
+    if rank is None:
 
-    desired = desired_nickname(
+        if member.nick is None:
+            return False
+
+        cleaned = remove_team_prefix(
+            member.nick
+        )
+
+        if cleaned == member.nick:
+            return False
+
+        bot_member = member.guild.me
+
+        if bot_member is None:
+            return False
+
+        if member.id == member.guild.owner_id:
+            return False
+
+        if (
+            member.top_role
+            >= bot_member.top_role
+        ):
+            return False
+
+        try:
+
+            await member.edit(
+                nick=cleaned[:32],
+                reason=(
+                    "EHRP | System "
+                    "Teamrolle entfernt"
+                ),
+            )
+
+            return True
+
+        except (
+            discord.Forbidden,
+            discord.HTTPException,
+        ):
+            return False
+
+    desired = desired_team_nickname(
         member
     )
 
@@ -366,29 +614,27 @@ async def update_member_nickname(
     if member.nick == desired:
         return False
 
-    guild = member.guild
-
-    bot_member = guild.me
+    bot_member = member.guild.me
 
     if bot_member is None:
         return False
 
-    # Serverbesitzer kann Discord nicht umbenennen
-    if member.id == guild.owner_id:
+    if member.id == member.guild.owner_id:
         return False
 
-    # Bot muss über der Zielrolle stehen
     if (
         member.top_role
         >= bot_member.top_role
     ):
         print(
             "⚠️ Nickname nicht änderbar: "
-            f"{member} | Rolle zu hoch"
+            f"{member} | Bot-Rolle zu niedrig"
         )
+
         return False
 
     try:
+
         await member.edit(
             nick=desired,
             reason=(
@@ -397,19 +643,23 @@ async def update_member_nickname(
             ),
         )
 
+        print(
+            f"✅ Nickname: {member} -> {desired}"
+        )
+
         return True
 
     except discord.Forbidden:
 
         print(
-            "⚠️ Keine Berechtigung für Nickname: "
-            f"{member}"
+            "⚠️ Keine Berechtigung "
+            f"für Nickname von {member}"
         )
 
     except discord.HTTPException as error:
 
         print(
-            "❌ Nickname Fehler "
+            f"❌ Nickname Fehler "
             f"{member}: {error}"
         )
 
@@ -417,21 +667,26 @@ async def update_member_nickname(
 
 
 # ============================================================
-# TEAM MEMBERS
+# ALLE TEAMMITGLIEDER
 # ============================================================
 
-def all_team_members(
+def get_all_team_members(
     guild: discord.Guild,
-) -> list[discord.Member]:
+):
 
     members = []
 
     for member in guild.members:
 
-        if (
-            not member.bot
-            and is_team_member(member)
-        ):
+        if member.bot:
+            continue
+
+        rank = get_member_team_rank(
+            member
+        )
+
+        if rank:
+
             members.append(
                 member
             )
@@ -439,70 +694,74 @@ def all_team_members(
     return members
 
 
-def members_for_role(
+def members_for_rank(
     guild: discord.Guild,
-    role_name: str,
-) -> list[discord.Member]:
+    rank_name: str,
+):
 
-    role = find_role(
-        guild,
-        role_name,
-    )
+    members = []
 
-    if role is None:
-        return []
+    for member in guild.members:
 
-    members = [
-        member
-        for member in role.members
-        if not member.bot
-    ]
+        if member.bot:
+            continue
+
+        rank = get_member_team_rank(
+            member
+        )
+
+        if (
+            rank
+            and rank["role_name"]
+            == rank_name
+        ):
+
+            members.append(
+                member
+            )
 
     members.sort(
         key=lambda member:
-        member.display_name.lower()
+        member.display_name.casefold()
     )
 
     return members
 
 
 # ============================================================
-# TEAM EMBED
+# TEAMLISTE
 # ============================================================
 
 def build_team_embed(
     guild: discord.Guild,
-) -> discord.Embed:
+):
 
-    team_members = all_team_members(
+    members = get_all_team_members(
         guild
     )
 
     absent_count = sum(
         1
-        for member in team_members
+        for member in members
         if member_is_absent(member)
     )
 
     active_count = (
-        len(team_members)
+        len(members)
         - absent_count
     )
 
     embed = discord.Embed(
-        title=TEAM_EMBED_TITLE,
+        title="👥 EHRP | SYSTEM • TEAMLISTE",
         description=(
             "## OFFIZIELLE TEAMÜBERSICHT\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            f"👥 **Teammitglieder:** "
-            f"{len(team_members)}\n"
-            f"🟢 **Aktiv:** "
-            f"{active_count}\n"
-            f"🏖️ **Abgemeldet:** "
-            f"{absent_count}\n"
+            f"👥 **Teammitglieder:** {len(members)}\n"
+            f"🟢 **Aktiv:** {active_count}\n"
+            f"🏖️ **Abgemeldet:** {absent_count}\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Die Teamliste wird automatisch "
-            "mit den Discord-Rollen synchronisiert."
+            "Die Liste wird automatisch "
+            "mit den Serverrollen synchronisiert."
         ),
         color=SYSTEM_COLOR,
     )
@@ -513,32 +772,45 @@ def build_team_embed(
 
         for role_name, prefix in roles:
 
-            members = members_for_role(
+            rank_members = members_for_rank(
                 guild,
                 role_name,
             )
 
-            if members:
+            if rank_members:
 
-                member_text = " ".join(
-                    member.mention
-                    for member in members
+                member_lines = []
+
+                for member in rank_members:
+
+                    status = (
+                        "🏖️"
+                        if member_is_absent(member)
+                        else "🟢"
+                    )
+
+                    member_lines.append(
+                        f"{status} {member.mention}"
+                    )
+
+                members_text = "\n".join(
+                    member_lines
                 )
 
             else:
 
-                member_text = "—"
+                members_text = "—"
 
             lines.append(
                 f"**{prefix} {role_name}**\n"
-                f"{member_text}"
+                f"{members_text}"
             )
 
         embed.add_field(
             name=section_name,
             value="\n\n".join(
                 lines
-            ),
+            )[:1024],
             inline=False,
         )
 
@@ -553,22 +825,22 @@ def build_team_embed(
 
 
 # ============================================================
-# FIND EXISTING TEAM MESSAGE
+# TEAM MESSAGE FINDEN
 # ============================================================
 
 async def find_team_message(
     guild: discord.Guild,
 ):
 
-    bot_user = guild.me
+    bot_member = guild.me
 
-    if bot_user is None:
+    if bot_member is None:
         return None
 
     for channel in guild.text_channels:
 
         permissions = channel.permissions_for(
-            bot_user
+            bot_member
         )
 
         if not (
@@ -580,24 +852,22 @@ async def find_team_message(
         try:
 
             async for message in channel.history(
-                limit=50
+                limit=75
             ):
 
                 if (
                     message.author.id
-                    != bot_user.id
+                    != bot_member.id
                 ):
                     continue
 
                 if not message.embeds:
                     continue
 
-                embed = message.embeds[0]
-
                 footer = (
-                    embed.footer.text
-                    if embed.footer
-                    else ""
+                    message.embeds[0]
+                    .footer.text
+                    or ""
                 )
 
                 if (
@@ -616,6 +886,53 @@ async def find_team_message(
 
 
 # ============================================================
+# FULL SYNC
+# ============================================================
+
+async def perform_full_sync(
+    guild: discord.Guild,
+):
+
+    changed = 0
+
+    # Absichtlich alle User prüfen.
+    # Dadurch werden alte Team-Kürzel auch entfernt,
+    # wenn eine Teamrolle entzogen wurde.
+    for member in guild.members:
+
+        if member.bot:
+            continue
+
+        if await sync_member_nickname(
+            member
+        ):
+            changed += 1
+
+    team_message = await find_team_message(
+        guild
+    )
+
+    if team_message:
+
+        try:
+
+            await team_message.edit(
+                embed=build_team_embed(
+                    guild
+                )
+            )
+
+        except discord.HTTPException as error:
+
+            print(
+                "❌ Teamliste konnte nicht "
+                f"aktualisiert werden: {error}"
+            )
+
+    return changed
+
+
+# ============================================================
 # COG
 # ============================================================
 
@@ -627,6 +944,7 @@ class Team(
         self,
         bot: commands.Bot,
     ):
+
         self.bot = bot
 
         self.team_sync_loop.start()
@@ -634,58 +952,13 @@ class Team(
     def cog_unload(
         self,
     ):
+
         self.team_sync_loop.cancel()
 
-    # --------------------------------------------------------
-    # FULL SYNC
-    # --------------------------------------------------------
 
-    async def full_sync(
-        self,
-        guild: discord.Guild,
-    ):
-
-        changed = 0
-
-        for member in guild.members:
-
-            if (
-                member.bot
-                or not is_team_member(member)
-            ):
-                continue
-
-            if await update_member_nickname(
-                member
-            ):
-                changed += 1
-
-        message = await find_team_message(
-            guild
-        )
-
-        if message:
-
-            try:
-
-                await message.edit(
-                    embed=build_team_embed(
-                        guild
-                    )
-                )
-
-            except discord.HTTPException as error:
-
-                print(
-                    "❌ Teamliste Update Fehler: "
-                    f"{error}"
-                )
-
-        return changed
-
-    # --------------------------------------------------------
-    # AUTO LOOP
-    # --------------------------------------------------------
+    # ========================================================
+    # AUTOMATISCH ALLE 5 MINUTEN
+    # ========================================================
 
     @tasks.loop(
         minutes=5
@@ -698,7 +971,7 @@ class Team(
 
             try:
 
-                await self.full_sync(
+                await perform_full_sync(
                     guild
                 )
 
@@ -709,16 +982,18 @@ class Team(
                     f"{guild.name}: {error}"
                 )
 
+
     @team_sync_loop.before_loop
-    async def before_team_sync(
+    async def before_team_sync_loop(
         self,
     ):
 
         await self.bot.wait_until_ready()
 
-    # --------------------------------------------------------
-    # ROLE / NICKNAME CHANGE
-    # --------------------------------------------------------
+
+    # ========================================================
+    # SOFORT BEI ROLLENÄNDERUNG
+    # ========================================================
 
     @commands.Cog.listener()
     async def on_member_update(
@@ -727,125 +1002,42 @@ class Team(
         after: discord.Member,
     ):
 
-        # Nur reagieren wenn Rollen oder Nickname
-        # wirklich geändert wurden
+        # Wir reagieren nur auf relevante Änderungen
         if (
             before.roles == after.roles
             and before.nick == after.nick
         ):
             return
 
-        if is_team_member(after):
+        try:
 
-            await update_member_nickname(
+            await sync_member_nickname(
                 after
             )
 
-        message = await find_team_message(
-            after.guild
-        )
+            team_message = await find_team_message(
+                after.guild
+            )
 
-        if message:
+            if team_message:
 
-            try:
-
-                await message.edit(
+                await team_message.edit(
                     embed=build_team_embed(
                         after.guild
                     )
                 )
 
-            except discord.HTTPException:
-                pass
+        except Exception as error:
 
-    # --------------------------------------------------------
-    # /team_panel
-    # --------------------------------------------------------
-
-    @app_commands.command(
-        name="team_panel",
-        description=(
-            "Erstellt oder verschiebt "
-            "die automatische Teamliste."
-        ),
-    )
-    async def team_panel(
-        self,
-        interaction: discord.Interaction,
-    ):
-
-        if not await ensure_dev(
-            interaction
-        ):
-            return
-
-        if not isinstance(
-            interaction.channel,
-            discord.TextChannel,
-        ):
-            await interaction.response.send_message(
-                "❌ Bitte in einem Textkanal benutzen.",
-                ephemeral=True,
-            )
-            return
-
-        await interaction.response.defer(
-            ephemeral=True
-        )
-
-        existing = await find_team_message(
-            interaction.guild
-        )
-
-        # Wenn bereits im selben Channel:
-        # einfach aktualisieren
-        if (
-            existing
-            and existing.channel.id
-            == interaction.channel.id
-        ):
-
-            await existing.edit(
-                embed=build_team_embed(
-                    interaction.guild
-                )
+            print(
+                "❌ Member Update Fehler: "
+                f"{error}"
             )
 
-            await interaction.followup.send(
-                "✅ Teamliste wurde aktualisiert.",
-                ephemeral=True,
-            )
 
-            return
-
-        # Neue Teamliste posten
-        new_message = await interaction.channel.send(
-            embed=build_team_embed(
-                interaction.guild
-            )
-        )
-
-        # Alte Teamliste entfernen
-        if existing:
-
-            try:
-
-                await existing.delete()
-
-            except discord.HTTPException:
-                pass
-
-        await interaction.followup.send(
-            (
-                "✅ **Team-System eingerichtet**\n"
-                f"📍 {new_message.channel.mention}"
-            ),
-            ephemeral=True,
-        )
-
-    # --------------------------------------------------------
+    # ========================================================
     # /team_sync
-    # --------------------------------------------------------
+    # ========================================================
 
     @app_commands.command(
         name="team_sync",
@@ -868,35 +1060,46 @@ class Team(
             ephemeral=True
         )
 
-        changed = await self.full_sync(
+        changed = await perform_full_sync(
             interaction.guild
         )
 
-        team_members = all_team_members(
+        members = get_all_team_members(
             interaction.guild
+        )
+
+        absent = sum(
+            1
+            for member in members
+            if member_is_absent(
+                member
+            )
         )
 
         await interaction.followup.send(
             (
                 "✅ **TEAM-SYNC ABGESCHLOSSEN**\n\n"
-                f"👥 Erkannte Teammitglieder: "
-                f"**{len(team_members)}**\n"
+                f"👥 Teammitglieder erkannt: "
+                f"**{len(members)}**\n"
+                f"🟢 Aktiv: "
+                f"**{len(members) - absent}**\n"
+                f"🏖️ Abgemeldet: "
+                f"**{absent}**\n"
                 f"✏️ Nicknames geändert: "
-                f"**{changed}**\n"
-                "🔄 Teamliste aktualisiert"
+                f"**{changed}**"
             ),
             ephemeral=True,
         )
 
-    # --------------------------------------------------------
+
+    # ========================================================
     # /team_status
-    # --------------------------------------------------------
+    # ========================================================
 
     @app_commands.command(
         name="team_status",
         description=(
-            "Zeigt den aktuellen Status "
-            "des Team-Systems."
+            "Zeigt den Status des Team-Systems."
         ),
     )
     async def team_status(
@@ -909,34 +1112,38 @@ class Team(
         ):
             return
 
-        members = all_team_members(
+        members = get_all_team_members(
             interaction.guild
         )
 
-        absent = [
-            member
+        absent = sum(
+            1
             for member in members
-            if member_is_absent(member)
-        ]
-
-        active = (
-            len(members)
-            - len(absent)
+            if member_is_absent(
+                member
+            )
         )
 
-        detected_roles = 0
+        detected_roles = []
         missing_roles = []
 
         for _, roles in TEAM_STRUCTURE:
 
             for role_name, _ in roles:
 
-                if find_role(
+                discord_role = find_discord_role(
                     interaction.guild,
                     role_name,
-                ):
+                )
 
-                    detected_roles += 1
+                if discord_role:
+
+                    detected_roles.append(
+                        (
+                            role_name,
+                            discord_role.name,
+                        )
+                    )
 
                 else:
 
@@ -945,20 +1152,19 @@ class Team(
                     )
 
         embed = discord.Embed(
-            title=(
-                "⚙️ EHRP | SYSTEM • TEAM STATUS"
-            ),
+            title="⚙️ EHRP | SYSTEM • TEAM STATUS",
             description=(
                 "## SYSTEM STATUS\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
                 f"👥 **Teammitglieder:** "
                 f"{len(members)}\n"
                 f"🟢 **Aktiv:** "
-                f"{active}\n"
+                f"{len(members) - absent}\n"
                 f"🏖️ **Abgemeldet:** "
-                f"{len(absent)}\n\n"
+                f"{absent}\n\n"
                 f"🎭 **Teamrollen erkannt:** "
-                f"{detected_roles}\n"
+                f"{len(detected_roles)} / "
+                f"{len(RANK_ENTRIES)}\n"
                 f"⚠️ **Fehlende Rollen:** "
                 f"{len(missing_roles)}\n\n"
                 "🔄 **Auto-Sync:** AKTIV\n"
@@ -976,22 +1182,177 @@ class Team(
 
             embed.add_field(
                 name="⚠️ Nicht gefundene Rollen",
-                value=(
-                    "\n".join(
-                        f"• {role}"
-                        for role
-                        in missing_roles
-                    )
+                value="\n".join(
+                    f"• {role}"
+                    for role in missing_roles
                 )[:1024],
                 inline=False,
             )
 
         embed.set_footer(
-            text="EHRP | System • Team Management"
+            text=(
+                "EHRP | System • "
+                "Team Management V3"
+            )
         )
 
         await interaction.response.send_message(
             embed=embed,
+            ephemeral=True,
+        )
+
+
+    # ========================================================
+    # /team_debug
+    # ========================================================
+
+    @app_commands.command(
+        name="team_debug",
+        description=(
+            "Zeigt, welche Serverrollen "
+            "das Team-System erkennt."
+        ),
+    )
+    async def team_debug(
+        self,
+        interaction: discord.Interaction,
+    ):
+
+        if not await ensure_dev(
+            interaction
+        ):
+            return
+
+        detected = []
+
+        for role in reversed(
+            interaction.guild.roles
+        ):
+
+            rank = match_known_rank(
+                role.name
+            )
+
+            if not rank:
+                continue
+
+            detected.append(
+                (
+                    f"`{role.name}`\n"
+                    f"↳ **{rank['prefix']} "
+                    f"{rank['role_name']}**"
+                )
+            )
+
+        embed = discord.Embed(
+            title="🔎 EHRP | TEAM DEBUG",
+            description=(
+                "Hier siehst du, welche echten "
+                "Discord-Rollen erkannt werden.\n\n"
+                + (
+                    "\n\n".join(
+                        detected
+                    )[:4000]
+                    if detected
+                    else "❌ Keine Teamrollen erkannt."
+                )
+            ),
+            color=SYSTEM_COLOR,
+        )
+
+        embed.set_footer(
+            text="EHRP | System • Role Detection"
+        )
+
+        await interaction.response.send_message(
+            embed=embed,
+            ephemeral=True,
+        )
+
+
+    # ========================================================
+    # /team_panel
+    # ========================================================
+
+    @app_commands.command(
+        name="team_panel",
+        description=(
+            "Erstellt die automatische Teamliste "
+            "im aktuellen Channel."
+        ),
+    )
+    async def team_panel(
+        self,
+        interaction: discord.Interaction,
+    ):
+
+        if not await ensure_dev(
+            interaction
+        ):
+            return
+
+        if not isinstance(
+            interaction.channel,
+            discord.TextChannel,
+        ):
+
+            await interaction.response.send_message(
+                "❌ Bitte benutze den Befehl "
+                "in einem Textkanal.",
+                ephemeral=True,
+            )
+
+            return
+
+        await interaction.response.defer(
+            ephemeral=True
+        )
+
+        old_message = await find_team_message(
+            interaction.guild
+        )
+
+        # gleiche Nachricht aktualisieren
+        if (
+            old_message
+            and old_message.channel.id
+            == interaction.channel.id
+        ):
+
+            await old_message.edit(
+                embed=build_team_embed(
+                    interaction.guild
+                )
+            )
+
+            await interaction.followup.send(
+                "✅ Teamliste aktualisiert.",
+                ephemeral=True,
+            )
+
+            return
+
+        new_message = await interaction.channel.send(
+            embed=build_team_embed(
+                interaction.guild
+            )
+        )
+
+        # alte Teamliste entfernen
+        if old_message:
+
+            try:
+
+                await old_message.delete()
+
+            except discord.HTTPException:
+                pass
+
+        await interaction.followup.send(
+            (
+                "✅ **Team-Panel erstellt**\n"
+                f"📍 {new_message.channel.mention}"
+            ),
             ephemeral=True,
         )
 
