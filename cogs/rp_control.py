@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-import os
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import discord
@@ -14,25 +14,23 @@ from discord.ext import commands, tasks
 # EHRP | SYSTEM — RP CONTROL
 # ============================================================
 
-OWNER_USER_ID = 1294267376459714621
+CONTROL_USER_ID = 1294267376459714621
 
 RP_CHANNEL_ID = 1529998957449707551
 RP_ROLE_ID = 1526957918128443533
 
-GERMAN_TZ = ZoneInfo("Europe/Berlin")
+GERMAN_TIMEZONE = ZoneInfo(
+    "Europe/Berlin"
+)
 
-SETTINGS_FILE = "rp_settings.json"
 
-DEFAULT_SETTINGS = {
-    "auto_enabled": False,
-    "auto_time": "18:00",
-    "rp_active": False,
-    "last_auto_date": None,
-}
+# ============================================================
+# DESIGN
+# ============================================================
 
 SYSTEM_COLOR = 0x5865F2
-SUCCESS_COLOR = 0x57F287
-ERROR_COLOR = 0xED4245
+ONLINE_COLOR = 0x57F287
+OFFLINE_COLOR = 0xED4245
 WARNING_COLOR = 0xFEE75C
 
 
@@ -40,39 +38,64 @@ WARNING_COLOR = 0xFEE75C
 # SETTINGS
 # ============================================================
 
+SETTINGS_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "rp_settings.json"
+)
+
+DEFAULT_SETTINGS = {
+    "auto_enabled": False,
+    "auto_time": "18:00",
+    "rp_active": False,
+    "last_auto_start": None,
+}
+
+
 def load_settings() -> dict:
-    if not os.path.exists(SETTINGS_FILE):
-        save_settings(DEFAULT_SETTINGS.copy())
+
+    if not SETTINGS_PATH.exists():
         return DEFAULT_SETTINGS.copy()
 
     try:
-        with open(
-            SETTINGS_FILE,
+
+        with SETTINGS_PATH.open(
             "r",
             encoding="utf-8",
         ) as file:
-            data = json.load(file)
 
-        result = DEFAULT_SETTINGS.copy()
-        result.update(data)
+            loaded = json.load(
+                file
+            )
 
-        return result
+        settings = DEFAULT_SETTINGS.copy()
+
+        settings.update(
+            loaded
+        )
+
+        return settings
 
     except Exception as error:
+
         print(
-            f"❌ RP Settings Load Fehler: {error}"
+            "❌ RP Einstellungen "
+            f"konnten nicht geladen werden: {error}"
         )
 
         return DEFAULT_SETTINGS.copy()
 
 
-def save_settings(settings: dict):
+def save_settings(
+    settings: dict,
+):
+
     try:
-        with open(
-            SETTINGS_FILE,
+
+        with SETTINGS_PATH.open(
             "w",
             encoding="utf-8",
         ) as file:
+
             json.dump(
                 settings,
                 file,
@@ -81,24 +104,66 @@ def save_settings(settings: dict):
             )
 
     except Exception as error:
+
         print(
-            f"❌ RP Settings Save Fehler: {error}"
+            "❌ RP Einstellungen "
+            f"konnten nicht gespeichert werden: {error}"
         )
+
+
+# ============================================================
+# TIME
+# ============================================================
+
+def german_now() -> datetime:
+
+    return datetime.now(
+        GERMAN_TIMEZONE
+    )
+
+
+def parse_clock(
+    value: str,
+):
+
+    value = value.strip()
+
+    try:
+
+        parsed = datetime.strptime(
+            value,
+            "%H:%M",
+        )
+
+        return (
+            parsed.hour,
+            parsed.minute,
+        )
+
+    except ValueError:
+
+        return None
 
 
 # ============================================================
 # ACCESS
 # ============================================================
 
-async def ensure_rp_owner(
+async def check_control_permission(
     interaction: discord.Interaction,
 ) -> bool:
 
-    if interaction.user.id == OWNER_USER_ID:
+    if (
+        interaction.user.id
+        == CONTROL_USER_ID
+    ):
         return True
 
     await interaction.response.send_message(
-        "❌ Du darfst das RP-System nicht steuern.",
+        (
+            "❌ Du hast keine Berechtigung, "
+            "das RP-System zu steuern."
+        ),
         ephemeral=True,
     )
 
@@ -106,45 +171,27 @@ async def ensure_rp_owner(
 
 
 # ============================================================
-# HELPERS
+# STATUS EMBED
 # ============================================================
-
-def parse_time(
-    value: str,
-):
-    value = value.strip()
-
-    try:
-        parsed = datetime.strptime(
-            value,
-            "%H:%M",
-        )
-
-        return parsed.hour, parsed.minute
-
-    except ValueError:
-        return None
-
-
-def get_german_time() -> datetime:
-    return datetime.now(
-        GERMAN_TZ
-    )
-
 
 def build_status_embed(
     settings: dict,
 ):
-    now = get_german_time()
 
-    rp_active = settings.get(
-        "rp_active",
-        False,
+    now = german_now()
+
+    rp_active = bool(
+        settings.get(
+            "rp_active",
+            False,
+        )
     )
 
-    auto_enabled = settings.get(
-        "auto_enabled",
-        False,
+    auto_enabled = bool(
+        settings.get(
+            "auto_enabled",
+            False,
+        )
     )
 
     auto_time = settings.get(
@@ -156,21 +203,23 @@ def build_status_embed(
         title="🎮 EHRP | RP CONTROL",
         description=(
             "## SYSTEM STATUS\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
             f"{'🟢' if rp_active else '🔴'} "
-            f"**RP-Status:** "
-            f"{'ONLINE' if rp_active else 'OFFLINE'}\n"
+            f"**RP:** "
+            f"{'ONLINE' if rp_active else 'OFFLINE'}\n\n"
             f"{'🟢' if auto_enabled else '🔴'} "
-            f"**Auto-RP:** "
-            f"{'AN' if auto_enabled else 'AUS'}\n"
-            f"🕒 **Auto-Start:** `{auto_time}`\n"
-            f"🇩🇪 **Zeitzone:** Europe/Berlin\n"
-            f"⌚ **Aktuell:** "
-            f"`{now.strftime('%H:%M:%S')}`\n"
+            f"**Automatischer Start:** "
+            f"{'AN' if auto_enabled else 'AUS'}\n\n"
+            f"🕒 **Eingestellte Startzeit:** "
+            f"`{auto_time} Uhr`\n\n"
+            "🇩🇪 **Zeitzone:** "
+            "`Deutschland (Europe/Berlin)`\n\n"
+            f"⌚ **Deutsche Uhrzeit jetzt:** "
+            f"`{now.strftime('%H:%M:%S')}`\n\n"
             "━━━━━━━━━━━━━━━━━━━━"
         ),
         color=(
-            SUCCESS_COLOR
+            ONLINE_COLOR
             if rp_active
             else SYSTEM_COLOR
         ),
@@ -185,14 +234,15 @@ def build_status_embed(
 
 
 # ============================================================
-# RP START
+# START RP
 # ============================================================
 
-async def start_rp(
+async def start_roleplay(
     bot: commands.Bot,
     settings: dict,
     started_by: str,
-):
+) -> tuple[bool, str]:
+
     channel = bot.get_channel(
         RP_CHANNEL_ID
     )
@@ -201,53 +251,62 @@ async def start_rp(
         channel,
         discord.TextChannel,
     ):
-        print(
-            "❌ RP-Channel nicht gefunden."
+
+        return (
+            False,
+            "Der RP-Channel wurde nicht gefunden.",
         )
-        return False
 
     role = channel.guild.get_role(
         RP_ROLE_ID
     )
 
     if role is None:
-        print(
-            "❌ RP-Rolle nicht gefunden."
+
+        return (
+            False,
+            "Die RP-Rolle wurde nicht gefunden.",
         )
-        return False
 
     if settings.get(
         "rp_active",
         False,
     ):
-        return False
 
-    now = get_german_time()
+        return (
+            False,
+            "Das RP läuft bereits.",
+        )
+
+    now = german_now()
 
     embed = discord.Embed(
         title="🟢 EHRP/VC • RP START",
         description=(
-            "## ROLEPLAY IST GESTARTET\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "🎮 Das RP ist jetzt **OFFIZIELL GEÖFFNET**.\n\n"
-            "Bitte haltet euch an das Regelwerk "
-            "und sorgt für sauberes RP.\n\n"
+            "## ROLEPLAY GESTARTET\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Das offizielle Roleplay ist "
+            "**ab sofort geöffnet**. 🎮\n\n"
+            "Bitte achtet auf sauberes RP "
+            "und haltet euch an das Regelwerk.\n\n"
             f"🕒 **Start:** "
-            f"{now.strftime('%H:%M')} Uhr\n"
-            f"🇩🇪 **Zeitzone:** Deutschland\n"
+            f"`{now.strftime('%H:%M')} Uhr`\n"
+            "🇩🇪 **Zeitzone:** Deutschland\n\n"
             "━━━━━━━━━━━━━━━━━━━━"
         ),
-        color=SUCCESS_COLOR,
+        color=ONLINE_COLOR,
         timestamp=now,
     )
 
     embed.set_footer(
         text=(
-            f"EHRP | System • Gestartet durch {started_by}"
+            "EHRP | System • "
+            f"Gestartet durch {started_by}"
         )
     )
 
     try:
+
         await channel.send(
             content=role.mention,
             embed=embed,
@@ -259,10 +318,15 @@ async def start_rp(
         )
 
     except discord.HTTPException as error:
+
         print(
-            f"❌ RP Start Message Fehler: {error}"
+            f"❌ RP Start Fehler: {error}"
         )
-        return False
+
+        return (
+            False,
+            "Die Start-Nachricht konnte nicht gesendet werden.",
+        )
 
     settings[
         "rp_active"
@@ -272,18 +336,22 @@ async def start_rp(
         settings
     )
 
-    return True
+    return (
+        True,
+        "RP wurde gestartet.",
+    )
 
 
 # ============================================================
-# RP STOP
+# STOP RP
 # ============================================================
 
-async def stop_rp(
+async def stop_roleplay(
     bot: commands.Bot,
     settings: dict,
     stopped_by: str,
-):
+) -> tuple[bool, str]:
+
     channel = bot.get_channel(
         RP_CHANNEL_ID
     )
@@ -292,47 +360,64 @@ async def stop_rp(
         channel,
         discord.TextChannel,
     ):
-        return False
+
+        return (
+            False,
+            "Der RP-Channel wurde nicht gefunden.",
+        )
 
     if not settings.get(
         "rp_active",
         False,
     ):
-        return False
 
-    now = get_german_time()
+        return (
+            False,
+            "Das RP ist bereits offline.",
+        )
+
+    now = german_now()
 
     embed = discord.Embed(
-        title="🔴 EHRP/VC • RP STOP",
+        title="🔴 EHRP/VC • RP ENDE",
         description=(
             "## ROLEPLAY BEENDET\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "Das offizielle RP wurde beendet.\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Das offizielle Roleplay "
+            "wurde beendet.\n\n"
             f"🕒 **Ende:** "
-            f"{now.strftime('%H:%M')} Uhr\n"
-            f"🇩🇪 **Zeitzone:** Deutschland\n"
+            f"`{now.strftime('%H:%M')} Uhr`\n"
+            "🇩🇪 **Zeitzone:** Deutschland\n\n"
+            "Vielen Dank fürs Mitspielen. ❤️\n\n"
             "━━━━━━━━━━━━━━━━━━━━"
         ),
-        color=ERROR_COLOR,
+        color=OFFLINE_COLOR,
         timestamp=now,
     )
 
     embed.set_footer(
         text=(
-            f"EHRP | System • Beendet durch {stopped_by}"
+            "EHRP | System • "
+            f"Beendet durch {stopped_by}"
         )
     )
 
     try:
+
         await channel.send(
             embed=embed
         )
 
     except discord.HTTPException as error:
+
         print(
-            f"❌ RP Stop Message Fehler: {error}"
+            f"❌ RP Stop Fehler: {error}"
         )
-        return False
+
+        return (
+            False,
+            "Die Stop-Nachricht konnte nicht gesendet werden.",
+        )
 
     settings[
         "rp_active"
@@ -342,7 +427,10 @@ async def stop_rp(
         settings
     )
 
-    return True
+    return (
+        True,
+        "RP wurde beendet.",
+    )
 
 
 # ============================================================
@@ -357,85 +445,148 @@ class RPControl(
         self,
         bot: commands.Bot,
     ):
-        self.bot = bot
-        self.settings = load_settings()
 
-        self.auto_rp_loop.start()
+        self.bot = bot
+
+        self.settings = (
+            load_settings()
+        )
+
+        self.auto_start_loop.start()
+
+        print(
+            "✅ RP-Control initialisiert"
+        )
+
+        print(
+            "🕒 Auto-RP: "
+            f"{'AN' if self.settings['auto_enabled'] else 'AUS'}"
+        )
+
+        print(
+            "🕒 Auto-Zeit: "
+            f"{self.settings['auto_time']}"
+        )
 
 
     def cog_unload(
         self,
     ):
-        self.auto_rp_loop.cancel()
+
+        self.auto_start_loop.cancel()
 
 
     # ========================================================
-    # AUTO LOOP
+    # AUTOMATISCHER CHECK
     # ========================================================
 
     @tasks.loop(
-        seconds=30
+        seconds=20
     )
-    async def auto_rp_loop(
+    async def auto_start_loop(
         self,
     ):
+
         if not self.settings.get(
             "auto_enabled",
             False,
         ):
+
             return
 
-        now = get_german_time()
+        if self.settings.get(
+            "rp_active",
+            False,
+        ):
 
-        parsed = parse_time(
+            return
+
+        parsed = parse_clock(
             self.settings.get(
                 "auto_time",
                 "18:00",
             )
         )
 
-        if not parsed:
+        if parsed is None:
+
             return
 
-        hour, minute = parsed
+        target_hour, target_minute = parsed
+
+        now = german_now()
 
         if (
-            now.hour != hour
-            or now.minute != minute
+            now.hour != target_hour
+            or now.minute != target_minute
         ):
+
             return
 
-        today = now.date().isoformat()
+        today = now.strftime(
+            "%Y-%m-%d"
+        )
 
         if (
             self.settings.get(
-                "last_auto_date"
+                "last_auto_start"
             )
             == today
         ):
+
             return
 
-        success = await start_rp(
+        success, _ = await start_roleplay(
             self.bot,
             self.settings,
-            "Auto-RP",
+            "Automatik",
         )
 
         if success:
+
             self.settings[
-                "last_auto_date"
+                "last_auto_start"
             ] = today
 
             save_settings(
                 self.settings
             )
 
+            print(
+                "✅ RP automatisch gestartet "
+                f"um {now.strftime('%H:%M')}"
+            )
 
-    @auto_rp_loop.before_loop
-    async def before_auto_rp_loop(
+
+    @auto_start_loop.before_loop
+    async def before_auto_start_loop(
         self,
     ):
+
         await self.bot.wait_until_ready()
+
+
+    # ========================================================
+    # /rp_status
+    # ========================================================
+
+    @app_commands.command(
+        name="rp_status",
+        description=(
+            "Zeigt den aktuellen RP-Systemstatus."
+        ),
+    )
+    async def rp_status(
+        self,
+        interaction: discord.Interaction,
+    ):
+
+        await interaction.response.send_message(
+            embed=build_status_embed(
+                self.settings
+            ),
+            ephemeral=True,
+        )
 
 
     # ========================================================
@@ -445,36 +596,43 @@ class RPControl(
     @app_commands.command(
         name="rp_start",
         description=(
-            "Startet das RP sofort."
+            "Startet das RP sofort manuell."
         ),
     )
     async def rp_start(
         self,
         interaction: discord.Interaction,
     ):
-        if not await ensure_rp_owner(
+
+        if not await check_control_permission(
             interaction
         ):
+
             return
 
         await interaction.response.defer(
             ephemeral=True
         )
 
-        success = await start_rp(
-            self.bot,
-            self.settings,
-            interaction.user.display_name,
+        success, message = (
+            await start_roleplay(
+                self.bot,
+                self.settings,
+                interaction.user.display_name,
+            )
         )
 
         if success:
+
             await interaction.followup.send(
-                "✅ RP wurde gestartet.",
+                "✅ **RP wurde gestartet.**",
                 ephemeral=True,
             )
+
         else:
+
             await interaction.followup.send(
-                "⚠️ RP läuft bereits oder konnte nicht gestartet werden.",
+                f"⚠️ {message}",
                 ephemeral=True,
             )
 
@@ -493,53 +651,38 @@ class RPControl(
         self,
         interaction: discord.Interaction,
     ):
-        if not await ensure_rp_owner(
+
+        if not await check_control_permission(
             interaction
         ):
+
             return
 
         await interaction.response.defer(
             ephemeral=True
         )
 
-        success = await stop_rp(
-            self.bot,
-            self.settings,
-            interaction.user.display_name,
+        success, message = (
+            await stop_roleplay(
+                self.bot,
+                self.settings,
+                interaction.user.display_name,
+            )
         )
 
         if success:
+
             await interaction.followup.send(
-                "✅ RP wurde beendet.",
+                "✅ **RP wurde beendet.**",
                 ephemeral=True,
             )
+
         else:
+
             await interaction.followup.send(
-                "⚠️ RP ist bereits offline.",
+                f"⚠️ {message}",
                 ephemeral=True,
             )
-
-
-    # ========================================================
-    # /rp_status
-    # ========================================================
-
-    @app_commands.command(
-        name="rp_status",
-        description=(
-            "Zeigt den aktuellen RP-Status."
-        ),
-    )
-    async def rp_status(
-        self,
-        interaction: discord.Interaction,
-    ):
-        await interaction.response.send_message(
-            embed=build_status_embed(
-                self.settings
-            ),
-            ephemeral=True,
-        )
 
 
     # ========================================================
@@ -549,13 +692,13 @@ class RPControl(
     @app_commands.command(
         name="rp_uhrzeit",
         description=(
-            "Stellt die automatische RP-Startzeit ein."
+            "Stellt die automatische "
+            "RP-Startzeit ein."
         ),
     )
     @app_commands.describe(
         uhrzeit=(
-            "Deutsche Uhrzeit im Format HH:MM, "
-            "z.B. 18:30"
+            "Deutsche Uhrzeit, z.B. 18:30"
         )
     )
     async def rp_uhrzeit(
@@ -563,23 +706,30 @@ class RPControl(
         interaction: discord.Interaction,
         uhrzeit: str,
     ):
-        if not await ensure_rp_owner(
+
+        if not await check_control_permission(
             interaction
         ):
+
             return
 
-        parsed = parse_time(
+        parsed = parse_clock(
             uhrzeit
         )
 
-        if not parsed:
+        if parsed is None:
+
             await interaction.response.send_message(
                 (
-                    "❌ Ungültige Uhrzeit.\n"
-                    "Benutze z.B. `/rp_uhrzeit 18:30`."
+                    "❌ **Ungültige Uhrzeit.**\n\n"
+                    "Beispiele:\n"
+                    "`18:30`\n"
+                    "`19:00`\n"
+                    "`21:45`"
                 ),
                 ephemeral=True,
             )
+
             return
 
         hour, minute = parsed
@@ -593,7 +743,7 @@ class RPControl(
         ] = formatted
 
         self.settings[
-            "last_auto_date"
+            "last_auto_start"
         ] = None
 
         save_settings(
@@ -602,11 +752,11 @@ class RPControl(
 
         await interaction.response.send_message(
             (
-                "✅ **Auto-RP-Uhrzeit geändert**\n\n"
-                f"🕒 Start: **{formatted} Uhr**\n"
-                "🇩🇪 Zeitzone: **Deutschland**\n\n"
-                f"Auto-RP ist aktuell "
-                f"**{'AN' if self.settings['auto_enabled'] else 'AUS'}**."
+                "✅ **RP-Uhrzeit gespeichert**\n\n"
+                f"🕒 **{formatted} Uhr**\n"
+                "🇩🇪 Deutsche Zeit\n\n"
+                f"Automatik: "
+                f"**{'AN' if self.settings['auto_enabled'] else 'AUS'}**"
             ),
             ephemeral=True,
         )
@@ -626,9 +776,11 @@ class RPControl(
         self,
         interaction: discord.Interaction,
     ):
-        if not await ensure_rp_owner(
+
+        if not await check_control_permission(
             interaction
         ):
+
             return
 
         self.settings[
@@ -636,7 +788,7 @@ class RPControl(
         ] = True
 
         self.settings[
-            "last_auto_date"
+            "last_auto_start"
         ] = None
 
         save_settings(
@@ -645,8 +797,8 @@ class RPControl(
 
         await interaction.response.send_message(
             (
-                "✅ **Auto-RP aktiviert**\n\n"
-                f"🕒 Startzeit: "
+                "✅ **Auto-RP ist jetzt AN**\n\n"
+                f"🕒 Start täglich um "
                 f"**{self.settings['auto_time']} Uhr**\n"
                 "🇩🇪 Deutsche Zeit"
             ),
@@ -668,9 +820,11 @@ class RPControl(
         self,
         interaction: discord.Interaction,
     ):
-        if not await ensure_rp_owner(
+
+        if not await check_control_permission(
             interaction
         ):
+
             return
 
         self.settings[
@@ -682,7 +836,10 @@ class RPControl(
         )
 
         await interaction.response.send_message(
-            "✅ Auto-RP wurde deaktiviert.",
+            (
+                "✅ **Auto-RP ist jetzt AUS**\n\n"
+                "Das RP startet nicht mehr automatisch."
+            ),
             ephemeral=True,
         )
 
@@ -694,6 +851,7 @@ class RPControl(
 async def setup(
     bot: commands.Bot,
 ):
+
     await bot.add_cog(
         RPControl(bot)
     )
