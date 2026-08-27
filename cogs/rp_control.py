@@ -17,7 +17,9 @@ from discord.ext import commands, tasks
 CONTROL_USER_ID = 1294267376459714621
 
 RP_CHANNEL_ID = 1529998957449707551
+
 BUERGER_ROLE_ID = 1526957918128443533
+RP_START_PING_ROLE_ID = 1526958031349350541
 
 GERMAN_TIMEZONE = ZoneInfo("Europe/Berlin")
 
@@ -28,7 +30,6 @@ GERMAN_TIMEZONE = ZoneInfo("Europe/Berlin")
 
 START_COLOR = 0x57F287
 STOP_COLOR = 0xED4245
-SYSTEM_COLOR = 0x5865F2
 
 
 # ============================================================
@@ -254,19 +255,14 @@ def build_status_embed(settings):
         description=(
             "## ROLEPLAY STATUS\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-
             f"{'🟢' if rp_active else '🔴'} "
             f"**RP:** "
             f"{'ONLINE' if rp_active else 'OFFLINE'}\n\n"
-
             f"{'🟢' if auto_enabled else '🔴'} "
             f"**Auto-Start:** "
             f"{'AN' if auto_enabled else 'AUS'}\n\n"
-
             f"🕒 **Startzeit:** {auto_time} Uhr\n\n"
-
             "🇩🇪 **Zeitzone:** Deutschland\n\n"
-
             "━━━━━━━━━━━━━━━━━━━━"
         ),
         color=(
@@ -310,14 +306,29 @@ async def start_roleplay(
         BUERGER_ROLE_ID
     )
 
+    rp_start_role = guild.get_role(
+        RP_START_PING_ROLE_ID
+    )
+
+    lines = []
+
     if citizen_role:
-        ping_text = (
+        lines.append(
             f"❤️ **Liebe {citizen_role.mention}**"
         )
     else:
-        ping_text = (
+        lines.append(
             "❤️ **Liebe Bürger**"
         )
+
+    if rp_start_role:
+        lines.append(
+            f"🔔 {rp_start_role.mention}"
+        )
+
+    ping_text = "\n".join(
+        lines
+    )
 
     embed = build_start_embed()
 
@@ -442,9 +453,7 @@ class RPControl(
         bot: commands.Bot,
     ):
         self.bot = bot
-
         self.settings = load_settings()
-
         self.auto_start_loop.start()
 
 
