@@ -7,20 +7,19 @@ from health_server import start_health_server
 
 
 # ============================================================
-# EHRP | SYSTEM
-# MAIN
+# EHRP | SYSTEM — MAIN
 # ============================================================
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 if not TOKEN:
     raise RuntimeError(
-        "DISCORD_TOKEN wurde in Render nicht gefunden."
+        "DISCORD_TOKEN wurde nicht gefunden."
     )
 
 
 # ============================================================
-# DISCORD INTENTS
+# INTENTS
 # ============================================================
 
 intents = discord.Intents.default()
@@ -68,13 +67,23 @@ class EHRPSystem(commands.Bot):
         )
         print("✅ RP-Control geladen")
 
-        # Slash Commands bei Discord registrieren
+        # Self-Roles
+        await self.load_extension(
+            "cogs.selfroles"
+        )
+        print("✅ Self-Roles geladen")
+
+        # Slash Commands registrieren
         synced = await self.tree.sync()
 
         print(
             f"✅ {len(synced)} Slash-Commands synchronisiert"
         )
 
+
+# ============================================================
+# BOT INSTANZ
+# ============================================================
 
 bot = EHRPSystem()
 
@@ -90,28 +99,29 @@ async def on_ready():
     print("========================================")
     print("✅ EHRP | SYSTEM ONLINE")
     print(f"🤖 Bot: {bot.user}")
-    print(
-        f"🆔 Bot-ID: "
-        f"{bot.user.id if bot.user else 'unbekannt'}"
-    )
+
+    if bot.user:
+        print(f"🆔 Bot-ID: {bot.user.id}")
+
     print(f"🌐 Server: {len(bot.guilds)}")
-    print("🎫 Tickets: ONLINE")
     print("👥 Team-System: ONLINE")
+    print("🎫 Ticket-System: ONLINE")
     print("🎮 RP-Control: ONLINE")
+    print("🔔 Self-Roles: ONLINE")
     print("🕐 Alter 13:00 RP-Start: ENTFERNT")
     print("========================================")
     print("")
 
 
 # ============================================================
-# RENDER HEALTH SERVER
+# HEALTH SERVER FÜR RENDER
 # ============================================================
 
 start_health_server()
 
 
 # ============================================================
-# START
+# BOT START
 # ============================================================
 
 bot.run(TOKEN)
