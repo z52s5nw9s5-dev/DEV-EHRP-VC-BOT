@@ -7,23 +7,23 @@ from health_server import start_health_server
 
 
 # ============================================================
-# TOKEN
+# EHRP | SYSTEM
+# MAIN
 # ============================================================
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 if not TOKEN:
     raise RuntimeError(
-        "DISCORD_TOKEN wurde nicht gefunden."
+        "DISCORD_TOKEN wurde in Render nicht gefunden."
     )
 
 
 # ============================================================
-# INTENTS
+# DISCORD INTENTS
 # ============================================================
 
 intents = discord.Intents.default()
-
 intents.guilds = True
 intents.members = True
 
@@ -42,42 +42,39 @@ class EHRPSystem(commands.Bot):
 
     async def setup_hook(self):
 
-        # --------------------------------------------
-        # COGS LADEN
-        # --------------------------------------------
+        print("🔄 Lade EHRP | System Module ...")
 
+        # Recovery
         await self.load_extension(
             "cogs.recovery"
         )
+        print("✅ Recovery geladen")
 
+        # Team-System
         await self.load_extension(
             "cogs.team"
         )
+        print("✅ Team-System geladen")
 
+        # Ticket-System
         await self.load_extension(
             "cogs.tickets"
         )
+        print("✅ Ticket-System geladen")
 
-        # RP-Control kommt danach hier dazu:
-        #
-        # await self.load_extension(
-        #     "cogs.rp_control"
-        # )
+        # RP-Control
+        await self.load_extension(
+            "cogs.rp_control"
+        )
+        print("✅ RP-Control geladen")
 
-        # --------------------------------------------
-        # SLASH COMMANDS
-        # --------------------------------------------
-
+        # Slash Commands bei Discord registrieren
         synced = await self.tree.sync()
 
         print(
-            f"✅ {len(synced)} Slash-Commands synchronisiert."
+            f"✅ {len(synced)} Slash-Commands synchronisiert"
         )
 
-
-# ============================================================
-# BOT INSTANZ
-# ============================================================
 
 bot = EHRPSystem()
 
@@ -89,37 +86,25 @@ bot = EHRPSystem()
 @bot.event
 async def on_ready():
 
+    print("")
+    print("========================================")
+    print("✅ EHRP | SYSTEM ONLINE")
+    print(f"🤖 Bot: {bot.user}")
     print(
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        f"🆔 Bot-ID: "
+        f"{bot.user.id if bot.user else 'unbekannt'}"
     )
-
-    print(
-        f"✅ EHRP | System ONLINE"
-    )
-
-    print(
-        f"🤖 Eingeloggt als: {bot.user}"
-    )
-
-    print(
-        f"🆔 Bot-ID: {bot.user.id if bot.user else 'Unbekannt'}"
-    )
-
-    print(
-        f"🌐 Server: {len(bot.guilds)}"
-    )
-
-    print(
-        "🕒 Alter 13-Uhr-RP-Start: DEAKTIVIERT"
-    )
-
-    print(
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    )
+    print(f"🌐 Server: {len(bot.guilds)}")
+    print("🎫 Tickets: ONLINE")
+    print("👥 Team-System: ONLINE")
+    print("🎮 RP-Control: ONLINE")
+    print("🕐 Alter 13:00 RP-Start: ENTFERNT")
+    print("========================================")
+    print("")
 
 
 # ============================================================
-# HEALTH SERVER
+# RENDER HEALTH SERVER
 # ============================================================
 
 start_health_server()
