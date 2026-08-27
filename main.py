@@ -83,6 +83,9 @@ class EHRPSystem(
             "Slash-Commands synchronisiert"
         )
 
+await self.load_extension("cogs.team_ideas")
+print("✅ Team-Ideen geladen")
+
 
 bot = EHRPSystem()
 
