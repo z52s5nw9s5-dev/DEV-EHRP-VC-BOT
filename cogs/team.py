@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import unicodedata
 
 import discord
 from discord import app_commands
@@ -11,284 +10,159 @@ from config import DEV_ROLE_ID
 
 
 # ============================================================
-# EHRP | SYSTEM — TEAM SYSTEM
+# EHRP | SYSTEM — GALAXY TEAM SYNC
 # ============================================================
+
+GALAXY_TEAM_CHANNEL_ID = 1526942701092606062
 
 SYSTEM_COLOR = 0x5865F2
 SUCCESS_COLOR = 0x57F287
 WARNING_COLOR = 0xFEE75C
 
-TEAM_FOOTER = "EHRP_TEAM_SYSTEM_V5"
+TEAM_PANEL_MARKER = "EHRP_GALAXY_TEAM_SYNC_V1"
 
 
 # ============================================================
-# FESTE ROLLEN -> NAMETAG ZUORDNUNG
+# GALAXY RANG -> NAMETAG
 #
-# WICHTIG:
-# Nur EXAKTE Namen / Aliases werden erkannt.
-# Dadurch wird z.B. "Fraktion Manager" NICHT zu Manager.
+# Diese Zuordnung kommt direkt aus deiner Galaxy-Team-Liste.
 # ============================================================
 
-TEAM_RANKS = [
-    # LEITUNG
+GALAXY_RANKS = [
     {
-        "section": "👑 Leitung",
         "name": "Founder",
         "tag": "[FD]",
-        "aliases": [
-            "Founder",
-        ],
+        "section": "👑 Leitung",
     },
     {
-        "section": "👑 Leitung",
         "name": "Co-Founder",
         "tag": "[Co. FD]",
-        "aliases": [
-            "Co-Founder",
-            "Co Founder",
-        ],
+        "section": "👑 Leitung",
     },
-
-    # LEADEREBENE
     {
-        "section": "⚜️ Leaderebene",
         "name": "Obervorstand",
         "tag": "[OVS]",
-        "aliases": [
-            "Obervorstand",
-        ],
+        "section": "⚜️ Leaderebene",
     },
     {
-        "section": "⚜️ Leaderebene",
         "name": "Vorstand",
         "tag": "[VS]",
-        "aliases": [
-            "Vorstand",
-        ],
+        "section": "⚜️ Leaderebene",
     },
     {
-        "section": "⚜️ Leaderebene",
         "name": "Sachbearbeiter",
         "tag": "[SB]",
-        "aliases": [
-            "Sachbearbeiter",
-        ],
+        "section": "⚜️ Leaderebene",
     },
     {
-        "section": "⚜️ Leaderebene",
         "name": "Verwaltungsleitung",
         "tag": "[VL]",
-        "aliases": [
-            "Verwaltungsleitung",
-            "Verwaltungs Leitung",
-        ],
+        "section": "⚜️ Leaderebene",
     },
     {
-        "section": "⚜️ Leaderebene",
         "name": "Hauptverwaltung",
         "tag": "[HV]",
-        "aliases": [
-            "Hauptverwaltung",
-            "Haupt Verwaltung",
-        ],
+        "section": "⚜️ Leaderebene",
     },
-
-    # KERNTEAM
     {
-        "section": "💎 Kernteam",
         "name": "Archivleitung",
         "tag": "[AL]",
-        "aliases": [
-            "Archivleitung",
-            "Archiv Leitung",
-        ],
+        "section": "💎 Kernteam",
     },
     {
-        "section": "💎 Kernteam",
         "name": "Gesamtkoordinator",
         "tag": "[GT. K]",
-        "aliases": [
-            "Gesamtkoordinator",
-            "Gesamt Koordinator",
-        ],
+        "section": "💎 Kernteam",
     },
     {
-        "section": "💎 Kernteam",
         "name": "Teamkoordinator",
         "tag": "[T. K]",
-        "aliases": [
-            "Teamkoordinator",
-            "Team Koordinator",
-        ],
+        "section": "💎 Kernteam",
     },
     {
-        "section": "💎 Kernteam",
         "name": "Jr. Teamkoordinator",
         "tag": "[Jr. T. K]",
-        "aliases": [
-            "Jr. Teamkoordinator",
-            "Jr Teamkoordinator",
-            "Jr. Team Koordinator",
-            "Junior Teamkoordinator",
-        ],
+        "section": "💎 Kernteam",
     },
-
-    # TEAMVERWALTUNG
     {
-        "section": "🛡️ Teamverwaltung",
         "name": "Head of Management",
         "tag": "[HoM]",
-        "aliases": [
-            "Head of Management",
-        ],
+        "section": "🛡️ Teamverwaltung",
     },
     {
-        "section": "🛡️ Teamverwaltung",
         "name": "Sr. Management",
         "tag": "[Sr. M]",
-        "aliases": [
-            "Sr. Management",
-            "Sr Management",
-            "Senior Management",
-        ],
+        "section": "🛡️ Teamverwaltung",
     },
     {
-        "section": "🛡️ Teamverwaltung",
         "name": "Manager",
         "tag": "[M]",
-        "aliases": [
-            "Manager",
-        ],
+        "section": "🛡️ Teamverwaltung",
     },
     {
-        "section": "🛡️ Teamverwaltung",
         "name": "Stv. Manager",
         "tag": "[Stv. M]",
-        "aliases": [
-            "Stv. Manager",
-            "Stv Manager",
-            "Stellv. Manager",
-            "Stellvertretender Manager",
-        ],
+        "section": "🛡️ Teamverwaltung",
     },
-
-    # MANAGEMENT
     {
-        "section": "⚙️ Management",
         "name": "Admin-Koordinator",
         "tag": "[A. K]",
-        "aliases": [
-            "Admin-Koordinator",
-            "Admin Koordinator",
-        ],
+        "section": "⚙️ Management",
     },
     {
-        "section": "⚙️ Management",
         "name": "Systemadministrator",
         "tag": "[SYS. A]",
-        "aliases": [
-            "Systemadministrator",
-            "System Administrator",
-        ],
+        "section": "⚙️ Management",
     },
     {
-        "section": "⚙️ Management",
         "name": "Administrator",
-        "tag": "[ADM]",
-        "aliases": [
-            "Administrator",
-            "Admin",
-        ],
-    },
-    {
+        "tag": "[AD]",
         "section": "⚙️ Management",
-        "name": "Jr. Administrator",
-        "tag": "[Jr. ADM]",
-        "aliases": [
-            "Jr. Administrator",
-            "Jr Administrator",
-            "Jr. Admin",
-            "Jr Admin",
-            "Junior Administrator",
-        ],
     },
-
-    # ADMINISTRATION
     {
-        "section": "🔨 Administration",
+        "name": "Jr. Administrator",
+        "tag": "[Jr. AD]",
+        "section": "⚙️ Management",
+    },
+    {
         "name": "Mod-Koordinator",
         "tag": "[MOD. K]",
-        "aliases": [
-            "Mod-Koordinator",
-            "Mod Koordinator",
-        ],
+        "section": "🔨 Administration",
     },
     {
-        "section": "🔨 Administration",
         "name": "Moderations-Spezialist",
         "tag": "[MOD. S]",
-        "aliases": [
-            "Moderations-Spezialist",
-            "Moderations Spezialist",
-        ],
+        "section": "🔨 Administration",
     },
     {
-        "section": "🔨 Administration",
         "name": "Moderator",
         "tag": "[MOD]",
-        "aliases": [
-            "Moderator",
-        ],
+        "section": "🔨 Administration",
     },
     {
-        "section": "🔨 Administration",
         "name": "Jr. Moderator",
         "tag": "[Jr. MOD]",
-        "aliases": [
-            "Jr. Moderator",
-            "Jr Moderator",
-            "Junior Moderator",
-        ],
+        "section": "🔨 Administration",
     },
-
-    # MODERATION / SUPPORT
     {
-        "section": "🎧 Moderatoren",
         "name": "Sup-Koordinator",
         "tag": "[SUP. K]",
-        "aliases": [
-            "Sup-Koordinator",
-            "Sup Koordinator",
-            "Support-Koordinator",
-            "Support Koordinator",
-        ],
+        "section": "🎧 Moderatoren",
     },
     {
-        "section": "🎧 Moderatoren",
         "name": "Support-Spezialist",
         "tag": "[SUP. S]",
-        "aliases": [
-            "Support-Spezialist",
-            "Support Spezialist",
-        ],
+        "section": "🎧 Moderatoren",
     },
     {
-        "section": "🎧 Moderatoren",
         "name": "Supporter",
         "tag": "[SUP]",
-        "aliases": [
-            "Supporter",
-        ],
+        "section": "🎧 Moderatoren",
     },
     {
-        "section": "🎧 Moderatoren",
         "name": "Az. Supporter",
-        "tag": "[Az. SUP]",
-        "aliases": [
-            "Az. Supporter",
-            "Az Supporter",
-            "Azubi Supporter",
-        ],
+        "tag": "[SUP]",
+        "section": "🎧 Moderatoren",
     },
 ]
 
@@ -297,177 +171,412 @@ TEAM_RANKS = [
 # ABMELDUNG
 # ============================================================
 
-ABSENCE_WORDS = [
+ABSENCE_KEYWORDS = (
     "abgemeldet",
     "abwesen",
     "abwesenheit",
     "absence",
-]
+)
 
 
 # ============================================================
-# NORMALISIERUNG
+# ACCESS
 # ============================================================
 
-def normalize(text: str) -> str:
-    text = unicodedata.normalize(
-        "NFKC",
-        text,
+async def ensure_dev(
+    interaction: discord.Interaction,
+) -> bool:
+
+    if (
+        interaction.guild is None
+        or not isinstance(
+            interaction.user,
+            discord.Member,
+        )
+    ):
+        await interaction.response.send_message(
+            "❌ Dieser Befehl funktioniert nur auf dem Server.",
+            ephemeral=True,
+        )
+        return False
+
+    if interaction.user.guild_permissions.administrator:
+        return True
+
+    try:
+        dev_role_id = int(DEV_ROLE_ID)
+    except (TypeError, ValueError):
+        dev_role_id = 0
+
+    dev_role = interaction.guild.get_role(
+        dev_role_id
     )
+
+    if (
+        dev_role is not None
+        and dev_role in interaction.user.roles
+    ):
+        return True
+
+    await interaction.response.send_message(
+        "❌ Du darfst diese Systemfunktion nicht benutzen.",
+        ephemeral=True,
+    )
+
+    return False
+
+
+# ============================================================
+# TEXT NORMALISIEREN
+# ============================================================
+
+def normalize_text(
+    text: str,
+) -> str:
 
     text = text.casefold()
 
-    # Unsichtbare Zeichen entfernen
-    text = "".join(
-        char
-        for char in text
-        if unicodedata.category(char)
-        not in (
-            "Cf",
-            "Cc",
-        )
+    text = (
+        text.replace("»", " ")
+        .replace("@", " ")
+        .replace("•", " ")
+        .replace("|", " ")
+        .replace("—", " ")
+        .replace("–", " ")
     )
 
-    # Discord-Deko entfernen:
-    # » • ➡ ↪ | - usw.
     text = re.sub(
-        r"[^a-z0-9äöüß]+",
-        "",
+        r"\s+",
+        " ",
         text,
     )
 
-    return text
+    return text.strip()
 
 
 # ============================================================
-# ROLLEN-MAP
+# GALAXY RANG FINDEN
 # ============================================================
 
-ROLE_MAP = {}
-
-for rank in TEAM_RANKS:
-
-    for alias in rank["aliases"]:
-
-        ROLE_MAP[
-            normalize(alias)
-        ] = rank
-
-
-# ============================================================
-# ROLLE -> RANG
-# ============================================================
-
-def detect_rank_from_role(
-    role: discord.Role,
+def find_rank_by_heading(
+    heading: str,
 ):
 
-    normalized = normalize(
-        role.name
+    normalized_heading = normalize_text(
+        heading
     )
 
-    # NUR exakte Zuordnung!
-    return ROLE_MAP.get(
-        normalized
+    # längere Namen zuerst
+    sorted_ranks = sorted(
+        GALAXY_RANKS,
+        key=lambda rank: len(rank["name"]),
+        reverse=True,
     )
 
+    for rank in sorted_ranks:
 
-# ============================================================
-# HÖCHSTER TEAMRANG EINES USERS
-# ============================================================
-
-def get_member_rank(
-    member: discord.Member,
-):
-
-    found = []
-
-    for role in member.roles:
-
-        rank = detect_rank_from_role(
-            role
+        rank_name = normalize_text(
+            rank["name"]
         )
 
-        if rank is not None:
-
-            found.append(
-                rank
-            )
-
-    if not found:
-        return None
-
-    # TEAM_RANKS ist bereits von oben nach unten
-    # sortiert -> höchster Rang gewinnt.
-
-    for configured_rank in TEAM_RANKS:
-
-        for member_rank in found:
-
-            if (
-                configured_rank["name"]
-                == member_rank["name"]
-            ):
-                return configured_rank
+        if rank_name in normalized_heading:
+            return rank
 
     return None
 
 
 # ============================================================
-# TEAM MEMBER?
+# EMBEDS AUS GALAXY LESEN
 # ============================================================
 
-def is_team_member(
-    member: discord.Member,
-) -> bool:
-
-    return (
-        get_member_rank(member)
-        is not None
+async def get_latest_galaxy_team_messages(
+    guild: discord.Guild,
+):
+    channel = guild.get_channel(
+        GALAXY_TEAM_CHANNEL_ID
     )
+
+    if not isinstance(
+        channel,
+        discord.TextChannel,
+    ):
+        print(
+            "❌ Galaxy Team-Channel nicht gefunden."
+        )
+        return []
+
+    messages = []
+
+    try:
+        async for message in channel.history(
+            limit=30,
+            oldest_first=False,
+        ):
+
+            if not message.author.bot:
+                continue
+
+            # Galaxy-Teamliste erkennen
+            has_team_embed = False
+
+            for embed in message.embeds:
+
+                title = (
+                    embed.title
+                    or ""
+                )
+
+                description = (
+                    embed.description
+                    or ""
+                )
+
+                combined = (
+                    title
+                    + " "
+                    + description
+                ).casefold()
+
+                if (
+                    "teamliste" in combined
+                    or "team-liste" in combined
+                    or "staff" in combined
+                ):
+                    has_team_embed = True
+                    break
+
+                # Auch reine Rang-Embeds berücksichtigen
+                for rank in GALAXY_RANKS:
+
+                    if normalize_text(
+                        rank["name"]
+                    ) in normalize_text(
+                        combined
+                    ):
+                        has_team_embed = True
+                        break
+
+                if has_team_embed:
+                    break
+
+            if has_team_embed:
+                messages.append(
+                    message
+                )
+
+        return list(
+            reversed(messages)
+        )
+
+    except (
+        discord.Forbidden,
+        discord.HTTPException,
+    ) as error:
+
+        print(
+            f"❌ Galaxy-Liste konnte nicht gelesen werden: {error}"
+        )
+
+        return []
+
+
+# ============================================================
+# USER AUS EMBEDS EXTRAHIEREN
+# ============================================================
+
+def extract_user_ids(
+    text: str,
+) -> list[int]:
+
+    if not text:
+        return []
+
+    ids = re.findall(
+        r"<@!?(\d+)>",
+        text,
+    )
+
+    return [
+        int(user_id)
+        for user_id in ids
+    ]
+
+
+# ============================================================
+# GALAXY TEAMSTRUKTUR PARSEN
+# ============================================================
+
+async def parse_galaxy_team(
+    guild: discord.Guild,
+):
+    messages = await get_latest_galaxy_team_messages(
+        guild
+    )
+
+    result = {}
+
+    for rank in GALAXY_RANKS:
+        result[
+            rank["name"]
+        ] = []
+
+    current_rank = None
+
+    for message in messages:
+
+        for embed in message.embeds:
+
+            # ------------------------------------------------
+            # TITLE
+            # ------------------------------------------------
+
+            if embed.title:
+
+                detected = find_rank_by_heading(
+                    embed.title
+                )
+
+                if detected:
+                    current_rank = detected
+
+            # ------------------------------------------------
+            # DESCRIPTION
+            # ------------------------------------------------
+
+            if embed.description:
+
+                lines = embed.description.splitlines()
+
+                for line in lines:
+
+                    detected = find_rank_by_heading(
+                        line
+                    )
+
+                    if detected:
+                        current_rank = detected
+
+                    user_ids = extract_user_ids(
+                        line
+                    )
+
+                    if (
+                        current_rank
+                        and user_ids
+                    ):
+
+                        for user_id in user_ids:
+
+                            if (
+                                user_id
+                                not in result[
+                                    current_rank["name"]
+                                ]
+                            ):
+                                result[
+                                    current_rank["name"]
+                                ].append(
+                                    user_id
+                                )
+
+            # ------------------------------------------------
+            # FIELDS
+            # ------------------------------------------------
+
+            for field in embed.fields:
+
+                detected = find_rank_by_heading(
+                    field.name
+                )
+
+                if detected:
+                    current_rank = detected
+
+                user_ids = extract_user_ids(
+                    field.value
+                )
+
+                if (
+                    current_rank
+                    and user_ids
+                ):
+
+                    for user_id in user_ids:
+
+                        if (
+                            user_id
+                            not in result[
+                                current_rank["name"]
+                            ]
+                        ):
+                            result[
+                                current_rank["name"]
+                            ].append(
+                                user_id
+                            )
+
+    return result
+
+
+# ============================================================
+# USER -> GALAXY RANG
+# ============================================================
+
+async def get_member_galaxy_rank(
+    member: discord.Member,
+):
+    parsed = await parse_galaxy_team(
+        member.guild
+    )
+
+    for rank in GALAXY_RANKS:
+
+        member_ids = parsed.get(
+            rank["name"],
+            []
+        )
+
+        if member.id in member_ids:
+            return rank
+
+    return None
 
 
 # ============================================================
 # ABGEMELDET?
 # ============================================================
 
-def is_absent(
+def member_is_absent(
     member: discord.Member,
 ) -> bool:
 
     for role in member.roles:
 
-        name = normalize(
-            role.name
-        )
+        role_name = role.name.casefold()
 
-        for keyword in ABSENCE_WORDS:
+        for keyword in ABSENCE_KEYWORDS:
 
-            if normalize(keyword) in name:
+            if keyword in role_name:
                 return True
 
     return False
 
 
 # ============================================================
-# ALLE NAMETAGS
+# ALTEN TEAMTAG ENTFERNEN
 # ============================================================
 
 ALL_TAGS = sorted(
     {
         rank["tag"]
-        for rank in TEAM_RANKS
+        for rank in GALAXY_RANKS
     },
     key=len,
     reverse=True,
 )
 
 
-# ============================================================
-# ALTEN NAMETAG ENTFERNEN
-# ============================================================
-
-def clean_nickname(
+def clean_member_name(
     member: discord.Member,
 ) -> str:
 
@@ -477,7 +586,6 @@ def clean_nickname(
         or member.name
     )
 
-    # "- Abgemeldet" entfernen
     name = re.sub(
         r"\s*-\s*abgemeldet\s*$",
         "",
@@ -485,7 +593,6 @@ def clean_nickname(
         flags=re.IGNORECASE,
     )
 
-    # Bekannte Tags vorne entfernen
     for tag in ALL_TAGS:
 
         if name.casefold().startswith(
@@ -505,88 +612,53 @@ def clean_nickname(
 
 
 # ============================================================
-# GEWÜNSCHTER NICKNAME
+# NAMETAG SYNC
 # ============================================================
 
-def desired_nickname(
+async def sync_member_from_galaxy(
     member: discord.Member,
-):
-
-    rank = get_member_rank(
-        member
-    )
-
-    if rank is None:
-        return None
-
-    base_name = clean_nickname(
-        member
-    )
-
-    nickname = (
-        f"{rank['tag']} "
-        f"{base_name}"
-    )
-
-    if is_absent(
-        member
-    ):
-
-        nickname += (
-            " - Abgemeldet"
-        )
-
-    return nickname[:32]
-
-
-# ============================================================
-# NICKNAME SYNC
-# ============================================================
-
-async def sync_nickname(
-    member: discord.Member,
+    parsed_team: dict,
 ) -> bool:
 
     if member.bot:
         return False
 
     guild = member.guild
-
     bot_member = guild.me
 
     if bot_member is None:
         return False
 
-    # Discord erlaubt Owner-Nickname nicht
     if member.id == guild.owner_id:
         return False
 
-    # Bot muss über der Rolle stehen
     if (
         member.top_role
         >= bot_member.top_role
     ):
-        print(
-            "⚠️ Kann Nickname nicht ändern: "
-            f"{member.display_name}"
-        )
-
         return False
 
-    rank = get_member_rank(
-        member
-    )
+    found_rank = None
 
-    # ========================================================
-    # USER IST NICHT MEHR IM TEAM
-    # ========================================================
+    for rank in GALAXY_RANKS:
 
-    if rank is None:
+        if member.id in parsed_team.get(
+            rank["name"],
+            []
+        ):
+            found_rank = rank
+            break
+
+    # --------------------------------------------------------
+    # NICHT MEHR IN GALAXY-LISTE
+    # --------------------------------------------------------
+
+    if found_rank is None:
 
         if member.nick is None:
             return False
 
-        cleaned = clean_nickname(
+        cleaned = clean_member_name(
             member
         )
 
@@ -594,12 +666,11 @@ async def sync_nickname(
             return False
 
         try:
-
             await member.edit(
                 nick=cleaned[:32],
                 reason=(
                     "EHRP | System "
-                    "Teamrang entfernt"
+                    "nicht mehr in Galaxy-Team-Liste"
                 ),
             )
 
@@ -609,36 +680,43 @@ async def sync_nickname(
             discord.Forbidden,
             discord.HTTPException,
         ):
-
             return False
 
-    # ========================================================
-    # USER IST TEAM
-    # ========================================================
+    # --------------------------------------------------------
+    # IN GALAXY-LISTE
+    # --------------------------------------------------------
 
-    wanted = desired_nickname(
+    base_name = clean_member_name(
         member
     )
 
-    if wanted is None:
-        return False
+    nickname = (
+        f"{found_rank['tag']} "
+        f"{base_name}"
+    )
 
-    if member.nick == wanted:
+    if member_is_absent(
+        member
+    ):
+        nickname += " - Abgemeldet"
+
+    nickname = nickname[:32]
+
+    if member.nick == nickname:
         return False
 
     try:
-
         await member.edit(
-            nick=wanted,
+            nick=nickname,
             reason=(
                 "EHRP | System "
-                f"Nametag {rank['tag']}"
+                f"Galaxy Sync -> {found_rank['name']}"
             ),
         )
 
         print(
-            "✅ TEAM TAG: "
-            f"{member.name} -> {wanted}"
+            f"✅ Galaxy Sync: "
+            f"{member.name} -> {nickname}"
         )
 
         return True
@@ -646,155 +724,92 @@ async def sync_nickname(
     except discord.Forbidden:
 
         print(
-            "❌ Keine Nickname-Rechte: "
-            f"{member.name}"
+            f"⚠️ Nickname nicht änderbar: {member}"
         )
 
     except discord.HTTPException as error:
 
         print(
-            "❌ Nickname Fehler: "
-            f"{member.name}: {error}"
+            f"❌ Nickname Fehler {member}: {error}"
         )
 
     return False
 
 
 # ============================================================
-# TEAMMITGLIEDER
+# ALLE GALAXY TEAMMITGLIEDER
 # ============================================================
 
-def all_team_members(
-    guild: discord.Guild,
-):
+def get_team_member_ids(
+    parsed_team: dict,
+) -> set[int]:
 
-    return [
-        member
-        for member in guild.members
-        if (
-            not member.bot
-            and get_member_rank(member)
-            is not None
-        )
-    ]
+    result = set()
 
+    for ids in parsed_team.values():
 
-# ============================================================
-# MITGLIEDER PRO RANG
-# ============================================================
-
-def members_for_rank(
-    guild: discord.Guild,
-    wanted_rank: dict,
-):
-
-    members = []
-
-    for member in guild.members:
-
-        if member.bot:
-            continue
-
-        rank = get_member_rank(
-            member
-        )
-
-        if rank is None:
-            continue
-
-        if (
-            rank["name"]
-            == wanted_rank["name"]
-        ):
-
-            members.append(
-                member
-            )
-
-    members.sort(
-        key=lambda m:
-        m.display_name.casefold()
-    )
-
-    return members
-
-
-# ============================================================
-# ALLE ERKANNTEN SERVERROLLEN
-# ============================================================
-
-def mapped_server_roles(
-    guild: discord.Guild,
-):
-
-    result = []
-
-    for role in reversed(
-        guild.roles
-    ):
-
-        rank = detect_rank_from_role(
-            role
-        )
-
-        if rank is None:
-            continue
-
-        result.append(
-            (
-                role,
-                rank,
-            )
+        result.update(
+            ids
         )
 
     return result
 
 
 # ============================================================
-# TEAM PANEL
+# UNSERE TEAMLISTE BAUEN
 # ============================================================
 
-def build_team_embed(
+async def build_team_embed(
     guild: discord.Guild,
 ):
-
-    members = all_team_members(
+    parsed = await parse_galaxy_team(
         guild
     )
+
+    team_ids = get_team_member_ids(
+        parsed
+    )
+
+    members = []
+
+    for user_id in team_ids:
+
+        member = guild.get_member(
+            user_id
+        )
+
+        if member:
+            members.append(
+                member
+            )
 
     absent = sum(
         1
         for member in members
-        if is_absent(member)
+        if member_is_absent(member)
     )
 
     embed = discord.Embed(
-        title=(
-            "👥 EHRP | SYSTEM • TEAMLISTE"
-        ),
+        title="👥 EHRP | SYSTEM • TEAMLISTE",
         description=(
-            "## OFFIZIELLE TEAMÜBERSICHT\n"
+            "## GALAXY SYNCHRONISIERTE TEAMLISTE\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            f"👥 **Teammitglieder:** "
-            f"{len(members)}\n"
-            f"🟢 **Aktiv:** "
-            f"{len(members) - absent}\n"
-            f"🏖️ **Abgemeldet:** "
-            f"{absent}\n"
-            "━━━━━━━━━━━━━━━━━━━━"
+            f"👥 **Teammitglieder:** {len(members)}\n"
+            f"🟢 **Aktiv:** {len(members) - absent}\n"
+            f"🏖️ **Abgemeldet:** {absent}\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Quelle: **EHRP | Galaxybot**\n"
+            "Nametags werden automatisch "
+            "aus der Galaxy-Team-Liste übernommen."
         ),
         color=SYSTEM_COLOR,
     )
 
     sections = []
 
-    for rank in TEAM_RANKS:
+    for rank in GALAXY_RANKS:
 
-        if (
-            rank["section"]
-            not in sections
-        ):
-
+        if rank["section"] not in sections:
             sections.append(
                 rank["section"]
             )
@@ -803,64 +818,61 @@ def build_team_embed(
 
         lines = []
 
-        section_ranks = [
-            rank
-            for rank in TEAM_RANKS
-            if rank["section"]
-            == section
-        ]
+        for rank in GALAXY_RANKS:
 
-        for rank in section_ranks:
+            if rank["section"] != section:
+                continue
 
-            members_here = members_for_rank(
-                guild,
-                rank,
+            ids = parsed.get(
+                rank["name"],
+                []
             )
 
-            if members_here:
+            users = []
 
-                names = []
+            for user_id in ids:
 
-                for member in members_here:
+                member = guild.get_member(
+                    user_id
+                )
 
-                    state = (
+                if member:
+
+                    status = (
                         "🏖️"
-                        if is_absent(member)
+                        if member_is_absent(member)
                         else "🟢"
                     )
 
-                    names.append(
-                        f"{state} {member.mention}"
+                    users.append(
+                        f"{status} {member.mention}"
                     )
 
-                member_text = "\n".join(
-                    names
+            if users:
+
+                user_text = "\n".join(
+                    users
                 )
 
             else:
 
-                member_text = "—"
+                user_text = "—"
 
             lines.append(
-                (
-                    f"**{rank['tag']} "
-                    f"{rank['name']}**\n"
-                    f"{member_text}"
-                )
+                f"**{rank['tag']} {rank['name']}**\n"
+                f"{user_text}"
             )
 
         embed.add_field(
             name=section,
-            value="\n\n".join(
-                lines
-            )[:1024],
+            value="\n\n".join(lines)[:1024],
             inline=False,
         )
 
     embed.set_footer(
         text=(
-            f"{TEAM_FOOTER} • "
-            "Automatische Synchronisierung"
+            f"{TEAM_PANEL_MARKER} • "
+            "Galaxy Auto-Sync"
         )
     )
 
@@ -868,10 +880,10 @@ def build_team_embed(
 
 
 # ============================================================
-# TEAM PANEL FINDEN
+# PANEL FINDEN
 # ============================================================
 
-async def find_team_panel(
+async def find_system_team_panel(
     guild: discord.Guild,
 ):
 
@@ -880,15 +892,13 @@ async def find_team_panel(
 
     for channel in guild.text_channels:
 
-        permissions = (
-            channel.permissions_for(
-                guild.me
-            )
+        perms = channel.permissions_for(
+            guild.me
         )
 
         if not (
-            permissions.view_channel
-            and permissions.read_message_history
+            perms.view_channel
+            and perms.read_message_history
         ):
             continue
 
@@ -913,27 +923,29 @@ async def find_team_panel(
                     or ""
                 )
 
-                if TEAM_FOOTER in footer:
-
+                if TEAM_PANEL_MARKER in footer:
                     return message
 
         except (
             discord.Forbidden,
             discord.HTTPException,
         ):
-
             continue
 
     return None
 
 
 # ============================================================
-# FULL SYNC
+# FULL GALAXY SYNC
 # ============================================================
 
-async def full_sync(
+async def full_galaxy_sync(
     guild: discord.Guild,
 ):
+
+    parsed = await parse_galaxy_team(
+        guild
+    )
 
     changed = 0
 
@@ -942,97 +954,30 @@ async def full_sync(
         if member.bot:
             continue
 
-        if await sync_nickname(
-            member
+        if await sync_member_from_galaxy(
+            member,
+            parsed,
         ):
-
             changed += 1
 
-    panel = await find_team_panel(
+    panel = await find_system_team_panel(
         guild
     )
 
-    if panel is not None:
+    if panel:
 
         try:
 
             await panel.edit(
-                embed=build_team_embed(
+                embed=await build_team_embed(
                     guild
                 )
             )
 
         except discord.HTTPException:
-
             pass
 
-    return changed
-
-
-# ============================================================
-# ACCESS
-# ============================================================
-
-async def ensure_dev(
-    interaction: discord.Interaction,
-) -> bool:
-
-    if (
-        interaction.guild is None
-        or not isinstance(
-            interaction.user,
-            discord.Member,
-        )
-    ):
-
-        await interaction.response.send_message(
-            "❌ Nur auf dem Server verfügbar.",
-            ephemeral=True,
-        )
-
-        return False
-
-    if (
-        interaction.user
-        .guild_permissions
-        .administrator
-    ):
-
-        return True
-
-    try:
-
-        role_id = int(
-            DEV_ROLE_ID
-        )
-
-    except (
-        ValueError,
-        TypeError,
-    ):
-
-        role_id = 0
-
-    dev_role = (
-        interaction.guild.get_role(
-            role_id
-        )
-    )
-
-    if (
-        dev_role is not None
-        and dev_role
-        in interaction.user.roles
-    ):
-
-        return True
-
-    await interaction.response.send_message(
-        "❌ Keine Berechtigung.",
-        ephemeral=True,
-    )
-
-    return False
+    return changed, parsed
 
 
 # ============================================================
@@ -1047,25 +992,24 @@ class Team(commands.Cog):
     ):
 
         self.bot = bot
-
-        self.auto_sync.start()
+        self.galaxy_sync_loop.start()
 
 
     def cog_unload(
         self,
     ):
 
-        self.auto_sync.cancel()
+        self.galaxy_sync_loop.cancel()
 
 
     # ========================================================
-    # AUTO SYNC
+    # AUTO-SYNC
     # ========================================================
 
     @tasks.loop(
         minutes=5
     )
-    async def auto_sync(
+    async def galaxy_sync_loop(
         self,
     ):
 
@@ -1073,20 +1017,19 @@ class Team(commands.Cog):
 
             try:
 
-                await full_sync(
+                await full_galaxy_sync(
                     guild
                 )
 
             except Exception as error:
 
                 print(
-                    "❌ Team Auto-Sync: "
-                    f"{error}"
+                    f"❌ Galaxy Team Sync Fehler: {error}"
                 )
 
 
-    @auto_sync.before_loop
-    async def before_auto_sync(
+    @galaxy_sync_loop.before_loop
+    async def before_galaxy_sync(
         self,
     ):
 
@@ -1094,69 +1037,17 @@ class Team(commands.Cog):
 
 
     # ========================================================
-    # ROLLENÄNDERUNG -> SOFORT TAG ÄNDERN
-    # ========================================================
-
-    @commands.Cog.listener()
-    async def on_member_update(
-        self,
-        before: discord.Member,
-        after: discord.Member,
-    ):
-
-        if (
-            before.roles
-            == after.roles
-            and before.nick
-            == after.nick
-        ):
-
-            return
-
-        try:
-
-            await sync_nickname(
-                after
-            )
-
-            panel = (
-                await find_team_panel(
-                    after.guild
-                )
-            )
-
-            if panel:
-
-                await panel.edit(
-                    embed=build_team_embed(
-                        after.guild
-                    )
-                )
-
-        except Exception as error:
-
-            print(
-                "❌ Team Member Update: "
-                f"{error}"
-            )
-
-
-    # ========================================================
-    # /team_map
-    #
-    # DAS IST JETZT DER WICHTIGE BEFEHL:
-    #
-    # echte Rolle -> Nametag
+    # /team_galaxy
     # ========================================================
 
     @app_commands.command(
-        name="team_map",
+        name="team_galaxy",
         description=(
-            "Zeigt jede erkannte Teamrolle "
-            "und den zugehörigen Nametag."
+            "Zeigt, welche Mitglieder "
+            "aus Galaxy erkannt wurden."
         ),
     )
-    async def team_map(
+    async def team_galaxy(
         self,
         interaction: discord.Interaction,
     ):
@@ -1164,36 +1055,60 @@ class Team(commands.Cog):
         if not await ensure_dev(
             interaction
         ):
-
             return
 
-        mapped = mapped_server_roles(
+        await interaction.response.defer(
+            ephemeral=True
+        )
+
+        parsed = await parse_galaxy_team(
             interaction.guild
         )
 
         lines = []
 
-        for role, rank in mapped:
+        for rank in GALAXY_RANKS:
+
+            ids = parsed.get(
+                rank["name"],
+                []
+            )
+
+            if not ids:
+                continue
+
+            names = []
+
+            for user_id in ids:
+
+                member = interaction.guild.get_member(
+                    user_id
+                )
+
+                if member:
+                    names.append(
+                        member.mention
+                    )
+                else:
+                    names.append(
+                        f"`{user_id}`"
+                    )
 
             lines.append(
                 (
-                    f"🎭 `{role.name}`\n"
-                    f"↳ **{rank['tag']} "
-                    f"{rank['name']}**"
+                    f"**{rank['tag']} "
+                    f"{rank['name']}**\n"
+                    + "\n".join(names)
                 )
             )
 
         embed = discord.Embed(
-            title=(
-                "🔎 EHRP | ROLE → NAMETAG"
-            ),
+            title="🪐 EHRP | GALAXY TEAM IMPORT",
             description=(
-                "\n\n".join(
-                    lines
-                )[:4000]
+                "\n\n".join(lines)[:4000]
                 if lines
                 else (
-                    "❌ Keine Teamrollen "
+                    "❌ Keine Galaxy-Teammitglieder "
                     "wurden erkannt."
                 )
             ),
@@ -1202,85 +1117,12 @@ class Team(commands.Cog):
 
         embed.set_footer(
             text=(
-                "Nur exakt definierte "
-                "Teamrollen werden verwendet."
+                "Quelle: Galaxy-Team-Liste • "
+                "keine Serverrollen-Auswertung"
             )
         )
 
-        await interaction.response.send_message(
-            embed=embed,
-            ephemeral=True,
-        )
-
-
-    # ========================================================
-    # /team_status
-    # ========================================================
-
-    @app_commands.command(
-        name="team_status",
-        description=(
-            "Zeigt den Status "
-            "des Team-Systems."
-        ),
-    )
-    async def team_status(
-        self,
-        interaction: discord.Interaction,
-    ):
-
-        if not await ensure_dev(
-            interaction
-        ):
-
-            return
-
-        members = all_team_members(
-            interaction.guild
-        )
-
-        absent = sum(
-            1
-            for member in members
-            if is_absent(member)
-        )
-
-        mapped = mapped_server_roles(
-            interaction.guild
-        )
-
-        embed = discord.Embed(
-            title=(
-                "⚙️ EHRP | SYSTEM • TEAM STATUS"
-            ),
-            description=(
-                "## SYSTEM STATUS\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                f"👥 **Teammitglieder:** "
-                f"{len(members)}\n"
-                f"🟢 **Aktiv:** "
-                f"{len(members) - absent}\n"
-                f"🏖️ **Abgemeldet:** "
-                f"{absent}\n\n"
-                f"🎭 **Serverrollen erkannt:** "
-                f"{len(mapped)}\n"
-                f"🏷️ **Nametag-Regeln:** "
-                f"{len(TEAM_RANKS)}\n\n"
-                "🔄 **Auto-Sync:** AKTIV\n"
-                "⏱️ **Intervall:** 5 Minuten\n"
-                "━━━━━━━━━━━━━━━━━━━━"
-            ),
-            color=SUCCESS_COLOR,
-        )
-
-        embed.set_footer(
-            text=(
-                "EHRP | System • "
-                "Team Management V5"
-            )
-        )
-
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=embed,
             ephemeral=True,
         )
@@ -1293,8 +1135,8 @@ class Team(commands.Cog):
     @app_commands.command(
         name="team_sync",
         description=(
-            "Synchronisiert alle "
-            "Team-Nametags."
+            "Synchronisiert Nametags "
+            "mit der Galaxy-Team-Liste."
         ),
     )
     async def team_sync(
@@ -1305,31 +1147,98 @@ class Team(commands.Cog):
         if not await ensure_dev(
             interaction
         ):
-
             return
 
         await interaction.response.defer(
             ephemeral=True
         )
 
-        changed = await full_sync(
+        changed, parsed = await full_galaxy_sync(
             interaction.guild
         )
 
-        members = all_team_members(
-            interaction.guild
+        team_ids = get_team_member_ids(
+            parsed
         )
 
         await interaction.followup.send(
             (
-                "✅ **TEAM-SYNC FERTIG**\n\n"
-                f"👥 Teammitglieder erkannt: "
-                f"**{len(members)}**\n"
+                "✅ **GALAXY TEAM-SYNC FERTIG**\n\n"
+                f"👥 Galaxy-Teammitglieder: "
+                f"**{len(team_ids)}**\n"
                 f"✏️ Nametags geändert: "
                 f"**{changed}**\n\n"
-                "Nutze `/team_map`, "
-                "um Rolle → Nametag zu prüfen."
+                "Quelle: EHRP | Galaxybot"
             ),
+            ephemeral=True,
+        )
+
+
+    # ========================================================
+    # /team_status
+    # ========================================================
+
+    @app_commands.command(
+        name="team_status",
+        description=(
+            "Zeigt den Status des "
+            "Galaxy-Team-Syncs."
+        ),
+    )
+    async def team_status(
+        self,
+        interaction: discord.Interaction,
+    ):
+
+        if not await ensure_dev(
+            interaction
+        ):
+            return
+
+        await interaction.response.defer(
+            ephemeral=True
+        )
+
+        parsed = await parse_galaxy_team(
+            interaction.guild
+        )
+
+        team_ids = get_team_member_ids(
+            parsed
+        )
+
+        active_ranks = sum(
+            1
+            for ids in parsed.values()
+            if ids
+        )
+
+        embed = discord.Embed(
+            title="⚙️ EHRP | SYSTEM • TEAM STATUS",
+            description=(
+                "## GALAXY SYNC\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "🟢 **System:** Online\n"
+                "🪐 **Quelle:** Galaxybot\n"
+                f"👥 **Teammitglieder erkannt:** "
+                f"{len(team_ids)}\n"
+                f"🏷️ **Aktive Galaxy-Ränge:** "
+                f"{active_ranks}\n"
+                "🔄 **Auto-Sync:** AKTIV\n"
+                "⏱️ **Intervall:** 5 Minuten\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "❌ Serverrollen werden nicht mehr "
+                "zur Rangbestimmung benutzt."
+            ),
+            color=SUCCESS_COLOR,
+        )
+
+        embed.set_footer(
+            text="EHRP | System • Galaxy Team Sync"
+        )
+
+        await interaction.followup.send(
+            embed=embed,
             ephemeral=True,
         )
 
@@ -1341,8 +1250,8 @@ class Team(commands.Cog):
     @app_commands.command(
         name="team_panel",
         description=(
-            "Erstellt die automatische "
-            "Teamliste."
+            "Erstellt die eigene "
+            "Galaxy-synchronisierte Teamliste."
         ),
     )
     async def team_panel(
@@ -1353,7 +1262,6 @@ class Team(commands.Cog):
         if not await ensure_dev(
             interaction
         ):
-
             return
 
         if not isinstance(
@@ -1362,21 +1270,21 @@ class Team(commands.Cog):
         ):
 
             await interaction.response.send_message(
-                "❌ Bitte in einem "
-                "Textkanal benutzen.",
+                "❌ Bitte in einem Textkanal benutzen.",
                 ephemeral=True,
             )
-
             return
 
         await interaction.response.defer(
             ephemeral=True
         )
 
-        old_panel = (
-            await find_team_panel(
-                interaction.guild
-            )
+        old_panel = await find_system_team_panel(
+            interaction.guild
+        )
+
+        embed = await build_team_embed(
+            interaction.guild
         )
 
         if (
@@ -1386,9 +1294,7 @@ class Team(commands.Cog):
         ):
 
             await old_panel.edit(
-                embed=build_team_embed(
-                    interaction.guild
-                )
+                embed=embed
             )
 
             await interaction.followup.send(
@@ -1398,28 +1304,22 @@ class Team(commands.Cog):
 
             return
 
-        message = (
-            await interaction.channel.send(
-                embed=build_team_embed(
-                    interaction.guild
-                )
-            )
+        new_message = await interaction.channel.send(
+            embed=embed
         )
 
         if old_panel:
 
             try:
-
                 await old_panel.delete()
 
             except discord.HTTPException:
-
                 pass
 
         await interaction.followup.send(
             (
-                "✅ **Teamliste erstellt**\n"
-                f"📍 {message.channel.mention}"
+                "✅ **Galaxy-Team-Panel erstellt**\n"
+                f"📍 {new_message.channel.mention}"
             ),
             ephemeral=True,
         )
