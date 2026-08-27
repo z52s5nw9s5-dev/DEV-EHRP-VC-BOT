@@ -11,524 +11,463 @@ from config import DEV_ROLE_ID
 
 
 # ============================================================
-# EHRP | SYSTEM — TEAM CONFIG
+# EHRP | SYSTEM — TEAM SYSTEM
 # ============================================================
 
 SYSTEM_COLOR = 0x5865F2
 SUCCESS_COLOR = 0x57F287
 WARNING_COLOR = 0xFEE75C
 
-TEAM_FOOTER_MARKER = "EHRP_TEAM_SYSTEM_V4"
+TEAM_FOOTER = "EHRP_TEAM_SYSTEM_V5"
 
 
 # ============================================================
-# TEAMSTRUKTUR + KÜRZEL
+# FESTE ROLLEN -> NAMETAG ZUORDNUNG
+#
+# WICHTIG:
+# Nur EXAKTE Namen / Aliases werden erkannt.
+# Dadurch wird z.B. "Fraktion Manager" NICHT zu Manager.
 # ============================================================
 
-TEAM_STRUCTURE = [
-    (
-        "👑 Leitung",
-        [
-            ("Founder", "[FD]"),
-            ("Co-Founder", "[Co. FD]"),
+TEAM_RANKS = [
+    # LEITUNG
+    {
+        "section": "👑 Leitung",
+        "name": "Founder",
+        "tag": "[FD]",
+        "aliases": [
+            "Founder",
         ],
-    ),
-    (
-        "⚜️ Leaderebene",
-        [
-            ("Obervorstand", "[OVS]"),
-            ("Vorstand", "[VS]"),
-            ("Sachbearbeiter", "[SB]"),
-            ("Verwaltungsleitung", "[VL]"),
-            ("Hauptverwaltung", "[HV]"),
+    },
+    {
+        "section": "👑 Leitung",
+        "name": "Co-Founder",
+        "tag": "[Co. FD]",
+        "aliases": [
+            "Co-Founder",
+            "Co Founder",
         ],
-    ),
-    (
-        "💎 Kernteam",
-        [
-            ("Archivleitung", "[AL]"),
-            ("Gesamtkoordinator", "[GT. K]"),
-            ("Teamkoordinator", "[T. K]"),
-            ("Jr. Teamkoordinator", "[Jr. T. K]"),
+    },
+
+    # LEADEREBENE
+    {
+        "section": "⚜️ Leaderebene",
+        "name": "Obervorstand",
+        "tag": "[OVS]",
+        "aliases": [
+            "Obervorstand",
         ],
-    ),
-    (
-        "🛡️ Teamverwaltung",
-        [
-            ("Head of Management", "[HoM]"),
-            ("Sr. Management", "[Sr. M]"),
-            ("Manager", "[M]"),
-            ("Stv. Manager", "[Stv. M]"),
+    },
+    {
+        "section": "⚜️ Leaderebene",
+        "name": "Vorstand",
+        "tag": "[VS]",
+        "aliases": [
+            "Vorstand",
         ],
-    ),
-    (
-        "⚙️ Management",
-        [
-            ("Admin-Koordinator", "[A. K]"),
-            ("Systemadministrator", "[SYS. A]"),
-            ("Administrator", "[ADM]"),
-            ("Jr. Administrator", "[Jr. ADM]"),
+    },
+    {
+        "section": "⚜️ Leaderebene",
+        "name": "Sachbearbeiter",
+        "tag": "[SB]",
+        "aliases": [
+            "Sachbearbeiter",
         ],
-    ),
-    (
-        "🔨 Administration",
-        [
-            ("Mod-Koordinator", "[MOD. K]"),
-            ("Moderations-Spezialist", "[MOD. S]"),
-            ("Moderator", "[MOD]"),
-            ("Jr. Moderator", "[Jr. MOD]"),
+    },
+    {
+        "section": "⚜️ Leaderebene",
+        "name": "Verwaltungsleitung",
+        "tag": "[VL]",
+        "aliases": [
+            "Verwaltungsleitung",
+            "Verwaltungs Leitung",
         ],
-    ),
-    (
-        "🎧 Moderatoren",
-        [
-            ("Sup-Koordinator", "[SUP. K]"),
-            ("Support-Spezialist", "[SUP. S]"),
-            ("Supporter", "[SUP]"),
-            ("Az. Supporter", "[Az. SUP]"),
+    },
+    {
+        "section": "⚜️ Leaderebene",
+        "name": "Hauptverwaltung",
+        "tag": "[HV]",
+        "aliases": [
+            "Hauptverwaltung",
+            "Haupt Verwaltung",
         ],
-    ),
+    },
+
+    # KERNTEAM
+    {
+        "section": "💎 Kernteam",
+        "name": "Archivleitung",
+        "tag": "[AL]",
+        "aliases": [
+            "Archivleitung",
+            "Archiv Leitung",
+        ],
+    },
+    {
+        "section": "💎 Kernteam",
+        "name": "Gesamtkoordinator",
+        "tag": "[GT. K]",
+        "aliases": [
+            "Gesamtkoordinator",
+            "Gesamt Koordinator",
+        ],
+    },
+    {
+        "section": "💎 Kernteam",
+        "name": "Teamkoordinator",
+        "tag": "[T. K]",
+        "aliases": [
+            "Teamkoordinator",
+            "Team Koordinator",
+        ],
+    },
+    {
+        "section": "💎 Kernteam",
+        "name": "Jr. Teamkoordinator",
+        "tag": "[Jr. T. K]",
+        "aliases": [
+            "Jr. Teamkoordinator",
+            "Jr Teamkoordinator",
+            "Jr. Team Koordinator",
+            "Junior Teamkoordinator",
+        ],
+    },
+
+    # TEAMVERWALTUNG
+    {
+        "section": "🛡️ Teamverwaltung",
+        "name": "Head of Management",
+        "tag": "[HoM]",
+        "aliases": [
+            "Head of Management",
+        ],
+    },
+    {
+        "section": "🛡️ Teamverwaltung",
+        "name": "Sr. Management",
+        "tag": "[Sr. M]",
+        "aliases": [
+            "Sr. Management",
+            "Sr Management",
+            "Senior Management",
+        ],
+    },
+    {
+        "section": "🛡️ Teamverwaltung",
+        "name": "Manager",
+        "tag": "[M]",
+        "aliases": [
+            "Manager",
+        ],
+    },
+    {
+        "section": "🛡️ Teamverwaltung",
+        "name": "Stv. Manager",
+        "tag": "[Stv. M]",
+        "aliases": [
+            "Stv. Manager",
+            "Stv Manager",
+            "Stellv. Manager",
+            "Stellvertretender Manager",
+        ],
+    },
+
+    # MANAGEMENT
+    {
+        "section": "⚙️ Management",
+        "name": "Admin-Koordinator",
+        "tag": "[A. K]",
+        "aliases": [
+            "Admin-Koordinator",
+            "Admin Koordinator",
+        ],
+    },
+    {
+        "section": "⚙️ Management",
+        "name": "Systemadministrator",
+        "tag": "[SYS. A]",
+        "aliases": [
+            "Systemadministrator",
+            "System Administrator",
+        ],
+    },
+    {
+        "section": "⚙️ Management",
+        "name": "Administrator",
+        "tag": "[ADM]",
+        "aliases": [
+            "Administrator",
+            "Admin",
+        ],
+    },
+    {
+        "section": "⚙️ Management",
+        "name": "Jr. Administrator",
+        "tag": "[Jr. ADM]",
+        "aliases": [
+            "Jr. Administrator",
+            "Jr Administrator",
+            "Jr. Admin",
+            "Jr Admin",
+            "Junior Administrator",
+        ],
+    },
+
+    # ADMINISTRATION
+    {
+        "section": "🔨 Administration",
+        "name": "Mod-Koordinator",
+        "tag": "[MOD. K]",
+        "aliases": [
+            "Mod-Koordinator",
+            "Mod Koordinator",
+        ],
+    },
+    {
+        "section": "🔨 Administration",
+        "name": "Moderations-Spezialist",
+        "tag": "[MOD. S]",
+        "aliases": [
+            "Moderations-Spezialist",
+            "Moderations Spezialist",
+        ],
+    },
+    {
+        "section": "🔨 Administration",
+        "name": "Moderator",
+        "tag": "[MOD]",
+        "aliases": [
+            "Moderator",
+        ],
+    },
+    {
+        "section": "🔨 Administration",
+        "name": "Jr. Moderator",
+        "tag": "[Jr. MOD]",
+        "aliases": [
+            "Jr. Moderator",
+            "Jr Moderator",
+            "Junior Moderator",
+        ],
+    },
+
+    # MODERATION / SUPPORT
+    {
+        "section": "🎧 Moderatoren",
+        "name": "Sup-Koordinator",
+        "tag": "[SUP. K]",
+        "aliases": [
+            "Sup-Koordinator",
+            "Sup Koordinator",
+            "Support-Koordinator",
+            "Support Koordinator",
+        ],
+    },
+    {
+        "section": "🎧 Moderatoren",
+        "name": "Support-Spezialist",
+        "tag": "[SUP. S]",
+        "aliases": [
+            "Support-Spezialist",
+            "Support Spezialist",
+        ],
+    },
+    {
+        "section": "🎧 Moderatoren",
+        "name": "Supporter",
+        "tag": "[SUP]",
+        "aliases": [
+            "Supporter",
+        ],
+    },
+    {
+        "section": "🎧 Moderatoren",
+        "name": "Az. Supporter",
+        "tag": "[Az. SUP]",
+        "aliases": [
+            "Az. Supporter",
+            "Az Supporter",
+            "Azubi Supporter",
+        ],
+    },
 ]
 
 
 # ============================================================
-# ROLLEN, DIE KOMPLETT IGNORIERT WERDEN
+# ABMELDUNG
 # ============================================================
 
-IGNORED_ROLE_NAMES = (
-    "fraktion manager",
-    "fraktions manager",
-    "fraktionsmanager",
-    "fraktion verwaltung",
-    "stv fraktion verwaltung",
-    "fraktions verwaltung",
-    "fraktions ebene",
-    "developmentleitung",
-    "development",
-    "jr development",
-    "team ausbilder",
-    "team ausbilder leitung",
-    "ausbildungs ebene",
-    "in game rechte",
-    "bau rechte",
-)
-
-
-ABSENCE_KEYWORDS = (
+ABSENCE_WORDS = [
     "abgemeldet",
     "abwesen",
     "abwesenheit",
     "absence",
-)
-
-
-# ============================================================
-# ACCESS
-# ============================================================
-
-async def ensure_dev(
-    interaction: discord.Interaction,
-) -> bool:
-
-    if (
-        interaction.guild is None
-        or not isinstance(interaction.user, discord.Member)
-    ):
-        await interaction.response.send_message(
-            "❌ Dieser Befehl funktioniert nur auf dem Server.",
-            ephemeral=True,
-        )
-        return False
-
-    if interaction.user.guild_permissions.administrator:
-        return True
-
-    try:
-        dev_role_id = int(DEV_ROLE_ID)
-    except (TypeError, ValueError):
-        dev_role_id = 0
-
-    dev_role = interaction.guild.get_role(dev_role_id)
-
-    if dev_role is not None and dev_role in interaction.user.roles:
-        return True
-
-    await interaction.response.send_message(
-        "❌ Du darfst diese Systemfunktion nicht benutzen.",
-        ephemeral=True,
-    )
-
-    return False
+]
 
 
 # ============================================================
 # NORMALISIERUNG
 # ============================================================
 
-def normalize_role_name(value: str) -> str:
+def normalize(text: str) -> str:
+    text = unicodedata.normalize(
+        "NFKC",
+        text,
+    )
 
-    value = unicodedata.normalize("NFKC", value)
-    value = value.casefold()
+    text = text.casefold()
 
-    value = "".join(
+    # Unsichtbare Zeichen entfernen
+    text = "".join(
         char
-        for char in value
-        if unicodedata.category(char) not in ("Cf", "Cc")
+        for char in text
+        if unicodedata.category(char)
+        not in (
+            "Cf",
+            "Cc",
+        )
     )
 
-    value = re.sub(
+    # Discord-Deko entfernen:
+    # » • ➡ ↪ | - usw.
+    text = re.sub(
         r"[^a-z0-9äöüß]+",
-        " ",
-        value,
+        "",
+        text,
     )
 
-    value = re.sub(
-        r"\s+",
-        " ",
-        value,
-    )
-
-    return value.strip()
-
-
-def compact_role_name(value: str) -> str:
-    return normalize_role_name(value).replace(" ", "")
+    return text
 
 
 # ============================================================
-# IGNORE CHECK
+# ROLLEN-MAP
 # ============================================================
 
-def role_is_ignored(role_name: str) -> bool:
+ROLE_MAP = {}
 
-    normal = normalize_role_name(role_name)
-    compact = compact_role_name(role_name)
+for rank in TEAM_RANKS:
 
-    for ignored in IGNORED_ROLE_NAMES:
+    for alias in rank["aliases"]:
 
-        ignored_normal = normalize_role_name(ignored)
-        ignored_compact = compact_role_name(ignored)
-
-        if (
-            normal == ignored_normal
-            or compact == ignored_compact
-        ):
-            return True
-
-    return False
+        ROLE_MAP[
+            normalize(alias)
+        ] = rank
 
 
 # ============================================================
-# RANK ENTRIES
+# ROLLE -> RANG
 # ============================================================
 
-def build_rank_entries():
-    entries = []
-
-    for section, roles in TEAM_STRUCTURE:
-
-        for role_name, prefix in roles:
-
-            entries.append(
-                {
-                    "section": section,
-                    "role_name": role_name,
-                    "prefix": prefix,
-                    "normal": normalize_role_name(role_name),
-                    "compact": compact_role_name(role_name),
-                }
-            )
-
-    entries.sort(
-        key=lambda item: len(item["compact"]),
-        reverse=True,
-    )
-
-    return entries
-
-
-RANK_ENTRIES = build_rank_entries()
-
-
-# ============================================================
-# ALIASES
-# ============================================================
-
-ROLE_ALIASES = {
-    "archiv leitung": "Archivleitung",
-    "archivleitung": "Archivleitung",
-
-    "administrator": "Administrator",
-    "admin": "Administrator",
-
-    "jr administrator": "Jr. Administrator",
-    "jr admin": "Jr. Administrator",
-    "junior administrator": "Jr. Administrator",
-    "junior admin": "Jr. Administrator",
-
-    "system administrator": "Systemadministrator",
-
-    "admin koordinator": "Admin-Koordinator",
-
-    "mod koordinator": "Mod-Koordinator",
-
-    "moderations spezialist": "Moderations-Spezialist",
-
-    "support spezialist": "Support-Spezialist",
-
-    "sup koordinator": "Sup-Koordinator",
-
-    "co founder": "Co-Founder",
-
-    "jr teamkoordinator": "Jr. Teamkoordinator",
-
-    "jr moderator": "Jr. Moderator",
-
-    "az supporter": "Az. Supporter",
-
-    "stv manager": "Stv. Manager",
-
-    "sr management": "Sr. Management",
-
-    "head of management": "Head of Management",
-}
-
-
-# ============================================================
-# MATCH RANK
-# ============================================================
-
-def get_entry_by_rank_name(rank_name: str):
-
-    for entry in RANK_ENTRIES:
-
-        if entry["role_name"] == rank_name:
-            return entry
-
-    return None
-
-
-def match_known_rank(
-    discord_role_name: str,
+def detect_rank_from_role(
+    role: discord.Role,
 ):
 
-    # Fraktion Manager & Co. komplett raus
-    if role_is_ignored(discord_role_name):
-        return None
-
-    role_normal = normalize_role_name(
-        discord_role_name
+    normalized = normalize(
+        role.name
     )
 
-    role_compact = compact_role_name(
-        discord_role_name
+    # NUR exakte Zuordnung!
+    return ROLE_MAP.get(
+        normalized
     )
-
-    if not role_compact:
-        return None
-
-    # --------------------------------------------------------
-    # 1. EXAKT
-    # --------------------------------------------------------
-
-    for entry in RANK_ENTRIES:
-
-        if (
-            role_normal == entry["normal"]
-            or role_compact == entry["compact"]
-        ):
-            return entry
-
-    # --------------------------------------------------------
-    # 2. ALIAS
-    # --------------------------------------------------------
-
-    for alias, target_rank in ROLE_ALIASES.items():
-
-        alias_normal = normalize_role_name(
-            alias
-        )
-
-        alias_compact = compact_role_name(
-            alias
-        )
-
-        if (
-            role_normal == alias_normal
-            or role_compact == alias_compact
-        ):
-            return get_entry_by_rank_name(
-                target_rank
-            )
-
-    # --------------------------------------------------------
-    # 3. NUR DEKO VOR DEM RANG ERLAUBEN
-    # --------------------------------------------------------
-
-    for entry in RANK_ENTRIES:
-
-        target = entry["normal"]
-
-        pattern = (
-            r"(?:^|\s)"
-            + re.escape(target)
-            + r"$"
-        )
-
-        if re.search(
-            pattern,
-            role_normal,
-        ):
-            return entry
-
-    return None
 
 
 # ============================================================
-# DISCORD ROLE FINDEN
+# HÖCHSTER TEAMRANG EINES USERS
 # ============================================================
 
-def find_discord_role(
-    guild: discord.Guild,
-    rank_name: str,
+def get_member_rank(
+    member: discord.Member,
 ):
 
     found = []
 
-    for role in guild.roles:
+    for role in member.roles:
 
-        detected = match_known_rank(
-            role.name
+        rank = detect_rank_from_role(
+            role
         )
 
-        if (
-            detected is not None
-            and detected["role_name"] == rank_name
-        ):
+        if rank is not None:
+
             found.append(
-                role
+                rank
             )
 
     if not found:
         return None
 
-    found.sort(
-        key=lambda role: role.position,
-        reverse=True,
-    )
+    # TEAM_RANKS ist bereits von oben nach unten
+    # sortiert -> höchster Rang gewinnt.
 
-    return found[0]
+    for configured_rank in TEAM_RANKS:
+
+        for member_rank in found:
+
+            if (
+                configured_rank["name"]
+                == member_rank["name"]
+            ):
+                return configured_rank
+
+    return None
 
 
 # ============================================================
-# MEMBER RANK
+# TEAM MEMBER?
 # ============================================================
-
-def get_member_team_rank(
-    member: discord.Member,
-):
-
-    detected_ranks = []
-
-    for role in member.roles:
-
-        detected = match_known_rank(
-            role.name
-        )
-
-        if detected is None:
-            continue
-
-        detected_ranks.append(
-            {
-                **detected,
-                "discord_role": role,
-            }
-        )
-
-    if not detected_ranks:
-        return None
-
-    priority = {}
-
-    index = 0
-
-    for _, roles in TEAM_STRUCTURE:
-
-        for role_name, _ in roles:
-
-            priority[role_name] = index
-            index += 1
-
-    detected_ranks.sort(
-        key=lambda item: priority.get(
-            item["role_name"],
-            9999,
-        )
-    )
-
-    return detected_ranks[0]
-
 
 def is_team_member(
     member: discord.Member,
 ) -> bool:
 
     return (
-        get_member_team_rank(member)
+        get_member_rank(member)
         is not None
     )
 
 
 # ============================================================
-# ABSENCE
+# ABGEMELDET?
 # ============================================================
 
-def member_is_absent(
+def is_absent(
     member: discord.Member,
 ) -> bool:
 
     for role in member.roles:
 
-        normalized = normalize_role_name(
+        name = normalize(
             role.name
         )
 
-        for keyword in ABSENCE_KEYWORDS:
+        for keyword in ABSENCE_WORDS:
 
-            if keyword in normalized:
+            if normalize(keyword) in name:
                 return True
 
     return False
 
 
 # ============================================================
-# NICKNAME CLEANER
+# ALLE NAMETAGS
 # ============================================================
 
-def all_prefixes():
-    prefixes = []
-
-    for _, roles in TEAM_STRUCTURE:
-
-        for _, prefix in roles:
-
-            prefixes.append(
-                prefix
-            )
-
-    prefixes.sort(
-        key=len,
-        reverse=True,
-    )
-
-    return prefixes
+ALL_TAGS = sorted(
+    {
+        rank["tag"]
+        for rank in TEAM_RANKS
+    },
+    key=len,
+    reverse=True,
+)
 
 
-TEAM_PREFIXES = all_prefixes()
+# ============================================================
+# ALTEN NAMETAG ENTFERNEN
+# ============================================================
 
-
-def clean_member_name(
+def clean_nickname(
     member: discord.Member,
 ) -> str:
 
@@ -538,7 +477,7 @@ def clean_member_name(
         or member.name
     )
 
-    # Abgemeldet hinten entfernen
+    # "- Abgemeldet" entfernen
     name = re.sub(
         r"\s*-\s*abgemeldet\s*$",
         "",
@@ -546,14 +485,15 @@ def clean_member_name(
         flags=re.IGNORECASE,
     )
 
-    # bekannten Team-Prefix entfernen
-    for prefix in TEAM_PREFIXES:
+    # Bekannte Tags vorne entfernen
+    for tag in ALL_TAGS:
 
         if name.casefold().startswith(
-            prefix.casefold()
+            tag.casefold()
         ):
+
             name = name[
-                len(prefix):
+                len(tag):
             ].strip()
 
             break
@@ -564,29 +504,37 @@ def clean_member_name(
     )
 
 
+# ============================================================
+# GEWÜNSCHTER NICKNAME
+# ============================================================
+
 def desired_nickname(
     member: discord.Member,
 ):
 
-    rank = get_member_team_rank(
+    rank = get_member_rank(
         member
     )
 
     if rank is None:
         return None
 
-    base = clean_member_name(
+    base_name = clean_nickname(
         member
     )
 
     nickname = (
-        f"{rank['prefix']} {base}"
+        f"{rank['tag']} "
+        f"{base_name}"
     )
 
-    if member_is_absent(
+    if is_absent(
         member
     ):
-        nickname += " - Abgemeldet"
+
+        nickname += (
+            " - Abgemeldet"
+        )
 
     return nickname[:32]
 
@@ -595,7 +543,7 @@ def desired_nickname(
 # NICKNAME SYNC
 # ============================================================
 
-async def sync_member_nickname(
+async def sync_nickname(
     member: discord.Member,
 ) -> bool:
 
@@ -603,31 +551,42 @@ async def sync_member_nickname(
         return False
 
     guild = member.guild
+
     bot_member = guild.me
 
     if bot_member is None:
         return False
 
+    # Discord erlaubt Owner-Nickname nicht
     if member.id == guild.owner_id:
         return False
 
-    if member.top_role >= bot_member.top_role:
+    # Bot muss über der Rolle stehen
+    if (
+        member.top_role
+        >= bot_member.top_role
+    ):
+        print(
+            "⚠️ Kann Nickname nicht ändern: "
+            f"{member.display_name}"
+        )
+
         return False
 
-    rank = get_member_team_rank(
+    rank = get_member_rank(
         member
     )
 
-    # --------------------------------------------------------
-    # KEIN TEAM MEHR
-    # --------------------------------------------------------
+    # ========================================================
+    # USER IST NICHT MEHR IM TEAM
+    # ========================================================
 
     if rank is None:
 
-        if not member.nick:
+        if member.nick is None:
             return False
 
-        cleaned = clean_member_name(
+        cleaned = clean_nickname(
             member
         )
 
@@ -650,30 +609,36 @@ async def sync_member_nickname(
             discord.Forbidden,
             discord.HTTPException,
         ):
+
             return False
 
-    # --------------------------------------------------------
-    # TEAM
-    # --------------------------------------------------------
+    # ========================================================
+    # USER IST TEAM
+    # ========================================================
 
-    desired = desired_nickname(
+    wanted = desired_nickname(
         member
     )
 
-    if not desired:
+    if wanted is None:
         return False
 
-    if member.nick == desired:
+    if member.nick == wanted:
         return False
 
     try:
 
         await member.edit(
-            nick=desired,
+            nick=wanted,
             reason=(
                 "EHRP | System "
-                "Team-Nickname synchronisiert"
+                f"Nametag {rank['tag']}"
             ),
+        )
+
+        print(
+            "✅ TEAM TAG: "
+            f"{member.name} -> {wanted}"
         )
 
         return True
@@ -681,47 +646,46 @@ async def sync_member_nickname(
     except discord.Forbidden:
 
         print(
-            f"⚠️ Nickname nicht erlaubt: {member}"
+            "❌ Keine Nickname-Rechte: "
+            f"{member.name}"
         )
 
     except discord.HTTPException as error:
 
         print(
-            f"❌ Nickname Fehler {member}: {error}"
+            "❌ Nickname Fehler: "
+            f"{member.name}: {error}"
         )
 
     return False
 
 
 # ============================================================
-# TEAM MEMBERS
+# TEAMMITGLIEDER
 # ============================================================
 
-def get_all_team_members(
+def all_team_members(
     guild: discord.Guild,
 ):
 
-    members = []
+    return [
+        member
+        for member in guild.members
+        if (
+            not member.bot
+            and get_member_rank(member)
+            is not None
+        )
+    ]
 
-    for member in guild.members:
 
-        if member.bot:
-            continue
-
-        if get_member_team_rank(
-            member
-        ):
-
-            members.append(
-                member
-            )
-
-    return members
-
+# ============================================================
+# MITGLIEDER PRO RANG
+# ============================================================
 
 def members_for_rank(
     guild: discord.Guild,
-    rank_name: str,
+    wanted_rank: dict,
 ):
 
     members = []
@@ -731,94 +695,146 @@ def members_for_rank(
         if member.bot:
             continue
 
-        rank = get_member_team_rank(
+        rank = get_member_rank(
             member
         )
 
+        if rank is None:
+            continue
+
         if (
-            rank
-            and rank["role_name"]
-            == rank_name
+            rank["name"]
+            == wanted_rank["name"]
         ):
+
             members.append(
                 member
             )
 
     members.sort(
-        key=lambda member:
-        member.display_name.casefold()
+        key=lambda m:
+        m.display_name.casefold()
     )
 
     return members
 
 
 # ============================================================
-# TEAM EMBED
+# ALLE ERKANNTEN SERVERROLLEN
+# ============================================================
+
+def mapped_server_roles(
+    guild: discord.Guild,
+):
+
+    result = []
+
+    for role in reversed(
+        guild.roles
+    ):
+
+        rank = detect_rank_from_role(
+            role
+        )
+
+        if rank is None:
+            continue
+
+        result.append(
+            (
+                role,
+                rank,
+            )
+        )
+
+    return result
+
+
+# ============================================================
+# TEAM PANEL
 # ============================================================
 
 def build_team_embed(
     guild: discord.Guild,
 ):
 
-    members = get_all_team_members(
+    members = all_team_members(
         guild
     )
 
     absent = sum(
         1
         for member in members
-        if member_is_absent(member)
-    )
-
-    active = (
-        len(members)
-        - absent
+        if is_absent(member)
     )
 
     embed = discord.Embed(
-        title="👥 EHRP | SYSTEM • TEAMLISTE",
+        title=(
+            "👥 EHRP | SYSTEM • TEAMLISTE"
+        ),
         description=(
             "## OFFIZIELLE TEAMÜBERSICHT\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            f"👥 **Teammitglieder:** {len(members)}\n"
-            f"🟢 **Aktiv:** {active}\n"
-            f"🏖️ **Abgemeldet:** {absent}\n"
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "Die Teamliste wird automatisch "
-            "mit den Teamrollen synchronisiert."
+            f"👥 **Teammitglieder:** "
+            f"{len(members)}\n"
+            f"🟢 **Aktiv:** "
+            f"{len(members) - absent}\n"
+            f"🏖️ **Abgemeldet:** "
+            f"{absent}\n"
+            "━━━━━━━━━━━━━━━━━━━━"
         ),
         color=SYSTEM_COLOR,
     )
 
-    for section_name, roles in TEAM_STRUCTURE:
+    sections = []
+
+    for rank in TEAM_RANKS:
+
+        if (
+            rank["section"]
+            not in sections
+        ):
+
+            sections.append(
+                rank["section"]
+            )
+
+    for section in sections:
 
         lines = []
 
-        for role_name, prefix in roles:
+        section_ranks = [
+            rank
+            for rank in TEAM_RANKS
+            if rank["section"]
+            == section
+        ]
 
-            rank_members = members_for_rank(
+        for rank in section_ranks:
+
+            members_here = members_for_rank(
                 guild,
-                role_name,
+                rank,
             )
 
-            if rank_members:
+            if members_here:
 
-                member_lines = []
+                names = []
 
-                for member in rank_members:
+                for member in members_here:
 
-                    status = (
+                    state = (
                         "🏖️"
-                        if member_is_absent(member)
+                        if is_absent(member)
                         else "🟢"
                     )
 
-                    member_lines.append(
-                        f"{status} {member.mention}"
+                    names.append(
+                        f"{state} {member.mention}"
                     )
 
                 member_text = "\n".join(
-                    member_lines
+                    names
                 )
 
             else:
@@ -826,20 +842,25 @@ def build_team_embed(
                 member_text = "—"
 
             lines.append(
-                f"**{prefix} {role_name}**\n"
-                f"{member_text}"
+                (
+                    f"**{rank['tag']} "
+                    f"{rank['name']}**\n"
+                    f"{member_text}"
+                )
             )
 
         embed.add_field(
-            name=section_name,
-            value="\n\n".join(lines)[:1024],
+            name=section,
+            value="\n\n".join(
+                lines
+            )[:1024],
             inline=False,
         )
 
     embed.set_footer(
         text=(
-            f"{TEAM_FOOTER_MARKER} • "
-            "Auto-Sync aktiv"
+            f"{TEAM_FOOTER} • "
+            "Automatische Synchronisierung"
         )
     )
 
@@ -847,22 +868,22 @@ def build_team_embed(
 
 
 # ============================================================
-# TEAM MESSAGE FINDEN
+# TEAM PANEL FINDEN
 # ============================================================
 
-async def find_team_message(
+async def find_team_panel(
     guild: discord.Guild,
 ):
 
-    bot_member = guild.me
-
-    if bot_member is None:
+    if guild.me is None:
         return None
 
     for channel in guild.text_channels:
 
-        permissions = channel.permissions_for(
-            bot_member
+        permissions = (
+            channel.permissions_for(
+                guild.me
+            )
         )
 
         if not (
@@ -874,12 +895,12 @@ async def find_team_message(
         try:
 
             async for message in channel.history(
-                limit=75
+                limit=50
             ):
 
                 if (
                     message.author.id
-                    != bot_member.id
+                    != guild.me.id
                 ):
                     continue
 
@@ -892,13 +913,15 @@ async def find_team_message(
                     or ""
                 )
 
-                if TEAM_FOOTER_MARKER in footer:
+                if TEAM_FOOTER in footer:
+
                     return message
 
         except (
             discord.Forbidden,
             discord.HTTPException,
         ):
+
             continue
 
     return None
@@ -908,7 +931,7 @@ async def find_team_message(
 # FULL SYNC
 # ============================================================
 
-async def perform_full_sync(
+async def full_sync(
     guild: discord.Guild,
 ):
 
@@ -919,32 +942,97 @@ async def perform_full_sync(
         if member.bot:
             continue
 
-        if await sync_member_nickname(
+        if await sync_nickname(
             member
         ):
+
             changed += 1
 
-    team_message = await find_team_message(
+    panel = await find_team_panel(
         guild
     )
 
-    if team_message:
+    if panel is not None:
 
         try:
 
-            await team_message.edit(
+            await panel.edit(
                 embed=build_team_embed(
                     guild
                 )
             )
 
-        except discord.HTTPException as error:
+        except discord.HTTPException:
 
-            print(
-                f"❌ Teamliste Update Fehler: {error}"
-            )
+            pass
 
     return changed
+
+
+# ============================================================
+# ACCESS
+# ============================================================
+
+async def ensure_dev(
+    interaction: discord.Interaction,
+) -> bool:
+
+    if (
+        interaction.guild is None
+        or not isinstance(
+            interaction.user,
+            discord.Member,
+        )
+    ):
+
+        await interaction.response.send_message(
+            "❌ Nur auf dem Server verfügbar.",
+            ephemeral=True,
+        )
+
+        return False
+
+    if (
+        interaction.user
+        .guild_permissions
+        .administrator
+    ):
+
+        return True
+
+    try:
+
+        role_id = int(
+            DEV_ROLE_ID
+        )
+
+    except (
+        ValueError,
+        TypeError,
+    ):
+
+        role_id = 0
+
+    dev_role = (
+        interaction.guild.get_role(
+            role_id
+        )
+    )
+
+    if (
+        dev_role is not None
+        and dev_role
+        in interaction.user.roles
+    ):
+
+        return True
+
+    await interaction.response.send_message(
+        "❌ Keine Berechtigung.",
+        ephemeral=True,
+    )
+
+    return False
 
 
 # ============================================================
@@ -959,13 +1047,15 @@ class Team(commands.Cog):
     ):
 
         self.bot = bot
-        self.team_sync_loop.start()
+
+        self.auto_sync.start()
+
 
     def cog_unload(
         self,
     ):
 
-        self.team_sync_loop.cancel()
+        self.auto_sync.cancel()
 
 
     # ========================================================
@@ -975,7 +1065,7 @@ class Team(commands.Cog):
     @tasks.loop(
         minutes=5
     )
-    async def team_sync_loop(
+    async def auto_sync(
         self,
     ):
 
@@ -983,19 +1073,20 @@ class Team(commands.Cog):
 
             try:
 
-                await perform_full_sync(
+                await full_sync(
                     guild
                 )
 
             except Exception as error:
 
                 print(
-                    f"❌ Team Auto-Sync Fehler: {error}"
+                    "❌ Team Auto-Sync: "
+                    f"{error}"
                 )
 
 
-    @team_sync_loop.before_loop
-    async def before_team_sync_loop(
+    @auto_sync.before_loop
+    async def before_auto_sync(
         self,
     ):
 
@@ -1003,7 +1094,7 @@ class Team(commands.Cog):
 
 
     # ========================================================
-    # MEMBER UPDATE
+    # ROLLENÄNDERUNG -> SOFORT TAG ÄNDERN
     # ========================================================
 
     @commands.Cog.listener()
@@ -1014,24 +1105,29 @@ class Team(commands.Cog):
     ):
 
         if (
-            before.roles == after.roles
-            and before.nick == after.nick
+            before.roles
+            == after.roles
+            and before.nick
+            == after.nick
         ):
+
             return
 
         try:
 
-            await sync_member_nickname(
+            await sync_nickname(
                 after
             )
 
-            team_message = await find_team_message(
-                after.guild
+            panel = (
+                await find_team_panel(
+                    after.guild
+                )
             )
 
-            if team_message:
+            if panel:
 
-                await team_message.edit(
+                await panel.edit(
                     embed=build_team_embed(
                         after.guild
                     )
@@ -1040,8 +1136,81 @@ class Team(commands.Cog):
         except Exception as error:
 
             print(
-                f"❌ Member Update Fehler: {error}"
+                "❌ Team Member Update: "
+                f"{error}"
             )
+
+
+    # ========================================================
+    # /team_map
+    #
+    # DAS IST JETZT DER WICHTIGE BEFEHL:
+    #
+    # echte Rolle -> Nametag
+    # ========================================================
+
+    @app_commands.command(
+        name="team_map",
+        description=(
+            "Zeigt jede erkannte Teamrolle "
+            "und den zugehörigen Nametag."
+        ),
+    )
+    async def team_map(
+        self,
+        interaction: discord.Interaction,
+    ):
+
+        if not await ensure_dev(
+            interaction
+        ):
+
+            return
+
+        mapped = mapped_server_roles(
+            interaction.guild
+        )
+
+        lines = []
+
+        for role, rank in mapped:
+
+            lines.append(
+                (
+                    f"🎭 `{role.name}`\n"
+                    f"↳ **{rank['tag']} "
+                    f"{rank['name']}**"
+                )
+            )
+
+        embed = discord.Embed(
+            title=(
+                "🔎 EHRP | ROLE → NAMETAG"
+            ),
+            description=(
+                "\n\n".join(
+                    lines
+                )[:4000]
+                if lines
+                else (
+                    "❌ Keine Teamrollen "
+                    "wurden erkannt."
+                )
+            ),
+            color=SYSTEM_COLOR,
+        )
+
+        embed.set_footer(
+            text=(
+                "Nur exakt definierte "
+                "Teamrollen werden verwendet."
+            )
+        )
+
+        await interaction.response.send_message(
+            embed=embed,
+            ephemeral=True,
+        )
 
 
     # ========================================================
@@ -1051,7 +1220,7 @@ class Team(commands.Cog):
     @app_commands.command(
         name="team_status",
         description=(
-            "Zeigt den aktuellen Status "
+            "Zeigt den Status "
             "des Team-Systems."
         ),
     )
@@ -1063,44 +1232,27 @@ class Team(commands.Cog):
         if not await ensure_dev(
             interaction
         ):
+
             return
 
-        members = get_all_team_members(
+        members = all_team_members(
             interaction.guild
         )
 
         absent = sum(
             1
             for member in members
-            if member_is_absent(member)
+            if is_absent(member)
         )
 
-        detected_roles = []
-        missing_roles = []
-
-        for _, roles in TEAM_STRUCTURE:
-
-            for role_name, _ in roles:
-
-                discord_role = find_discord_role(
-                    interaction.guild,
-                    role_name,
-                )
-
-                if discord_role:
-
-                    detected_roles.append(
-                        role_name
-                    )
-
-                else:
-
-                    missing_roles.append(
-                        role_name
-                    )
+        mapped = mapped_server_roles(
+            interaction.guild
+        )
 
         embed = discord.Embed(
-            title="⚙️ EHRP | SYSTEM • TEAM STATUS",
+            title=(
+                "⚙️ EHRP | SYSTEM • TEAM STATUS"
+            ),
             description=(
                 "## SYSTEM STATUS\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
@@ -1110,103 +1262,22 @@ class Team(commands.Cog):
                 f"{len(members) - absent}\n"
                 f"🏖️ **Abgemeldet:** "
                 f"{absent}\n\n"
-                f"🎭 **Teamrollen erkannt:** "
-                f"{len(detected_roles)} / "
-                f"{len(RANK_ENTRIES)}\n"
-                f"⚠️ **Fehlende Rollen:** "
-                f"{len(missing_roles)}\n\n"
+                f"🎭 **Serverrollen erkannt:** "
+                f"{len(mapped)}\n"
+                f"🏷️ **Nametag-Regeln:** "
+                f"{len(TEAM_RANKS)}\n\n"
                 "🔄 **Auto-Sync:** AKTIV\n"
                 "⏱️ **Intervall:** 5 Minuten\n"
                 "━━━━━━━━━━━━━━━━━━━━"
             ),
-            color=(
-                SUCCESS_COLOR
-                if members
-                else WARNING_COLOR
-            ),
-        )
-
-        if missing_roles:
-
-            embed.add_field(
-                name="⚠️ Nicht gefundene Rollen",
-                value="\n".join(
-                    f"• {role}"
-                    for role in missing_roles
-                )[:1024],
-                inline=False,
-            )
-
-        embed.set_footer(
-            text="EHRP | System • Team Management V4"
-        )
-
-        await interaction.response.send_message(
-            embed=embed,
-            ephemeral=True,
-        )
-
-
-    # ========================================================
-    # /team_debug
-    # ========================================================
-
-    @app_commands.command(
-        name="team_debug",
-        description=(
-            "Zeigt die erkannten echten Discord-Teamrollen."
-        ),
-    )
-    async def team_debug(
-        self,
-        interaction: discord.Interaction,
-    ):
-
-        if not await ensure_dev(
-            interaction
-        ):
-            return
-
-        detected_lines = []
-
-        for role in reversed(
-            interaction.guild.roles
-        ):
-
-            if role_is_ignored(
-                role.name
-            ):
-                continue
-
-            rank = match_known_rank(
-                role.name
-            )
-
-            if rank is None:
-                continue
-
-            detected_lines.append(
-                (
-                    f"`{role.name}`\n"
-                    f"↳ **{rank['prefix']} "
-                    f"{rank['role_name']}**"
-                )
-            )
-
-        embed = discord.Embed(
-            title="🔎 EHRP | TEAM DEBUG",
-            description=(
-                "\n\n".join(
-                    detected_lines
-                )[:4000]
-                if detected_lines
-                else "❌ Keine Teamrollen erkannt."
-            ),
-            color=SYSTEM_COLOR,
+            color=SUCCESS_COLOR,
         )
 
         embed.set_footer(
-            text="EHRP | System • Role Detection V4"
+            text=(
+                "EHRP | System • "
+                "Team Management V5"
+            )
         )
 
         await interaction.response.send_message(
@@ -1222,8 +1293,8 @@ class Team(commands.Cog):
     @app_commands.command(
         name="team_sync",
         description=(
-            "Synchronisiert Teamrollen, "
-            "Nicknames und Teamliste."
+            "Synchronisiert alle "
+            "Team-Nametags."
         ),
     )
     async def team_sync(
@@ -1234,37 +1305,30 @@ class Team(commands.Cog):
         if not await ensure_dev(
             interaction
         ):
+
             return
 
         await interaction.response.defer(
             ephemeral=True
         )
 
-        changed = await perform_full_sync(
+        changed = await full_sync(
             interaction.guild
         )
 
-        members = get_all_team_members(
+        members = all_team_members(
             interaction.guild
-        )
-
-        absent = sum(
-            1
-            for member in members
-            if member_is_absent(member)
         )
 
         await interaction.followup.send(
             (
-                "✅ **TEAM-SYNC ABGESCHLOSSEN**\n\n"
-                f"👥 Teammitglieder: "
+                "✅ **TEAM-SYNC FERTIG**\n\n"
+                f"👥 Teammitglieder erkannt: "
                 f"**{len(members)}**\n"
-                f"🟢 Aktiv: "
-                f"**{len(members) - absent}**\n"
-                f"🏖️ Abgemeldet: "
-                f"**{absent}**\n"
-                f"✏️ Nicknames geändert: "
-                f"**{changed}**"
+                f"✏️ Nametags geändert: "
+                f"**{changed}**\n\n"
+                "Nutze `/team_map`, "
+                "um Rolle → Nametag zu prüfen."
             ),
             ephemeral=True,
         )
@@ -1277,8 +1341,8 @@ class Team(commands.Cog):
     @app_commands.command(
         name="team_panel",
         description=(
-            "Erstellt die automatische Teamliste "
-            "im aktuellen Channel."
+            "Erstellt die automatische "
+            "Teamliste."
         ),
     )
     async def team_panel(
@@ -1289,6 +1353,7 @@ class Team(commands.Cog):
         if not await ensure_dev(
             interaction
         ):
+
             return
 
         if not isinstance(
@@ -1297,27 +1362,30 @@ class Team(commands.Cog):
         ):
 
             await interaction.response.send_message(
-                "❌ Bitte benutze den Befehl "
-                "in einem Textkanal.",
+                "❌ Bitte in einem "
+                "Textkanal benutzen.",
                 ephemeral=True,
             )
+
             return
 
         await interaction.response.defer(
             ephemeral=True
         )
 
-        old_message = await find_team_message(
-            interaction.guild
+        old_panel = (
+            await find_team_panel(
+                interaction.guild
+            )
         )
 
         if (
-            old_message
-            and old_message.channel.id
+            old_panel
+            and old_panel.channel.id
             == interaction.channel.id
         ):
 
-            await old_message.edit(
+            await old_panel.edit(
                 embed=build_team_embed(
                     interaction.guild
                 )
@@ -1330,24 +1398,28 @@ class Team(commands.Cog):
 
             return
 
-        new_message = await interaction.channel.send(
-            embed=build_team_embed(
-                interaction.guild
+        message = (
+            await interaction.channel.send(
+                embed=build_team_embed(
+                    interaction.guild
+                )
             )
         )
 
-        if old_message:
+        if old_panel:
 
             try:
-                await old_message.delete()
+
+                await old_panel.delete()
 
             except discord.HTTPException:
+
                 pass
 
         await interaction.followup.send(
             (
-                "✅ **Team-Panel erstellt**\n"
-                f"📍 {new_message.channel.mention}"
+                "✅ **Teamliste erstellt**\n"
+                f"📍 {message.channel.mention}"
             ),
             ephemeral=True,
         )
