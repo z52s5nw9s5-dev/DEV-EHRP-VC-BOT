@@ -17,7 +17,7 @@ from discord.ext import commands, tasks
 CONTROL_USER_ID = 1294267376459714621
 
 RP_CHANNEL_ID = 1529998957449707551
-BÜRGER_ROLE_ID = 1526957918128443533
+BUERGER_ROLE_ID = 1526957918128443533
 
 GERMAN_TIMEZONE = ZoneInfo("Europe/Berlin")
 
@@ -29,7 +29,6 @@ GERMAN_TIMEZONE = ZoneInfo("Europe/Berlin")
 START_COLOR = 0x57F287
 STOP_COLOR = 0xED4245
 SYSTEM_COLOR = 0x5865F2
-WARNING_COLOR = 0xFEE75C
 
 
 # ============================================================
@@ -44,14 +43,13 @@ BANNER_PATH = (
 
 
 # ============================================================
-# EINSTELLUNGEN
+# SETTINGS
 # ============================================================
 
 SETTINGS_PATH = (
     Path(__file__).resolve().parent.parent
     / "rp_settings.json"
 )
-
 
 DEFAULT_SETTINGS = {
     "auto_enabled": False,
@@ -112,7 +110,7 @@ def save_settings(settings):
 
 
 # ============================================================
-# DEUTSCHE ZEIT
+# ZEIT
 # ============================================================
 
 def german_now():
@@ -120,10 +118,6 @@ def german_now():
         GERMAN_TIMEZONE
     )
 
-
-# ============================================================
-# UHRZEIT PRÜFEN
-# ============================================================
 
 def parse_clock(value: str):
     try:
@@ -162,9 +156,7 @@ async def check_control_permission(
 # RP START EMBED
 # ============================================================
 
-def build_start_embed(
-    bot: commands.Bot,
-):
+def build_start_embed():
     now = german_now()
 
     embed = discord.Embed(
@@ -190,7 +182,7 @@ def build_start_embed(
 
     embed.set_footer(
         text=(
-            "EHRP | System • RP Control • "
+            "EHRP | System • RP Start • "
             f"{now.strftime('%H:%M')} Uhr"
         )
     )
@@ -202,21 +194,19 @@ def build_start_embed(
 # RP STOP EMBED
 # ============================================================
 
-def build_stop_embed(
-    bot: commands.Bot,
-):
+def build_stop_embed():
     now = german_now()
 
     embed = discord.Embed(
         title="🛑 RP STOP 🛑",
         description=(
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "🛑 **Das heutige Roleplay wurde beendet.**\n\n"
+            "🛑 **Das Roleplay wurde beendet.**\n\n"
             "🚫 **Der offizielle RP-Betrieb ist ab sofort geschlossen.**\n\n"
-            "🙏 **Vielen Dank an alle Bürger für das heutige RP.**\n\n"
+            "🙏 **Vielen Dank an alle Bürger für das heutige Roleplay.**\n\n"
             "🌙 **Wir wünschen euch noch einen schönen Abend.**\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
-            "⛔ **Bitte beendet eure laufenden RP-Situationen ordentlich.**\n\n"
+            "⛔ **Bitte beendet laufende RP-Situationen ordentlich.**\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             "**Euer EHRP/VC Serverteam**"
         ),
@@ -231,7 +221,7 @@ def build_stop_embed(
 
     embed.set_footer(
         text=(
-            "EHRP | System • RP Control • "
+            "EHRP | System • RP Stop • "
             f"{now.strftime('%H:%M')} Uhr"
         )
     )
@@ -243,9 +233,7 @@ def build_stop_embed(
 # STATUS EMBED
 # ============================================================
 
-def build_status_embed(
-    settings,
-):
+def build_status_embed(settings):
     rp_active = settings.get(
         "rp_active",
         False,
@@ -275,8 +263,7 @@ def build_status_embed(
             f"**Auto-Start:** "
             f"{'AN' if auto_enabled else 'AUS'}\n\n"
 
-            f"🕒 **Startzeit:** "
-            f"{auto_time} Uhr\n\n"
+            f"🕒 **Startzeit:** {auto_time} Uhr\n\n"
 
             "🇩🇪 **Zeitzone:** Deutschland\n\n"
 
@@ -297,19 +284,13 @@ def build_status_embed(
 
 
 # ============================================================
-# RP STARTEN
+# RP START SENDEN
 # ============================================================
 
 async def start_roleplay(
     bot: commands.Bot,
     settings,
 ):
-    if settings.get(
-        "rp_active",
-        False,
-    ):
-        return False
-
     channel = bot.get_channel(
         RP_CHANNEL_ID
     )
@@ -326,7 +307,7 @@ async def start_roleplay(
     guild = channel.guild
 
     citizen_role = guild.get_role(
-        BÜRGER_ROLE_ID
+        BUERGER_ROLE_ID
     )
 
     if citizen_role:
@@ -338,9 +319,7 @@ async def start_roleplay(
             "❤️ **Liebe Bürger**"
         )
 
-    embed = build_start_embed(
-        bot
-    )
+    embed = build_start_embed()
 
     allowed_mentions = discord.AllowedMentions(
         roles=True,
@@ -378,19 +357,13 @@ async def start_roleplay(
 
 
 # ============================================================
-# RP STOPPEN
+# RP STOP SENDEN
 # ============================================================
 
 async def stop_roleplay(
     bot: commands.Bot,
     settings,
 ):
-    if not settings.get(
-        "rp_active",
-        False,
-    ):
-        return False
-
     channel = bot.get_channel(
         RP_CHANNEL_ID
     )
@@ -407,7 +380,7 @@ async def stop_roleplay(
     guild = channel.guild
 
     citizen_role = guild.get_role(
-        BÜRGER_ROLE_ID
+        BUERGER_ROLE_ID
     )
 
     if citizen_role:
@@ -419,9 +392,7 @@ async def stop_roleplay(
             "🛑 **Liebe Bürger**"
         )
 
-    embed = build_stop_embed(
-        bot
-    )
+    embed = build_stop_embed()
 
     allowed_mentions = discord.AllowedMentions(
         roles=True,
@@ -484,7 +455,7 @@ class RPControl(
 
 
     # ========================================================
-    # AUTOMATISCHER START
+    # AUTO START
     # ========================================================
 
     @tasks.loop(
@@ -495,12 +466,6 @@ class RPControl(
     ):
         if not self.settings.get(
             "auto_enabled",
-            False,
-        ):
-            return
-
-        if self.settings.get(
-            "rp_active",
             False,
         ):
             return
@@ -583,7 +548,7 @@ class RPControl(
 
     @app_commands.command(
         name="rp_start",
-        description="Startet das Roleplay.",
+        description="Sendet den RP-Start.",
     )
     async def rp_start(
         self,
@@ -598,20 +563,20 @@ class RPControl(
             ephemeral=True
         )
 
-        started = await start_roleplay(
+        success = await start_roleplay(
             self.bot,
             self.settings,
         )
 
-        if not started:
+        if not success:
             await interaction.followup.send(
-                "⚠️ Das RP ist bereits gestartet.",
+                "❌ RP-Start konnte nicht gesendet werden.",
                 ephemeral=True,
             )
             return
 
         await interaction.followup.send(
-            "🟢 **RP wurde erfolgreich gestartet.**",
+            "🟢 **RP-Start wurde gesendet.**",
             ephemeral=True,
         )
 
@@ -622,7 +587,7 @@ class RPControl(
 
     @app_commands.command(
         name="rp_stop",
-        description="Beendet das Roleplay.",
+        description="Sendet den RP-Stop.",
     )
     async def rp_stop(
         self,
@@ -637,20 +602,20 @@ class RPControl(
             ephemeral=True
         )
 
-        stopped = await stop_roleplay(
+        success = await stop_roleplay(
             self.bot,
             self.settings,
         )
 
-        if not stopped:
+        if not success:
             await interaction.followup.send(
-                "⚠️ Das RP ist bereits beendet.",
+                "❌ RP-Stop konnte nicht gesendet werden.",
                 ephemeral=True,
             )
             return
 
         await interaction.followup.send(
-            "🛑 **RP wurde erfolgreich beendet.**",
+            "🛑 **RP-Stop wurde gesendet.**",
             ephemeral=True,
         )
 
@@ -682,7 +647,7 @@ class RPControl(
 
         if parsed is None:
             await interaction.response.send_message(
-                "❌ Bitte benutze das Format **HH:MM**, z.B. `18:30`.",
+                "❌ Bitte Format **HH:MM** benutzen, z.B. `18:30`.",
                 ephemeral=True,
             )
             return
@@ -701,9 +666,9 @@ class RPControl(
 
         await interaction.response.send_message(
             (
-                "✅ Automatische RP-Startzeit geändert.\n\n"
-                f"🕒 **Neue Uhrzeit:** {parsed} Uhr\n"
-                "🇩🇪 **Zeitzone:** Deutschland"
+                "✅ **RP-Startzeit geändert.**\n\n"
+                f"🕒 **{parsed} Uhr**\n"
+                "🇩🇪 Deutsche Zeit"
             ),
             ephemeral=True,
         )
@@ -736,8 +701,8 @@ class RPControl(
 
         await interaction.response.send_message(
             (
-                "🟢 **Automatischer RP-Start aktiviert.**\n\n"
-                f"🕒 Start: **{self.settings['auto_time']} Uhr**\n"
+                "🟢 **Auto-RP aktiviert.**\n\n"
+                f"🕒 Startzeit: **{self.settings['auto_time']} Uhr**\n"
                 "🇩🇪 Deutsche Zeit"
             ),
             ephemeral=True,
