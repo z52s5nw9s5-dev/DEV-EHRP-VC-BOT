@@ -4,11 +4,11 @@ import os
 import discord
 from discord.ext import commands
 
-from health_server import keep_alive
+from health_server import start_health_server
 
 
 # ============================================================
-# BOT CONFIG
+# TOKEN
 # ============================================================
 
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -27,8 +27,8 @@ intents = discord.Intents.default()
 
 intents.guilds = True
 intents.members = True
-intents.message_content = True
 intents.messages = True
+intents.message_content = True
 
 
 # ============================================================
@@ -38,22 +38,24 @@ intents.messages = True
 class EHRPBot(commands.Bot):
 
     def __init__(self):
+
         super().__init__(
             command_prefix="!",
             intents=intents,
         )
 
 
+    # ========================================================
+    # SETUP
+    # ========================================================
+
     async def setup_hook(self):
 
+        print("")
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        print("🚀 EHRP | System startet …")
+        print("🚀 EHRP | SYSTEM STARTET")
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
-
-        # ====================================================
-        # COGS
-        # ====================================================
 
         extensions = [
             "cogs.recovery",
@@ -82,7 +84,7 @@ class EHRPBot(commands.Bot):
             except Exception as error:
 
                 print(
-                    f"❌ Fehler beim Laden von {extension}"
+                    f"❌ Fehler bei: {extension}"
                 )
 
                 print(
@@ -91,13 +93,14 @@ class EHRPBot(commands.Bot):
 
 
         # ====================================================
-        # SLASH COMMAND SYNC
+        # SLASH COMMANDS
         # ====================================================
 
         try:
 
             synced = await self.tree.sync()
 
+            print("")
             print(
                 f"✅ Slash Commands synchronisiert: {len(synced)}"
             )
@@ -110,25 +113,31 @@ class EHRPBot(commands.Bot):
 
         except Exception as error:
 
+            print("")
             print(
-                "❌ Slash Commands konnten nicht "
-                "synchronisiert werden:"
+                "❌ Slash Commands konnten nicht synchronisiert werden."
             )
 
             print(
-                f"   {type(error).__name__}: {error}"
+                f"{type(error).__name__}: {error}"
             )
 
 
+        print("")
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        print("✅ Setup abgeschlossen")
+        print("✅ SETUP ABGESCHLOSSEN")
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
+
+    # ========================================================
+    # READY
+    # ========================================================
 
     async def on_ready(self):
 
         if self.user is None:
             return
+
 
         print("")
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -147,7 +156,7 @@ class EHRPBot(commands.Bot):
 
 
         # ====================================================
-        # STATUS
+        # BOT STATUS
         # ====================================================
 
         try:
@@ -169,6 +178,10 @@ class EHRPBot(commands.Bot):
             )
 
 
+    # ========================================================
+    # GLOBAL EVENT ERROR
+    # ========================================================
+
     async def on_error(
         self,
         event_method,
@@ -177,21 +190,30 @@ class EHRPBot(commands.Bot):
     ):
 
         print(
-            f"❌ Unbehandelter Fehler bei Event: {event_method}"
+            f"❌ Fehler bei Discord Event: {event_method}"
         )
 
 
 # ============================================================
-# START BOT
+# CREATE BOT
 # ============================================================
 
 bot = EHRPBot()
 
 
+# ============================================================
+# MAIN
+# ============================================================
+
 async def main():
 
-    # Render Health Server
-    keep_alive()
+    # Render Health Server starten
+    start_health_server()
+
+    print(
+        "🟢 Health Server gestartet."
+    )
+
 
     try:
 
@@ -201,26 +223,28 @@ async def main():
                 TOKEN
             )
 
+
     except discord.LoginFailure:
 
+        print("")
+        print("❌ Discord Login fehlgeschlagen.")
         print(
-            "❌ Discord Login fehlgeschlagen."
+            "Prüfe DISCORD_TOKEN in den Render Environment Variables."
         )
 
-        print(
-            "Bitte DISCORD_TOKEN auf Render prüfen."
-        )
 
     except KeyboardInterrupt:
 
         print(
-            "🛑 Bot wurde gestoppt."
+            "🛑 Bot wurde beendet."
         )
+
 
     except Exception as error:
 
+        print("")
         print(
-            "❌ Kritischer Bot-Fehler:"
+            "❌ KRITISCHER BOT-FEHLER"
         )
 
         print(
