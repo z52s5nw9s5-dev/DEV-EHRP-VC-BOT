@@ -17,8 +17,6 @@ from discord.ext import commands, tasks
 
 CONTROL_USER_ID = 1294267376459714621
 
-FOUNDER_ROLE_ID = 1526952807838646334
-
 RP_CHANNEL_ID = 1529998957449707551
 
 BUERGER_ROLE_ID = 1526957918128443533
@@ -35,6 +33,21 @@ SYSTEM_COLOR = 0x5865F2
 SUCCESS_COLOR = 0x57F287
 ERROR_COLOR = 0xED4245
 WARNING_COLOR = 0xFEE75C
+
+
+# ============================================================
+# KERNTEAM ODER HÖHER
+# ============================================================
+
+RP_CONTROL_ROLE_IDS = {
+    1526952807838646334,  # Founder
+    1526952825169510473,  # Co-Founder
+    1526952877585596570,  # Obervorstand
+    1526952894891556864,  # Vorstand
+    1536099715412926584,  # Sachbearbeiter
+    1526952911651995649,  # Verwaltungsleitung
+    1526953865768075435,  # Hauptverwaltung
+}
 
 
 # ============================================================
@@ -158,26 +171,19 @@ def can_control_rp(
     if interaction.guild is None:
         return False
 
-    # Du persönlich
     if interaction.user.id == CONTROL_USER_ID:
         return True
 
-    # Founder-Rolle
-    if isinstance(
+    if not isinstance(
         interaction.user,
         discord.Member,
     ):
-        founder_role = interaction.guild.get_role(
-            FOUNDER_ROLE_ID
-        )
+        return False
 
-        if (
-            founder_role is not None
-            and founder_role in interaction.user.roles
-        ):
-            return True
-
-    return False
+    return any(
+        role.id in RP_CONTROL_ROLE_IDS
+        for role in interaction.user.roles
+    )
 
 
 async def check_control_access(
@@ -189,8 +195,7 @@ async def check_control_access(
 
     message = (
         "❌ Du darfst die RP-Steuerung nicht benutzen.\n"
-        "Diese Funktion ist nur für die zuständige Leitung "
-        "und Founder freigeschaltet."
+        "Diese Funktion ist nur für das **Kernteam oder höher** freigeschaltet."
     )
 
     if interaction.response.is_done():
@@ -198,7 +203,6 @@ async def check_control_access(
             message,
             ephemeral=True,
         )
-
     else:
         await interaction.response.send_message(
             message,
@@ -229,11 +233,10 @@ def get_banner_file():
 
 
 # ============================================================
-# RP START EMBED
+# EMBEDS
 # ============================================================
 
 def build_start_embed() -> discord.Embed:
-
     embed = discord.Embed(
         description=RP_START_TEXT,
         color=SUCCESS_COLOR,
@@ -258,12 +261,7 @@ def build_start_embed() -> discord.Embed:
     return embed
 
 
-# ============================================================
-# RP STOP EMBED
-# ============================================================
-
 def build_stop_embed() -> discord.Embed:
-
     embed = discord.Embed(
         description=RP_STOP_TEXT,
         color=ERROR_COLOR,
@@ -292,47 +290,37 @@ def build_stop_embed() -> discord.Embed:
 # COG
 # ============================================================
 
-class RPControl(
-    commands.Cog,
-):
+class RPControl(commands.Cog):
 
     def __init__(
         self,
         bot: commands.Bot,
     ):
-
         self.bot = bot
         self.settings = load_settings()
 
         self.auto_rp_loop.start()
 
 
-    def cog_unload(
-        self,
-    ):
+    def cog_unload(self):
         self.auto_rp_loop.cancel()
 
 
     # ========================================================
-    # GET RP CHANNEL
+    # CHANNEL
     # ========================================================
 
-    def get_rp_channel(
-        self,
-    ):
-
+    def get_rp_channel(self):
         return self.bot.get_channel(
             RP_CHANNEL_ID
         )
 
 
     # ========================================================
-    # SEND RP START
+    # SEND START
     # ========================================================
 
-    async def send_rp_start(
-        self,
-    ):
+    async def send_rp_start(self):
 
         channel = self.get_rp_channel()
 
@@ -346,7 +334,6 @@ class RPControl(
 
         embed = build_start_embed()
 
-        # Zusätzlicher RP-Start-Ping
         ping_content = (
             f"<@&{RP_START_PING_ROLE_ID}>"
         )
@@ -383,12 +370,10 @@ class RPControl(
 
 
     # ========================================================
-    # SEND RP STOP
+    # SEND STOP
     # ========================================================
 
-    async def send_rp_stop(
-        self,
-    ):
+    async def send_rp_stop(self):
 
         channel = self.get_rp_channel()
 
@@ -463,10 +448,7 @@ class RPControl(
             )
 
             await interaction.followup.send(
-                (
-                    "❌ Der RP-Start konnte nicht "
-                    "gesendet werden."
-                ),
+                "❌ Der RP-Start konnte nicht gesendet werden.",
                 ephemeral=True,
             )
 
@@ -512,10 +494,7 @@ class RPControl(
             )
 
             await interaction.followup.send(
-                (
-                    "❌ Der RP-Stop konnte nicht "
-                    "gesendet werden."
-                ),
+                "❌ Der RP-Stop konnte nicht gesendet werden.",
                 ephemeral=True,
             )
 
@@ -571,7 +550,6 @@ class RPControl(
         if rp_active:
             rp_text = "🟢 RP läuft"
             color = SUCCESS_COLOR
-
         else:
             rp_text = "🔴 RP geschlossen"
             color = ERROR_COLOR
@@ -581,7 +559,6 @@ class RPControl(
                 "🟢 Aktiv\n"
                 f"⏰ {auto_hour:02d}:{auto_minute:02d} Uhr"
             )
-
         else:
             auto_text = "🔴 Deaktiviert"
 
@@ -637,18 +614,12 @@ class RPControl(
 
         self.settings[
             "auto_hour"
-        ] = int(
-            stunde
-        )
+        ] = int(stunde)
 
         self.settings[
             "auto_minute"
-        ] = int(
-            minute
-        )
+        ] = int(minute)
 
-        # Neue Uhrzeit darf am selben Tag
-        # wieder einen Auto-Start auslösen
         self.settings[
             "last_auto_start_date"
         ] = None
@@ -754,9 +725,7 @@ class RPControl(
     @tasks.loop(
         seconds=20
     )
-    async def auto_rp_loop(
-        self,
-    ):
+    async def auto_rp_loop(self):
 
         if not self.settings.get(
             "auto_enabled",
@@ -792,12 +761,10 @@ class RPControl(
         ):
             return
 
-        # Nur einmal pro Tag automatisch starten
         if last_start == today:
             return
 
         try:
-
             await self.send_rp_start()
 
             self.settings[
@@ -814,7 +781,6 @@ class RPControl(
             )
 
         except Exception as error:
-
             print(
                 "❌ Automatischer RP-Start Fehler: "
                 f"{error}"
@@ -822,15 +788,11 @@ class RPControl(
 
 
     @auto_rp_loop.before_loop
-    async def before_auto_rp_loop(
-        self,
-    ):
+    async def before_auto_rp_loop(self):
 
         await self.bot.wait_until_ready()
 
-        await asyncio.sleep(
-            3
-        )
+        await asyncio.sleep(3)
 
 
 # ============================================================
@@ -840,7 +802,6 @@ class RPControl(
 async def setup(
     bot: commands.Bot,
 ):
-
     await bot.add_cog(
         RPControl(bot)
     )
