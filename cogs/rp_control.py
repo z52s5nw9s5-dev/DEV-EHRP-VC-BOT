@@ -44,18 +44,6 @@ BANNER_PATH = (
 
 
 # ============================================================
-# SERVER DATEN
-# ============================================================
-
-JOIN_CODE = "a3pu7mbc"
-
-ROBLOX_JOIN_URL = (
-    "https://www.roblox.com/share?"
-    "v=v2&code=5ihdm3h6q1r232"
-)
-
-
-# ============================================================
 # SETTINGS
 # ============================================================
 
@@ -71,6 +59,10 @@ DEFAULT_SETTINGS = {
     "last_auto_start": None,
 }
 
+
+# ============================================================
+# SETTINGS LADEN
+# ============================================================
 
 def load_settings():
     settings = DEFAULT_SETTINGS.copy()
@@ -94,6 +86,10 @@ def load_settings():
 
     return settings
 
+
+# ============================================================
+# SETTINGS SPEICHERN
+# ============================================================
 
 def save_settings(settings):
     try:
@@ -158,44 +154,38 @@ async def check_control_permission(
 
 
 # ============================================================
-# RP START DESIGN
+# RP START EMBED
 # ============================================================
 
 def build_start_embed():
     now = german_now()
 
     embed = discord.Embed(
-        title="🟢 EHRP/VC – RP START",
         description=(
-            "### Der RP-Server ist jetzt geöffnet!\n\n"
+            "**EHRP/VC – RP START**\n"
+            "Der RP-Server ist jetzt geöffnet!\n\n"
 
-            "Es ist soweit – **EHRP/VC startet jetzt offiziell.** "
+            "Es ist soweit – EHRP/VC startet jetzt offiziell. "
             "Alle Einsatzkräfte, Zivilisten und Fraktionen können "
             "ab sofort beitreten und gemeinsam realistisches sowie "
             "hochwertiges Roleplay erleben.\n\n"
 
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Server beitreten:\n"
+            "Join Code: a3pu7mbc\n\n"
 
-            "### 🎮 Server beitreten\n"
-            f"**Join Code:** `{JOIN_CODE}`\n\n"
+            "Direkter Roblox-Join:\n"
+            "https://www.roblox.com/share?v=v2&code=5ihdm3h6q1r232\n\n"
 
-            "### 🔗 Direkter Roblox-Join\n"
-            f"{ROBLOX_JOIN_URL}\n\n"
+            "Wir erwarten von allen Spielern:\n"
+            "Realistisches und faires Roleplay\n"
+            "Einhaltung des Regelwerks\n"
+            "Respektvollen Umgang miteinander\n"
+            "Spaß am gemeinsamen RP\n\n"
 
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Wir freuen uns auf jeden einzelnen von euch und wünschen "
+            "allen einen erfolgreichen Start auf EHRP/VC.\n\n"
 
-            "### 📋 Wir erwarten von allen Spielern:\n"
-            "• Realistisches und faires Roleplay\n"
-            "• Einhaltung des Regelwerks\n"
-            "• Respektvollen Umgang miteinander\n"
-            "• Spaß am gemeinsamen RP\n\n"
-
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
-
-            "Wir freuen uns auf jeden einzelnen von euch und "
-            "wünschen allen einen erfolgreichen Start auf **EHRP/VC**.\n\n"
-
-            "**Das EHRP/VC-Team**"
+            "Das EHRP/VC-Team"
         ),
         color=START_COLOR,
         timestamp=now,
@@ -206,44 +196,37 @@ def build_start_embed():
             url="attachment://ehrp_banner.jpeg"
         )
 
-    embed.set_footer(
-        text=(
-            "EHRP | SYSTEM • RP START • "
-            f"{now.strftime('%H:%M')} Uhr"
-        )
-    )
-
     return embed
 
 
 # ============================================================
-# RP STOP DESIGN
+# RP STOP EMBED
 # ============================================================
 
 def build_stop_embed():
     now = german_now()
 
     embed = discord.Embed(
-        title="🛑 EHRP/VC – RP STOP",
         description=(
-            "### Der RP-Server wurde geschlossen.\n\n"
+            "**EHRP/VC – RP STOP**\n"
+            "Der RP-Server wurde geschlossen.\n\n"
 
             "Das heutige Roleplay ist beendet. Vielen Dank an alle "
             "Spieler, die dabei waren und zu einem gelungenen RP "
             "beigetragen haben.\n\n"
 
             "Wir hoffen, ihr hattet Spaß und seid beim nächsten "
-            "**RP-Start** wieder mit dabei.\n\n"
+            "RP-Start wieder mit dabei.\n\n"
 
             "Bleibt gerne auf dem Discord-Server, um keine "
             "Ankündigungen, Updates oder den nächsten RP-Start "
             "zu verpassen.\n\n"
 
-            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Vielen Dank für eure Teilnahme!\n\n"
 
-            "🙏 **Vielen Dank für eure Teilnahme!**\n\n"
+            "Euer EHRP/VC-Team\n\n"
 
-            "**Euer EHRP/VC-Team**"
+            "||Ping: <@&1526957918128443533>||"
         ),
         color=STOP_COLOR,
         timestamp=now,
@@ -254,18 +237,11 @@ def build_stop_embed():
             url="attachment://ehrp_banner.jpeg"
         )
 
-    embed.set_footer(
-        text=(
-            "EHRP | SYSTEM • RP STOP • "
-            f"{now.strftime('%H:%M')} Uhr"
-        )
-    )
-
     return embed
 
 
 # ============================================================
-# STATUS
+# STATUS EMBED
 # ============================================================
 
 def build_status_embed(settings):
@@ -299,6 +275,7 @@ def build_status_embed(settings):
             f"{'AN' if auto_enabled else 'AUS'}\n\n"
 
             f"🕒 **Startzeit:** {auto_time} Uhr\n\n"
+
             "🇩🇪 **Zeitzone:** Deutschland\n\n"
 
             "━━━━━━━━━━━━━━━━━━━━"
@@ -333,7 +310,9 @@ async def start_roleplay(
         channel,
         discord.TextChannel,
     ):
-        print("❌ RP Channel nicht gefunden.")
+        print(
+            "❌ RP Channel nicht gefunden."
+        )
         return False
 
     guild = channel.guild
@@ -350,16 +329,16 @@ async def start_roleplay(
 
     if citizen_role:
         lines.append(
-            f"❤️ Liebe {citizen_role.mention}"
+            citizen_role.mention
         )
     else:
         lines.append(
-            "❤️ Liebe Bürgerschaft"
+            "<@&1526957918128443533>"
         )
 
     if rp_start_role:
         lines.append(
-            f"🔔 {rp_start_role.mention}"
+            rp_start_role.mention
         )
 
     ping_text = "\n".join(
@@ -419,23 +398,10 @@ async def stop_roleplay(
         channel,
         discord.TextChannel,
     ):
-        print("❌ RP Channel nicht gefunden.")
+        print(
+            "❌ RP Channel nicht gefunden."
+        )
         return False
-
-    guild = channel.guild
-
-    citizen_role = guild.get_role(
-        BUERGER_ROLE_ID
-    )
-
-    if citizen_role:
-        ping_text = (
-            f"🛑 Liebe {citizen_role.mention}"
-        )
-    else:
-        ping_text = (
-            "🛑 Liebe Bürgerschaft"
-        )
 
     embed = build_stop_embed()
 
@@ -452,7 +418,6 @@ async def stop_roleplay(
         )
 
         await channel.send(
-            content=ping_text,
             embed=embed,
             file=file,
             allowed_mentions=allowed_mentions,
@@ -460,7 +425,6 @@ async def stop_roleplay(
 
     else:
         await channel.send(
-            content=ping_text,
             embed=embed,
             allowed_mentions=allowed_mentions,
         )
@@ -487,7 +451,9 @@ class RPControl(
         bot: commands.Bot,
     ):
         self.bot = bot
+
         self.settings = load_settings()
+
         self.auto_start_loop.start()
 
 
@@ -520,7 +486,11 @@ class RPControl(
             "18:00",
         )
 
-        if now.strftime("%H:%M") != target_time:
+        current_time = now.strftime(
+            "%H:%M"
+        )
+
+        if current_time != target_time:
             return
 
         today = now.strftime(
@@ -547,6 +517,10 @@ class RPControl(
 
             save_settings(
                 self.settings
+            )
+
+            print(
+                f"✅ Automatischer RP-Start um {target_time} Uhr"
             )
 
 
