@@ -722,6 +722,10 @@ class ApplicationPanelView(discord.ui.View):
 # REQUIREMENTS CONFIRMATION
 # ============================================================
 
+# ============================================================
+# REQUIREMENTS CONFIRMATION
+# ============================================================
+
 class RequirementsView(discord.ui.View):
 
     def __init__(self):
@@ -756,6 +760,10 @@ class RequirementsView(discord.ui.View):
             "requirements_confirmed"
         ] = True
 
+        session[
+            "current_question"
+        ] = 0
+
         set_session(
             interaction.user.id,
             session,
@@ -768,6 +776,360 @@ class RequirementsView(discord.ui.View):
             view=QuestionView(),
         )
 
+
+# ============================================================
+# QUESTION EMBED
+# ============================================================
+
+def build_question_embed(
+    user_id: int,
+) -> discord.Embed:
+
+    session = get_session(
+        user_id
+    )
+
+    if not session:
+        return discord.Embed(
+            title="❌ Sitzung nicht gefunden",
+            description=(
+                "Ihre Bewerbungssitzung ist nicht mehr verfügbar."
+            ),
+            color=ERROR_COLOR,
+        )
+
+    index = int(
+        session.get(
+            "current_question",
+            0,
+        )
+    )
+
+    question = QUESTIONS[
+        index
+    ]
+
+    progress = int(
+        (
+            index
+            / len(QUESTIONS)
+        )
+        * 100
+    )
+
+    progress_bar_length = 10
+
+    filled = round(
+        progress
+        / 100
+        * progress_bar_length
+    )
+
+    progress_bar = (
+        "🟩" * filled
+        + "⬜" * (
+            progress_bar_length
+            - filled
+        )
+    )
+
+    embed = discord.Embed(
+        title="📨 EHRP/VC • TEAMBEWERBUNG",
+        description=(
+            f"# Frage {index + 1} von {len(QUESTIONS)}\n\n"
+
+            f"## {question['category']}\n\n"
+
+            f"### {question['title']}\n\n"
+
+            "Bitte beantworten Sie die Frage vollständig und ehrlich.\n\n"
+
+            "Klicken Sie auf **Weiter**, um Ihre Antwort einzugeben."
+        ),
+        color=SYSTEM_COLOR,
+    )
+
+    embed.add_field(
+        name="📊 Fortschritt",
+        value=(
+            f"{progress_bar}\n"
+            f"**{progress}% abgeschlossen**"
+        ),
+        inline=False,
+    )
+
+    embed.set_footer(
+        text=(
+            "EHRP/VC | Recruitment System • "
+            f"Frage {index + 1}/{len(QUESTIONS)}"
+        )
+    )
+
+    return embed
+
+
+# ============================================================
+# ANSWER MODAL
+# ============================================================
+
+class AnswerModal(discord.ui.Modal):
+
+    def __init__(
+        self,
+        user_id: int,
+    ):
+
+        session = get_session(
+            user_id
+        )
+
+        if not session:
+            raise RuntimeError(
+                "Bewerbungssitzung nicht gefunden."
+            )
+
+        index = int(
+            session[
+                "current_question"
+            ]
+        )
+
+        self.question_index = (
+            index
+        )
+
+        question = QUESTIONS[
+            index
+        ]
+
+        super().__init__(
+            title=(
+                f"Frage {index + 1} "
+                f"von {len(QUESTIONS)}"
+            )
+        )
+
+        if question[
+            "long"
+        ]:
+            style = (
+                discord.TextStyle.paragraph
+            )
+        else:
+            style = (
+                discord.TextStyle.short
+            )
+
+        self.answer_input = (
+            discord.ui.TextInput(
+                label=(
+                    question[
+                        "title"
+                    ][:45]
+                ),
+                placeholder=(
+                    question[
+                        "placeholder"
+                    ][:100]
+                ),
+                style=style,
+                required=True,
+                min_length=(
+                    question[
+                        "min_length"
+                    ]
+                ),
+                max_length=(
+                    question[
+                        "max_length"
+                    ]
+                ),
+            )
+        )
+
+        self.add_item(
+            self.answer_input
+        )
+
+
+    async def on_submit(
+        self,
+        interaction: discord.Interaction,
+    ):
+
+        session = get_session(
+            interaction.user.id
+        )
+
+        if not session:
+
+            await interaction.response.send_message(
+                "❌ Ihre Bewerbungssitzung wurde nicht gefunden.",
+                ephemeral=True,
+            )
+
+            return
+
+
+        question = QUESTIONS[
+            self.question_index
+        ]
+
+        answer = str(
+            self.answer_input.value
+        ).strip()
+
+
+        # ====================================================
+        # AGE CHECK
+        # ====================================================
+
+        if question.get(
+            "type"
+        ) == "age":
+
+            try:
+
+                age = int(
+                    answer
+                )
+
+            except ValueError:
+
+                await interaction.response.send_message(
+                    "❌ Bitte geben Sie Ihr Alter ausschließlich als Zahl an.",
+                    ephemeral=True,
+                )
+
+                return
+
+
+            if age < 13:
+
+                remove_session(
+                    interaction.user.id
+                )
+
+                await interaction.response.send_message(
+                    (
+                        "# ❌ Bewerbung beendet\n\n"
+
+                        "Leider erfüllen Sie aktuell nicht die "
+                        "Mindestvoraussetzungen für eine Bewerbung "
+                        "bei **EHRP/VC**.\n\n"
+
+                        "Das Mindestalter beträgt **13 Jahre**."
+                    ),
+                    ephemeral=True,
+                )
+
+                return
+
+
+        # ====================================================
+        # SAVE ANSWER
+        # ====================================================
+
+        session[
+            "answers"
+        ][
+            str(
+                self.question_index
+            )
+        ] = answer
+
+
+        # ====================================================
+        # LAST QUESTION?
+        # ====================================================
+
+        if (
+            self.question_index
+            >= len(QUESTIONS) - 1
+        ):
+
+            set_session(
+                interaction.user.id,
+                session,
+            )
+
+            await interaction.response.edit_message(
+                embed=build_final_review_embed(
+                    interaction.user.id
+                ),
+                view=FinalReviewView(),
+            )
+
+            return
+
+
+        # ====================================================
+        # AUTOMATICALLY GO TO NEXT QUESTION
+        # ====================================================
+
+        session[
+            "current_question"
+        ] = (
+            self.question_index
+            + 1
+        )
+
+        set_session(
+            interaction.user.id,
+            session,
+        )
+
+        await interaction.response.edit_message(
+            embed=build_question_embed(
+                interaction.user.id
+            ),
+            view=QuestionView(),
+        )
+
+
+# ============================================================
+# QUESTION VIEW
+# ============================================================
+
+class QuestionView(discord.ui.View):
+
+    def __init__(self):
+
+        super().__init__(
+            timeout=1800
+        )
+
+
+    @discord.ui.button(
+        label="Weiter",
+        emoji="➡️",
+        style=discord.ButtonStyle.primary,
+    )
+    async def continue_application(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button,
+    ):
+
+        session = get_session(
+            interaction.user.id
+        )
+
+        if not session:
+
+            await interaction.response.send_message(
+                "❌ Ihre Bewerbungssitzung wurde nicht gefunden.",
+                ephemeral=True,
+            )
+
+            return
+
+
+        await interaction.response.send_modal(
+            AnswerModal(
+                interaction.user.id
+            )
+        )
 
 # ============================================================
 # QUESTION EMBED
