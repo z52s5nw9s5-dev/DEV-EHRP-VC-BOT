@@ -38,136 +38,192 @@ ABGEMELDET_SUFFIX = " (Abgemeldet)"
 # ============================================================
 
 TEAM_RANKS = [
+
+    # ========================================================
+    # LEADEREBENE
+    # ========================================================
+
     {
         "name": "Founder",
         "role_id": 1526952807838646334,
         "tag": "[FD]",
     },
+
     {
-        "name": "Co-Founder",
+        "name": "Co. Founder",
         "role_id": 1526952825169510473,
         "tag": "[Co. FD]",
     },
+
+
+    # ========================================================
+    # KERNTEAM
+    # ========================================================
+
     {
         "name": "Obervorstand",
         "role_id": 1526952877585596570,
         "tag": "[OVS]",
     },
+
     {
         "name": "Vorstand",
         "role_id": 1526952894891556864,
         "tag": "[VS]",
     },
+
     {
         "name": "Sachbearbeiter",
         "role_id": 1536099715412926584,
         "tag": "[SB]",
     },
+
     {
         "name": "Verwaltungsleitung",
         "role_id": 1526952911651995649,
         "tag": "[VL]",
     },
+
     {
         "name": "Hauptverwaltung",
         "role_id": 1526953865768075435,
         "tag": "[HV]",
     },
+
+
+    # ========================================================
+    # KERNTEAMVERWALTUNG
+    # ========================================================
+
     {
         "name": "Archivleitung",
         "role_id": 1536100042354462802,
         "tag": "[AL]",
     },
+
     {
         "name": "Gesamtkoordinator",
         "role_id": 1532505961292501084,
         "tag": "[GT. K]",
     },
+
     {
         "name": "Teamkoordinator",
         "role_id": 1526955267416133653,
-        "tag": "[T. K]",
+        "tag": "[TK]",
     },
+
     {
         "name": "Jr. Teamkoordinator",
         "role_id": 1526955292514980003,
-        "tag": "[Jr. T. K]",
+        "tag": "[Jr. TK]",
     },
+
     {
         "name": "Head of Management",
         "role_id": 1532506490852737104,
         "tag": "[HoM]",
     },
+
     {
         "name": "Sr. Management",
         "role_id": 1532506146898706604,
         "tag": "[Sr. MA]",
     },
+
     {
         "name": "Manager",
         "role_id": 1526953952199839935,
         "tag": "[MA]",
     },
+
     {
         "name": "Stv. Manager",
         "role_id": 1526953970294063194,
         "tag": "[Stv. MA]",
     },
+
+
+    # ========================================================
+    # ADMINEBENE
+    # ========================================================
+
     {
-        "name": "Admin-Koordinator",
+        "name": "Admin Koordinator",
         "role_id": 1532520713657909278,
-        "tag": "[AK]",
+        "tag": "[ADK]",
     },
+
     {
-        "name": "Systemadministrator",
+        "name": "Systemadmin",
         "role_id": 1526956576701677589,
-        "tag": "[SYS. A]",
+        "tag": "[SAD]",
     },
+
     {
-        "name": "Administrator",
+        "name": "Admin",
         "role_id": 1526956609048416429,
         "tag": "[AD]",
     },
+
     {
-        "name": "Jr. Administrator",
+        "name": "Jr. Admin",
         "role_id": 1526956627704549408,
         "tag": "[Jr. AD]",
     },
+
+
+    # ========================================================
+    # MODERATOREBENE
+    # ========================================================
+
     {
-        "name": "Mod-Koordinator",
+        "name": "Mod Koordinator",
         "role_id": 1526956664253579294,
         "tag": "[MOD. K]",
     },
+
     {
-        "name": "Moderations-Spezialist",
+        "name": "Mod Spezialist",
         "role_id": 1526956700836429944,
         "tag": "[MOD. S]",
     },
+
     {
-        "name": "Moderator",
+        "name": "Mod",
         "role_id": 1526956724089524386,
         "tag": "[MOD]",
     },
+
     {
-        "name": "Jr. Moderator",
+        "name": "Jr. Mod",
         "role_id": 1532504668859662376,
         "tag": "[Jr. MOD]",
     },
+
+
+    # ========================================================
+    # SUPPORTEREBENE
+    # ========================================================
+
     {
-        "name": "Sup-Koordinator",
+        "name": "Supporter Koordinator",
         "role_id": 1532504388503994568,
         "tag": "[SUP. K]",
     },
+
     {
-        "name": "Support-Spezialist",
+        "name": "Supporter Spezialist",
         "role_id": 1526956760303140924,
         "tag": "[SUP. S]",
     },
+
     {
         "name": "Supporter",
         "role_id": 1526956795590086747,
         "tag": "[SUP]",
     },
+
     {
         "name": "Az. Supporter",
         "role_id": 1526956832822919331,
@@ -183,10 +239,27 @@ TEAM_ROLE_IDS = {
 
 
 # ============================================================
+# ALTE TAGS
+# Damit alte Nicknames sauber ersetzt werden
+# ============================================================
+
+OLD_TEAM_TAGS = [
+
+    "[T. K]",
+    "[Jr. T. K]",
+    "[AK]",
+    "[A. K]",
+    "[SYS. A]",
+
+]
+
+
+# ============================================================
 # DEUTSCHE MONATE
 # ============================================================
 
 GERMAN_MONTHS = {
+
     "januar": 1,
     "februar": 2,
     "märz": 3,
@@ -200,39 +273,46 @@ GERMAN_MONTHS = {
     "oktober": 10,
     "november": 11,
     "dezember": 12,
+
 }
 
 
 # ============================================================
 # AKTIVE / GEPLANTE ABMELDUNGEN
-# user_id: {"start": datetime, "end": datetime}
 # ============================================================
 
 ABSENCES = {}
 
 
 # ============================================================
-# TEAM HELPER
+# TEAM RANG FINDEN
 # ============================================================
 
 def get_team_rank(
     member: discord.Member,
 ):
+
     member_role_ids = {
         role.id
         for role in member.roles
     }
 
     for rank in TEAM_RANKS:
+
         if rank["role_id"] in member_role_ids:
             return rank
 
     return None
 
 
+# ============================================================
+# ABMELDUNG SUFFIX ENTFERNEN
+# ============================================================
+
 def remove_absence_suffix(
     nickname: str,
 ):
+
     cleaned = nickname.strip()
 
     cleaned = re.sub(
@@ -252,14 +332,21 @@ def remove_absence_suffix(
     return cleaned.strip()
 
 
+# ============================================================
+# ALTE TEAM TAGS ENTFERNEN
+# ============================================================
+
 def remove_old_team_tag(
     nickname: str,
 ):
+
     cleaned = remove_absence_suffix(
         nickname
     )
 
+    # Aktuelle Tags
     for rank in TEAM_RANKS:
+
         tag = re.escape(
             rank["tag"]
         )
@@ -271,20 +358,31 @@ def remove_old_team_tag(
             flags=re.IGNORECASE,
         ).strip()
 
-    # altes Admin-Koordinator Kürzel
-    cleaned = re.sub(
-        r"^\[A\.\s*K\]\s*",
-        "",
-        cleaned,
-        flags=re.IGNORECASE,
-    ).strip()
+    # Alte Tags
+    for old_tag in OLD_TEAM_TAGS:
+
+        escaped = re.escape(
+            old_tag
+        )
+
+        cleaned = re.sub(
+            rf"^{escaped}\s*",
+            "",
+            cleaned,
+            flags=re.IGNORECASE,
+        ).strip()
 
     return cleaned
 
 
+# ============================================================
+# BASISNAME
+# ============================================================
+
 def get_base_name(
     member: discord.Member,
 ):
+
     current_name = (
         member.nick
         or member.global_name
@@ -296,19 +394,29 @@ def get_base_name(
     )
 
 
+# ============================================================
+# ABGEMELDET ROLLE?
+# ============================================================
+
 def has_absence_role(
     member: discord.Member,
 ):
+
     return any(
         role.id == ABGEMELDET_ROLE_ID
         for role in member.roles
     )
 
 
+# ============================================================
+# NICKNAME BAUEN
+# ============================================================
+
 def build_team_nickname(
     member: discord.Member,
     rank,
 ):
+
     base_name = get_base_name(
         member
     )
@@ -317,19 +425,22 @@ def build_team_nickname(
         f"{rank['tag']} {base_name}"
     )
 
-    if has_absence_role(member):
+    if has_absence_role(
+        member
+    ):
         nickname += ABGEMELDET_SUFFIX
 
     return nickname[:32]
 
 
 # ============================================================
-# TEAM NICKNAME SYNC
+# EINZELNES MITGLIED SYNCHRONISIEREN
 # ============================================================
 
 async def sync_member(
     member: discord.Member,
 ):
+
     if member.bot:
         return False
 
@@ -340,6 +451,7 @@ async def sync_member(
     if rank is None:
         return False
 
+    # Server Owner kann Discord nicht umbenennen
     if member.guild.owner_id == member.id:
         return False
 
@@ -358,6 +470,7 @@ async def sync_member(
         return False
 
     try:
+
         await member.edit(
             nick=desired_nickname,
             reason=(
@@ -369,11 +482,13 @@ async def sync_member(
         return True
 
     except discord.Forbidden:
+
         print(
             f"❌ Keine Berechtigung für Nickname: {member}"
         )
 
     except discord.HTTPException as error:
+
         print(
             f"❌ Nickname Fehler bei {member}: {error}"
         )
@@ -381,13 +496,19 @@ async def sync_member(
     return False
 
 
+# ============================================================
+# SERVER SYNCHRONISIEREN
+# ============================================================
+
 async def sync_guild(
     guild: discord.Guild,
 ):
+
     changed = 0
     detected = 0
 
     for member in guild.members:
+
         rank = get_team_rank(
             member
         )
@@ -407,13 +528,15 @@ async def sync_guild(
 
 # ============================================================
 # GALAXY DATUM PARSEN
-# z.B.
+# Beispiel:
 # 28. August 2026 at 14:00
+# 28. August 2026 um 14:00
 # ============================================================
 
 def parse_galaxy_datetime(
     value: str,
 ):
+
     if not value:
         return None
 
@@ -471,6 +594,7 @@ def parse_galaxy_datetime(
         return None
 
     try:
+
         return datetime(
             year,
             month,
@@ -481,16 +605,18 @@ def parse_galaxy_datetime(
         )
 
     except ValueError:
+
         return None
 
 
 # ============================================================
-# EMBED TEXT SAMMELN
+# EMBED TEXT AUSLESEN
 # ============================================================
 
 def get_embed_text(
     embed: discord.Embed,
 ):
+
     parts = []
 
     if embed.title:
@@ -504,6 +630,7 @@ def get_embed_text(
         )
 
     for field in embed.fields:
+
         parts.append(
             field.name
         )
@@ -518,18 +645,18 @@ def get_embed_text(
 
 
 # ============================================================
-# USER ID AUS GALAXY NACHRICHT
+# USER AUS GALAXY NACHRICHT
 # ============================================================
 
 def extract_user_id(
     message: discord.Message,
 ):
-    # Erst normale Discord-Mentions prüfen
+
     if message.mentions:
         return message.mentions[0].id
 
-    # Falls Mention im Embed steht
     for embed in message.embeds:
+
         text = get_embed_text(
             embed
         )
@@ -540,6 +667,7 @@ def extract_user_id(
         )
 
         if match:
+
             return int(
                 match.group(1)
             )
@@ -548,12 +676,13 @@ def extract_user_id(
 
 
 # ============================================================
-# "VOM" UND "BIS ZUM" AUS GALAXY AUSLESEN
+# START + ENDE AUS GALAXY
 # ============================================================
 
 def extract_absence_times(
     message: discord.Message,
 ):
+
     all_text = []
 
     if message.content:
@@ -562,6 +691,7 @@ def extract_absence_times(
         )
 
     for embed in message.embeds:
+
         all_text.append(
             get_embed_text(
                 embed
@@ -603,12 +733,13 @@ def extract_absence_times(
 
 
 # ============================================================
-# IST ES EINE GALAXY TEAM-ABMELDUNG?
+# IST GALAXY ABMELDUNG?
 # ============================================================
 
 def is_galaxy_absence_message(
     message: discord.Message,
 ):
+
     if (
         message.channel.id
         != GALAXY_ABMELDUNG_CHANNEL_ID
@@ -618,18 +749,29 @@ def is_galaxy_absence_message(
     if not message.author.bot:
         return False
 
+    all_text = []
+
+    if message.content:
+        all_text.append(
+            message.content
+        )
+
     for embed in message.embeds:
-        text = get_embed_text(
-            embed
-        ).lower()
 
-        if (
-            "neue team abmeldung"
-            in text
-        ):
-            return True
+        all_text.append(
+            get_embed_text(
+                embed
+            )
+        )
 
-    return False
+    text = "\n".join(
+        all_text
+    ).lower()
+
+    return (
+        "neue team abmeldung"
+        in text
+    )
 
 
 # ============================================================
@@ -639,6 +781,7 @@ def is_galaxy_absence_message(
 async def register_absence_from_message(
     message: discord.Message,
 ):
+
     if not is_galaxy_absence_message(
         message
     ):
@@ -653,21 +796,27 @@ async def register_absence_from_message(
     )
 
     if user_id is None:
+
         print(
-            "⚠️ Galaxy Abmeldung: User konnte nicht erkannt werden."
+            "⚠️ Galaxy: User konnte nicht erkannt werden."
         )
+
         return False
 
     if start is None or end is None:
+
         print(
-            "⚠️ Galaxy Abmeldung: Zeitraum konnte nicht erkannt werden."
+            "⚠️ Galaxy: Zeitraum konnte nicht erkannt werden."
         )
+
         return False
 
     if end <= start:
+
         print(
-            "⚠️ Galaxy Abmeldung: Ende liegt vor dem Start."
+            "⚠️ Galaxy: Abmeldungsende liegt vor Start."
         )
+
         return False
 
     ABSENCES[user_id] = {
@@ -691,13 +840,14 @@ async def register_absence_from_message(
 
 
 # ============================================================
-# ROLLE SETZEN / ENTFERNEN
+# ABMELDUNG VERARBEITEN
 # ============================================================
 
 async def process_single_absence(
     guild: discord.Guild,
     user_id: int,
 ):
+
     data = ABSENCES.get(
         user_id
     )
@@ -717,9 +867,11 @@ async def process_single_absence(
     )
 
     if absence_role is None:
+
         print(
             "❌ Abgemeldet-Rolle wurde nicht gefunden."
         )
+
         return
 
     now = datetime.now(
@@ -729,19 +881,22 @@ async def process_single_absence(
     start = data["start"]
     end = data["end"]
 
+
     # ========================================================
-    # NOCH NICHT GESTARTET
+    # ABMELDUNG NOCH NICHT GESTARTET
     # ========================================================
 
     if now < start:
 
         if absence_role in member.roles:
+
             try:
+
                 await member.remove_roles(
                     absence_role,
                     reason=(
                         "EHRP | System "
-                        "Galaxy-Abmeldung beginnt erst später"
+                        "Abmeldung beginnt erst später"
                     ),
                 )
 
@@ -756,13 +911,15 @@ async def process_single_absence(
 
 
     # ========================================================
-    # ABMELDUNG IST AKTIV
+    # ABMELDUNG AKTIV
     # ========================================================
 
     if start <= now < end:
 
         if absence_role not in member.roles:
+
             try:
+
                 await member.add_roles(
                     absence_role,
                     reason=(
@@ -776,16 +933,18 @@ async def process_single_absence(
                 )
 
             except discord.Forbidden:
+
                 print(
-                    "❌ Bot kann die Abgemeldet-Rolle "
-                    f"bei {member} nicht vergeben."
+                    f"❌ Abgemeldet-Rolle kann bei {member} "
+                    "nicht vergeben werden."
                 )
 
                 return
 
             except discord.HTTPException as error:
+
                 print(
-                    f"❌ Rollen-Fehler bei {member}: {error}"
+                    f"❌ Rollenfehler bei {member}: {error}"
                 )
 
                 return
@@ -798,13 +957,15 @@ async def process_single_absence(
 
 
     # ========================================================
-    # ABMELDUNG ABGELAUFEN
+    # ABMELDUNG BEENDET
     # ========================================================
 
     if now >= end:
 
         if absence_role in member.roles:
+
             try:
+
                 await member.remove_roles(
                     absence_role,
                     reason=(
@@ -818,16 +979,18 @@ async def process_single_absence(
                 )
 
             except discord.Forbidden:
+
                 print(
-                    "❌ Bot kann die Abgemeldet-Rolle "
-                    f"bei {member} nicht entfernen."
+                    f"❌ Abgemeldet-Rolle kann bei {member} "
+                    "nicht entfernt werden."
                 )
 
                 return
 
             except discord.HTTPException as error:
+
                 print(
-                    f"❌ Rollen-Fehler bei {member}: {error}"
+                    f"❌ Rollenfehler bei {member}: {error}"
                 )
 
                 return
@@ -849,9 +1012,11 @@ async def process_single_absence(
 def build_status_embed(
     guild: discord.Guild,
 ):
+
     detected = []
 
     for member in guild.members:
+
         rank = get_team_rank(
             member
         )
@@ -861,19 +1026,15 @@ def build_status_embed(
                 member
             )
 
-    active_absences = 0
-
     now = datetime.now(
         GERMAN_TIMEZONE
     )
 
-    for data in ABSENCES.values():
-        if (
-            data["start"]
-            <= now
-            < data["end"]
-        ):
-            active_absences += 1
+    active_absences = sum(
+        1
+        for data in ABSENCES.values()
+        if data["start"] <= now < data["end"]
+    )
 
     embed = discord.Embed(
         title="👥 EHRP | TEAM SYSTEM",
@@ -905,20 +1066,24 @@ def build_status_embed(
 def build_map_embed(
     guild: discord.Guild,
 ):
+
     lines = []
 
     for rank in TEAM_RANKS:
+
         role = guild.get_role(
             rank["role_id"]
         )
 
         if role:
+
             lines.append(
                 f"✅ **{rank['name']}** → "
                 f"`{rank['tag']}` → {role.mention}"
             )
 
         else:
+
             lines.append(
                 f"❌ **{rank['name']}** → "
                 f"`{rank['tag']}`"
@@ -936,7 +1101,7 @@ def build_map_embed(
     )
 
     embed.set_footer(
-        text="EHRP | System • Exakte Rollen-IDs"
+        text="EHRP | System • Team Rollen"
     )
 
     return embed
@@ -954,6 +1119,7 @@ class TeamSystem(
         self,
         bot: commands.Bot,
     ):
+
         self.bot = bot
 
         self.history_loaded = False
@@ -966,13 +1132,14 @@ class TeamSystem(
     def cog_unload(
         self,
     ):
+
         self.auto_sync.cancel()
 
         self.absence_loop.cancel()
 
 
     # ========================================================
-    # GALAXY NACHRICHT SOFORT ERKENNEN
+    # GALAXY NACHRICHT DIREKT ERKENNEN
     # ========================================================
 
     @commands.Cog.listener()
@@ -980,6 +1147,7 @@ class TeamSystem(
         self,
         message: discord.Message,
     ):
+
         if message.guild is None:
             return
 
@@ -995,13 +1163,13 @@ class TeamSystem(
 
 
     # ========================================================
-    # NEUSTART:
-    # GALAXY HISTORY ERNEUT EINLESEN
+    # HISTORY BEI NEUSTART LADEN
     # ========================================================
 
     async def load_absences_from_history(
         self,
     ):
+
         await self.bot.wait_until_ready()
 
         for guild in self.bot.guilds:
@@ -1014,16 +1182,21 @@ class TeamSystem(
                 channel,
                 discord.TextChannel,
             ):
+
                 print(
-                    "⚠️ Galaxy Abmeldungs-Channel nicht gefunden."
+                    "⚠️ Galaxy-Abmeldungs-Channel "
+                    "wurde nicht gefunden."
                 )
+
                 continue
 
             try:
+
                 async for message in channel.history(
                     limit=250,
                     oldest_first=False,
                 ):
+
                     if not is_galaxy_absence_message(
                         message
                     ):
@@ -1048,28 +1221,29 @@ class TeamSystem(
                         GERMAN_TIMEZONE
                     )
 
-                    # Nur laufende oder zukünftige Abmeldungen laden
                     if end <= now:
                         continue
 
-                    # Neueste Abmeldung eines Users gewinnt
                     if user_id not in ABSENCES:
+
                         ABSENCES[user_id] = {
                             "start": start,
                             "end": end,
                         }
 
                 print(
-                    "✅ Galaxy Abmeldungen aus History geladen: "
+                    "✅ Galaxy-Abmeldungen geladen: "
                     f"{len(ABSENCES)}"
                 )
 
             except discord.Forbidden:
+
                 print(
                     "❌ Bot darf Galaxy-History nicht lesen."
                 )
 
             except discord.HTTPException as error:
+
                 print(
                     f"❌ Galaxy-History Fehler: {error}"
                 )
@@ -1078,7 +1252,7 @@ class TeamSystem(
 
 
     # ========================================================
-    # ABMELDUNGEN ALLE 30 SEKUNDEN PRÜFEN
+    # ABMELDUNG ALLE 30 SEKUNDEN PRÜFEN
     # ========================================================
 
     @tasks.loop(
@@ -1087,7 +1261,9 @@ class TeamSystem(
     async def absence_loop(
         self,
     ):
+
         if not self.history_loaded:
+
             await self.load_absences_from_history()
 
         for guild in self.bot.guilds:
@@ -1095,15 +1271,18 @@ class TeamSystem(
             for user_id in list(
                 ABSENCES.keys()
             ):
+
                 try:
+
                     await process_single_absence(
                         guild,
                         user_id,
                     )
 
                 except Exception as error:
+
                     print(
-                        "❌ Abmeldungs-Loop Fehler | "
+                        "❌ Abmeldungsfehler | "
                         f"User {user_id}: {error}"
                     )
 
@@ -1112,11 +1291,12 @@ class TeamSystem(
     async def before_absence_loop(
         self,
     ):
+
         await self.bot.wait_until_ready()
 
 
     # ========================================================
-    # TEAM AUTO SYNC
+    # AUTOMATISCHER TEAM SYNC
     # ========================================================
 
     @tasks.loop(
@@ -1125,13 +1305,17 @@ class TeamSystem(
     async def auto_sync(
         self,
     ):
+
         for guild in self.bot.guilds:
+
             try:
+
                 detected, changed = await sync_guild(
                     guild
                 )
 
                 if changed:
+
                     print(
                         "👥 Team Sync | "
                         f"{guild.name} | "
@@ -1140,6 +1324,7 @@ class TeamSystem(
                     )
 
             except Exception as error:
+
                 print(
                     f"❌ Team Auto-Sync Fehler: {error}"
                 )
@@ -1149,6 +1334,7 @@ class TeamSystem(
     async def before_auto_sync(
         self,
     ):
+
         await self.bot.wait_until_ready()
 
 
@@ -1162,6 +1348,7 @@ class TeamSystem(
         before: discord.Member,
         after: discord.Member,
     ):
+
         before_roles = {
             role.id
             for role in before.roles
@@ -1173,6 +1360,7 @@ class TeamSystem(
         }
 
         if before_roles != after_roles:
+
             await sync_member(
                 after
             )
@@ -1190,11 +1378,14 @@ class TeamSystem(
         self,
         interaction: discord.Interaction,
     ):
+
         if interaction.guild is None:
+
             await interaction.response.send_message(
                 "❌ Nur auf dem Server verfügbar.",
                 ephemeral=True,
             )
+
             return
 
         await interaction.response.send_message(
@@ -1217,11 +1408,14 @@ class TeamSystem(
         self,
         interaction: discord.Interaction,
     ):
+
         if interaction.guild is None:
+
             await interaction.response.send_message(
                 "❌ Nur auf dem Server verfügbar.",
                 ephemeral=True,
             )
+
             return
 
         await interaction.response.send_message(
@@ -1244,6 +1438,7 @@ class TeamSystem(
         self,
         interaction: discord.Interaction,
     ):
+
         if (
             interaction.guild is None
             or not isinstance(
@@ -1254,10 +1449,12 @@ class TeamSystem(
             return
 
         if not interaction.user.guild_permissions.manage_nicknames:
+
             await interaction.response.send_message(
                 "❌ Du darfst keinen Team-Sync durchführen.",
                 ephemeral=True,
             )
+
             return
 
         await interaction.response.defer(
@@ -1287,17 +1484,17 @@ class TeamSystem(
 
     # ========================================================
     # /TEAM_ABMELDUNG_SYNC
-    # MANUELLER TEST / RESCAN
     # ========================================================
 
     @app_commands.command(
         name="team_abmeldung_sync",
-        description="Liest die Galaxy-Abmeldungen erneut ein.",
+        description="Liest Galaxy-Abmeldungen erneut ein.",
     )
     async def team_abmeldung_sync(
         self,
         interaction: discord.Interaction,
     ):
+
         if (
             interaction.guild is None
             or not isinstance(
@@ -1308,10 +1505,12 @@ class TeamSystem(
             return
 
         if not interaction.user.guild_permissions.manage_roles:
+
             await interaction.response.send_message(
                 "❌ Du darfst diesen Sync nicht durchführen.",
                 ephemeral=True,
             )
+
             return
 
         await interaction.response.defer(
@@ -1327,6 +1526,7 @@ class TeamSystem(
         for user_id in list(
             ABSENCES.keys()
         ):
+
             await process_single_absence(
                 interaction.guild,
                 user_id,
@@ -1335,7 +1535,7 @@ class TeamSystem(
         await interaction.followup.send(
             (
                 "✅ **Galaxy-Abmeldungen synchronisiert.**\n\n"
-                f"🌙 Erkannte laufende/geplante Abmeldungen: "
+                f"🌙 Laufende/geplante Abmeldungen: "
                 f"**{len(ABSENCES)}**"
             ),
             ephemeral=True,
@@ -1354,6 +1554,7 @@ class TeamSystem(
         self,
         interaction: discord.Interaction,
     ):
+
         if interaction.guild is None:
             return
 
@@ -1362,19 +1563,19 @@ class TeamSystem(
             description=(
                 "## TEAM SYSTEM\n"
                 "━━━━━━━━━━━━━━━━━━━━\n\n"
-                "🔄 **Automatische Nicknames**\n"
-                "Team-Ränge werden automatisch erkannt.\n\n"
-                "🌙 **Galaxy-Abmeldungen**\n"
-                "Abmeldungen werden automatisch aus Galaxy erkannt.\n\n"
-                "🏷️ **Abgemeldet-Rolle**\n"
-                "Während der Abmeldung wird automatisch "
-                "die Abgemeldet-Rolle vergeben.\n\n"
+                "🏷️ **Automatische Nametags**\n"
+                "Der höchste Team-Rang bestimmt das Kürzel.\n\n"
+                "🌙 **Galaxy-Abmeldung**\n"
+                "Galaxy-Abmeldungen werden automatisch erkannt.\n\n"
+                "🎭 **Abgemeldet-Rolle**\n"
+                "Während der Abmeldung wird automatisch die "
+                "Abgemeldet-Rolle vergeben.\n\n"
                 "✏️ **Nickname**\n"
                 "Während der Abmeldung steht automatisch "
                 "`(Abgemeldet)` hinter dem Namen.\n\n"
                 "⏰ **Automatisches Ende**\n"
-                "Nach Ablauf der Galaxy-Abmeldung werden Rolle "
-                "und Nametag automatisch entfernt.\n\n"
+                "Nach Ablauf werden Rolle und "
+                "`(Abgemeldet)` automatisch entfernt.\n\n"
                 "━━━━━━━━━━━━━━━━━━━━"
             ),
             color=SYSTEM_COLOR,
@@ -1397,6 +1598,7 @@ class TeamSystem(
 async def setup(
     bot: commands.Bot,
 ):
+
     await bot.add_cog(
         TeamSystem(bot)
     )
