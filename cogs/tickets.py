@@ -24,6 +24,62 @@ SUCCESS_COLOR = 0x57F287
 WARNING_COLOR = 0xFEE75C
 ERROR_COLOR = 0xED4245
 
+
+# ============================================================
+# BEKANNTE TEAM-RÄNGE
+#
+# Nur diese Rollen können über die Rang-Hierarchie
+# zusätzlichen Ticket-Zugriff erhalten.
+# Fremde Rollen zählen NICHT.
+# ============================================================
+
+TEAM_RANK_ROLE_IDS = {
+    # Leaderebene
+    1526952807838646334,  # Founder
+    1526952825169510473,  # Co. Founder
+
+    # Kernteam
+    1526952877585596570,  # Obervorstand
+    1526952894891556864,  # Vorstand
+    1536099715412926584,  # Sachbearbeiter
+    1526952911651995649,  # Verwaltungsleitung
+    1526953865768075435,  # Hauptverwaltung
+
+    # Kernteamverwaltung
+    1536100042354462802,  # Archivleitung
+    1532505961292501084,  # Gesamtkoordinator
+    1526955267416133653,  # Teamkoordinator
+    1526955292514980003,  # Jr. Teamkoordinator
+
+    1532506490852737104,  # Head of Management
+    1532506146898706604,  # Sr. Management
+    1526953952199839935,  # Manager
+    1526953970294063194,  # Stv. Manager
+
+    # Adminebene
+    1532520713657909278,  # Admin Koordinator
+    1526956576701677589,  # Systemadmin
+    1526956609048416429,  # Admin
+    1526956627704549408,  # Jr. Admin
+
+    # Moderatorebene
+    1526956664253579294,  # Mod Koordinator
+    1526956700836429944,  # Mod Spezialist
+    1526956724089524386,  # Mod
+    1532504668859662376,  # Jr. Mod
+
+    # Supporterebene
+    1532504388503994568,  # Supporter Koordinator
+    1526956760303140924,  # Supporter Spezialist
+    1526956795590086747,  # Supporter
+    1526956832822919331,  # Az. Supporter
+}
+
+
+# ============================================================
+# TICKET BEREICHE
+# ============================================================
+
 TICKET_TYPES = {
     "highteam": {
         "name": "High Team",
@@ -32,6 +88,7 @@ TICKET_TYPES = {
         "category_id": 1526978181591207986,
         "role_id": 1526955340414058526,
     },
+
     "allgemein": {
         "name": "Allgemein",
         "emoji": "🎫",
@@ -39,6 +96,7 @@ TICKET_TYPES = {
         "category_id": 1526938849618432000,
         "role_id": 1526956922555732151,
     },
+
     "entbannung": {
         "name": "Entbannung",
         "emoji": "🔓",
@@ -46,6 +104,7 @@ TICKET_TYPES = {
         "category_id": 1526938782732124201,
         "role_id": 1526955621981753435,
     },
+
     "immobilien": {
         "name": "Immobilien",
         "emoji": "🏠",
@@ -53,6 +112,7 @@ TICKET_TYPES = {
         "category_id": 1526938582772875404,
         "role_id": 1526956922555732151,
     },
+
     "socialmedia": {
         "name": "Social Media",
         "emoji": "📱",
@@ -60,6 +120,7 @@ TICKET_TYPES = {
         "category_id": 1526938931013222570,
         "role_id": 1526956524466081802,
     },
+
     "developer": {
         "name": "Developer",
         "emoji": "💻",
@@ -67,6 +128,7 @@ TICKET_TYPES = {
         "category_id": 1526980142054903969,
         "role_id": 1526955429697949706,
     },
+
     "fraktion": {
         "name": "Fraktion",
         "emoji": "🏛️",
@@ -78,53 +140,110 @@ TICKET_TYPES = {
 
 
 # ============================================================
-# ACCESS / HELPERS
+# DEV ACCESS
 # ============================================================
 
-async def ensure_dev(interaction: discord.Interaction) -> bool:
-    if not interaction.guild or not isinstance(interaction.user, discord.Member):
+async def ensure_dev(
+    interaction: discord.Interaction,
+) -> bool:
+
+    if (
+        not interaction.guild
+        or not isinstance(
+            interaction.user,
+            discord.Member,
+        )
+    ):
+
         if not interaction.response.is_done():
             await interaction.response.send_message(
                 "❌ Dieser Befehl kann nur auf dem Server benutzt werden.",
                 ephemeral=True,
             )
+
         return False
 
-    dev_role = interaction.guild.get_role(int(DEV_ROLE_ID))
-    allowed = interaction.user.guild_permissions.administrator
+    try:
+        dev_role_id = int(
+            DEV_ROLE_ID
+        )
 
-    if dev_role is not None and dev_role in interaction.user.roles:
+    except (TypeError, ValueError):
+        dev_role_id = 0
+
+    dev_role = interaction.guild.get_role(
+        dev_role_id
+    )
+
+    allowed = (
+        interaction.user.guild_permissions.administrator
+    )
+
+    if (
+        dev_role is not None
+        and dev_role in interaction.user.roles
+    ):
         allowed = True
 
     if not allowed:
+
         if not interaction.response.is_done():
             await interaction.response.send_message(
                 "❌ Du darfst diese Systemfunktion nicht benutzen.",
                 ephemeral=True,
             )
+
         return False
 
     return True
 
 
-def clean_channel_name(text: str) -> str:
+# ============================================================
+# CHANNEL NAME
+# ============================================================
+
+def clean_channel_name(
+    text: str,
+) -> str:
+
     text = text.lower().strip()
+
     text = (
-        text.replace("ä", "ae")
+        text
+        .replace("ä", "ae")
         .replace("ö", "oe")
         .replace("ü", "ue")
         .replace("ß", "ss")
     )
-    text = re.sub(r"[^a-z0-9-]", "-", text)
-    text = re.sub(r"-+", "-", text)
-    return text.strip("-")[:30] or "user"
 
+    text = re.sub(
+        r"[^a-z0-9-]",
+        "-",
+        text,
+    )
+
+    text = re.sub(
+        r"-+",
+        "-",
+        text,
+    )
+
+    return (
+        text.strip("-")[:30]
+        or "user"
+    )
+
+
+# ============================================================
+# TICKET TOPIC
+# ============================================================
 
 def make_ticket_topic(
     ticket_type: str,
     owner_id: int,
     claimed_id: int = 0,
 ) -> str:
+
     return (
         "EHRP_TICKET|"
         f"type={ticket_type}|"
@@ -133,70 +252,192 @@ def make_ticket_topic(
     )
 
 
-def read_ticket_topic(channel: discord.TextChannel):
+def read_ticket_topic(
+    channel: discord.TextChannel,
+):
+
     topic = channel.topic or ""
 
-    if not topic.startswith("EHRP_TICKET|"):
+    if not topic.startswith(
+        "EHRP_TICKET|"
+    ):
         return None
 
     values = {}
 
     for part in topic.split("|")[1:]:
+
         if "=" not in part:
             continue
 
-        key, value = part.split("=", 1)
+        key, value = part.split(
+            "=",
+            1,
+        )
+
         values[key] = value
 
     try:
+
         return {
             "type": values["type"],
-            "owner_id": int(values["owner"]),
-            "claimed_id": int(values.get("claimed", "0")),
+            "owner_id": int(
+                values["owner"]
+            ),
+            "claimed_id": int(
+                values.get(
+                    "claimed",
+                    "0",
+                )
+            ),
         }
-    except (KeyError, TypeError, ValueError):
+
+    except (
+        KeyError,
+        TypeError,
+        ValueError,
+    ):
         return None
 
 
-def get_ticket_info(channel: discord.TextChannel):
-    metadata = read_ticket_topic(channel)
+def get_ticket_info(
+    channel: discord.TextChannel,
+):
+
+    metadata = read_ticket_topic(
+        channel
+    )
 
     if not metadata:
         return None, None
 
-    return metadata, TICKET_TYPES.get(metadata["type"])
+    return (
+        metadata,
+        TICKET_TYPES.get(
+            metadata["type"]
+        ),
+    )
 
 
-def ticket_number(channel: discord.TextChannel) -> str:
-    return str(channel.id)[-6:]
+def ticket_number(
+    channel: discord.TextChannel,
+) -> str:
+
+    return str(
+        channel.id
+    )[-6:]
+
+
+# ============================================================
+# NEUE RANG-HIERARCHIE
+# ============================================================
+
+def get_ticket_staff_roles(
+    guild: discord.Guild,
+    config: dict,
+) -> list[discord.Role]:
+
+    """
+    Gibt alle Rollen zurück, die auf dieses Ticket
+    zugreifen dürfen.
+
+    1. Die exakt zuständige Ticket-Rolle.
+    2. Alle bekannten Team-Ränge, die in Discord
+       ÜBER der zuständigen Ticket-Rolle stehen.
+
+    Fremde Rollen werden ignoriert.
+    """
+
+    required_role = guild.get_role(
+        config["role_id"]
+    )
+
+    if required_role is None:
+        return []
+
+    allowed_roles = [
+        required_role
+    ]
+
+    for role_id in TEAM_RANK_ROLE_IDS:
+
+        role = guild.get_role(
+            role_id
+        )
+
+        if role is None:
+            continue
+
+        if role.id == required_role.id:
+            continue
+
+        if role.position > required_role.position:
+
+            allowed_roles.append(
+                role
+            )
+
+    return allowed_roles
 
 
 def user_is_ticket_staff(
     interaction: discord.Interaction,
     config: dict,
 ) -> bool:
-    if not interaction.guild or not isinstance(interaction.user, discord.Member):
+
+    if (
+        not interaction.guild
+        or not isinstance(
+            interaction.user,
+            discord.Member,
+        )
+    ):
         return False
 
-    staff_role = interaction.guild.get_role(config["role_id"])
+    allowed_role_ids = {
+        role.id
+        for role in get_ticket_staff_roles(
+            interaction.guild,
+            config,
+        )
+    }
 
-    return staff_role is not None and staff_role in interaction.user.roles
+    return any(
+        role.id in allowed_role_ids
+        for role in interaction.user.roles
+    )
 
+
+# ============================================================
+# OWNER
+# ============================================================
 
 async def get_ticket_owner(
     guild: discord.Guild,
     owner_id: int,
 ):
-    member = guild.get_member(owner_id)
+
+    member = guild.get_member(
+        owner_id
+    )
 
     if member:
         return member
 
     try:
-        return await guild.fetch_member(owner_id)
+
+        return await guild.fetch_member(
+            owner_id
+        )
+
     except discord.HTTPException:
+
         return None
 
+
+# ============================================================
+# LOGGING
+# ============================================================
 
 async def send_ticket_log(
     guild: discord.Guild,
@@ -205,17 +446,29 @@ async def send_ticket_log(
     color: int = SYSTEM_COLOR,
     file: discord.File | None = None,
 ):
-    log_channel = guild.get_channel(TICKET_LOG_CHANNEL_ID)
 
-    if not isinstance(log_channel, discord.TextChannel):
-        print("⚠️ Ticket-Log-Channel nicht gefunden.")
+    log_channel = guild.get_channel(
+        TICKET_LOG_CHANNEL_ID
+    )
+
+    if not isinstance(
+        log_channel,
+        discord.TextChannel,
+    ):
+
+        print(
+            "⚠️ Ticket-Log-Channel nicht gefunden."
+        )
+
         return
 
     embed = discord.Embed(
         title=title,
         description=description,
         color=color,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(
+            timezone.utc
+        ),
     )
 
     embed.set_footer(
@@ -223,25 +476,35 @@ async def send_ticket_log(
     )
 
     try:
+
         if file is None:
+
             await log_channel.send(
                 embed=embed
             )
+
         else:
+
             await log_channel.send(
                 embed=embed,
                 file=file,
             )
 
     except discord.HTTPException as error:
+
         print(
             f"❌ Ticket-Log Fehler: {error}"
         )
 
 
+# ============================================================
+# TRANSCRIPT
+# ============================================================
+
 async def create_transcript(
     channel: discord.TextChannel,
 ):
+
     rows = [
         "EHRP | SYSTEM — TICKET TRANSCRIPT",
         f"Ticket: #{channel.name}",
@@ -252,20 +515,29 @@ async def create_transcript(
     ]
 
     try:
+
         async for message in channel.history(
             limit=1000,
             oldest_first=True,
         ):
-            timestamp = message.created_at.strftime(
-                "%d.%m.%Y %H:%M:%S UTC"
+
+            timestamp = (
+                message.created_at.strftime(
+                    "%d.%m.%Y %H:%M:%S UTC"
+                )
             )
 
-            content = message.content or ""
+            content = (
+                message.content
+                or ""
+            )
 
             if message.attachments:
+
                 urls = " | ".join(
                     attachment.url
-                    for attachment in message.attachments
+                    for attachment
+                    in message.attachments
                 )
 
                 content = (
@@ -274,38 +546,63 @@ async def create_transcript(
                     else f"Anhänge: {urls}"
                 )
 
-            if not content and message.embeds:
-                content = "[Embed / System-Nachricht]"
+            if (
+                not content
+                and message.embeds
+            ):
+                content = (
+                    "[Embed / System-Nachricht]"
+                )
 
             if not content:
-                content = "[Keine Textnachricht]"
+                content = (
+                    "[Keine Textnachricht]"
+                )
 
             rows.append(
                 f"[{timestamp}] "
-                f"{message.author} ({message.author.id}): "
+                f"{message.author} "
+                f"({message.author.id}): "
                 f"{content}"
             )
 
     except discord.HTTPException as error:
+
         print(
             f"❌ Transcript Fehler: {error}"
         )
+
         return None
 
-    data = "\n".join(rows).encode("utf-8")
-
-    return discord.File(
-        io.BytesIO(data),
-        filename=f"{channel.name}-transcript.txt",
+    data = "\n".join(
+        rows
+    ).encode(
+        "utf-8"
     )
 
+    return discord.File(
+        io.BytesIO(
+            data
+        ),
+        filename=(
+            f"{channel.name}-transcript.txt"
+        ),
+    )
+
+
+# ============================================================
+# EXISTING TICKET
+# ============================================================
 
 async def find_existing_ticket(
     guild: discord.Guild,
     user_id: int,
     ticket_type: str,
 ):
-    config = TICKET_TYPES[ticket_type]
+
+    config = TICKET_TYPES[
+        ticket_type
+    ]
 
     category = guild.get_channel(
         config["category_id"]
@@ -318,7 +615,10 @@ async def find_existing_ticket(
         return None
 
     for channel in category.text_channels:
-        metadata = read_ticket_topic(channel)
+
+        metadata = read_ticket_topic(
+            channel
+        )
 
         if not metadata:
             continue
@@ -332,6 +632,10 @@ async def find_existing_ticket(
     return None
 
 
+# ============================================================
+# FORM FIELDS
+# ============================================================
+
 def extract_form_fields(
     message: discord.Message,
 ) -> list[tuple[str, str]]:
@@ -344,15 +648,21 @@ def extract_form_fields(
             field.name,
             field.value,
         )
-        for field in message.embeds[0].fields
+        for field
+        in message.embeds[0].fields
     ]
 
+
+# ============================================================
+# TICKET EMBED
+# ============================================================
 
 async def build_ticket_embed(
     channel: discord.TextChannel,
     status: str,
     form_fields: list[tuple[str, str]] | None = None,
 ):
+
     metadata, config = get_ticket_info(
         channel
     )
@@ -378,11 +688,19 @@ async def build_ticket_embed(
     )
 
     if status == "claimed":
-        status_text = "🟡 In Bearbeitung"
+
+        status_text = (
+            "🟡 In Bearbeitung"
+        )
+
         color = WARNING_COLOR
 
     else:
-        status_text = "🟢 Offen"
+
+        status_text = (
+            "🟢 Offen"
+        )
+
         color = SUCCESS_COLOR
 
     owner_text = (
@@ -420,10 +738,13 @@ async def build_ticket_embed(
             "━━━━━━━━━━━━━━━━━━━━"
         ),
         color=color,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(
+            timezone.utc
+        ),
     )
 
     if owner:
+
         embed.set_author(
             name=owner.display_name,
             icon_url=owner.display_avatar.url,
@@ -434,6 +755,7 @@ async def build_ticket_embed(
         )
 
     for label, value in form_fields or []:
+
         embed.add_field(
             name=label,
             value=value[:1024],
@@ -448,10 +770,11 @@ async def build_ticket_embed(
 
 
 # ============================================================
-# SERVICE CENTER
+# MAIN PANEL
 # ============================================================
 
 def build_main_panel():
+
     embed = discord.Embed(
         title="🎫 EHRP | SERVICE CENTER",
         description=(
@@ -483,14 +806,26 @@ def build_main_panel():
     return embed
 
 
-class TicketSelect(discord.ui.Select):
-    def __init__(self):
+# ============================================================
+# SELECT
+# ============================================================
+
+class TicketSelect(
+    discord.ui.Select
+):
+
+    def __init__(
+        self,
+    ):
+
         options = [
             discord.SelectOption(
                 label=config["name"],
                 value=key,
                 emoji=config["emoji"],
-                description=config["description"][:100],
+                description=(
+                    config["description"][:100]
+                ),
             )
             for key, config
             in TICKET_TYPES.items()
@@ -508,6 +843,7 @@ class TicketSelect(discord.ui.Select):
         self,
         interaction: discord.Interaction,
     ):
+
         await interaction.response.send_modal(
             TicketCreateModal(
                 self.values[0]
@@ -515,8 +851,14 @@ class TicketSelect(discord.ui.Select):
         )
 
 
-class TicketPanelView(discord.ui.View):
-    def __init__(self):
+class TicketPanelView(
+    discord.ui.View
+):
+
+    def __init__(
+        self,
+    ):
+
         super().__init__(
             timeout=None
         )
@@ -527,14 +869,18 @@ class TicketPanelView(discord.ui.View):
 
 
 # ============================================================
-# CREATE TICKET
+# CREATE MODAL
 # ============================================================
 
-class TicketCreateModal(discord.ui.Modal):
+class TicketCreateModal(
+    discord.ui.Modal
+):
+
     def __init__(
         self,
         ticket_type: str,
     ):
+
         self.ticket_type = ticket_type
 
         config = TICKET_TYPES[
@@ -542,7 +888,9 @@ class TicketCreateModal(discord.ui.Modal):
         ]
 
         super().__init__(
-            title=f"{config['name']} • Ticket"
+            title=(
+                f"{config['name']} • Ticket"
+            )
         )
 
         if ticket_type == "entbannung":
@@ -563,9 +911,7 @@ class TicketCreateModal(discord.ui.Modal):
 
                 discord.ui.TextInput(
                     label="Entbannungsbegründung",
-                    placeholder=(
-                        "Warum sollten wir dich entbannen?"
-                    ),
+                    placeholder="Warum sollten wir dich entbannen?",
                     style=discord.TextStyle.paragraph,
                     max_length=1200,
                 ),
@@ -582,10 +928,7 @@ class TicketCreateModal(discord.ui.Modal):
 
                 discord.ui.TextInput(
                     label="Beschreibung",
-                    placeholder=(
-                        "Beschreibe den Fehler "
-                        "möglichst genau."
-                    ),
+                    placeholder="Beschreibe den Fehler möglichst genau.",
                     style=discord.TextStyle.paragraph,
                     max_length=1500,
                 ),
@@ -596,10 +939,7 @@ class TicketCreateModal(discord.ui.Modal):
             fields = [
                 discord.ui.TextInput(
                     label="Immobilie / Ort",
-                    placeholder=(
-                        "Welche Immobilie betrifft "
-                        "das Anliegen?"
-                    ),
+                    placeholder="Welche Immobilie betrifft das Anliegen?",
                     max_length=150,
                 ),
 
@@ -616,10 +956,7 @@ class TicketCreateModal(discord.ui.Modal):
             fields = [
                 discord.ui.TextInput(
                     label="Plattform / Thema",
-                    placeholder=(
-                        "TikTok, YouTube, Instagram, "
-                        "Kooperation …"
-                    ),
+                    placeholder="TikTok, YouTube, Instagram, Kooperation …",
                     max_length=150,
                 ),
 
@@ -636,10 +973,7 @@ class TicketCreateModal(discord.ui.Modal):
             fields = [
                 discord.ui.TextInput(
                     label="Fraktion",
-                    placeholder=(
-                        "Welche Fraktion betrifft "
-                        "dein Anliegen?"
-                    ),
+                    placeholder="Welche Fraktion betrifft dein Anliegen?",
                     max_length=150,
                 ),
 
@@ -662,24 +996,24 @@ class TicketCreateModal(discord.ui.Modal):
 
                 discord.ui.TextInput(
                     label="Beschreibung",
-                    placeholder=(
-                        "Beschreibe dein Anliegen "
-                        "möglichst genau."
-                    ),
+                    placeholder="Beschreibe dein Anliegen möglichst genau.",
                     style=discord.TextStyle.paragraph,
                     max_length=1500,
                 ),
             ]
 
         for field in fields:
+
             self.add_item(
                 field
             )
+
 
     async def on_submit(
         self,
         interaction: discord.Interaction,
     ):
+
         guild = interaction.guild
 
         if guild is None:
@@ -696,6 +1030,7 @@ class TicketCreateModal(discord.ui.Modal):
         )
 
         if existing:
+
             await interaction.response.send_message(
                 (
                     "⚠️ Du hast in diesem Bereich bereits "
@@ -704,6 +1039,7 @@ class TicketCreateModal(discord.ui.Modal):
                 ),
                 ephemeral=True,
             )
+
             return
 
         category = guild.get_channel(
@@ -718,24 +1054,31 @@ class TicketCreateModal(discord.ui.Modal):
             category,
             discord.CategoryChannel,
         ):
+
             await interaction.response.send_message(
-                "❌ Die Ticket-Kategorie wurde "
-                "nicht gefunden.",
+                "❌ Die Ticket-Kategorie wurde nicht gefunden.",
                 ephemeral=True,
             )
+
             return
 
         if staff_role is None:
+
             await interaction.response.send_message(
-                "❌ Die zuständige Teamrolle "
-                "wurde nicht gefunden.",
+                "❌ Die zuständige Teamrolle wurde nicht gefunden.",
                 ephemeral=True,
             )
+
             return
 
         await interaction.response.defer(
             ephemeral=True
         )
+
+
+        # ====================================================
+        # CHANNEL PERMISSIONS
+        # ====================================================
 
         overwrites = {
             guild.default_role:
@@ -751,18 +1094,30 @@ class TicketCreateModal(discord.ui.Modal):
                     attach_files=True,
                     embed_links=True,
                 ),
-
-            staff_role:
-                discord.PermissionOverwrite(
-                    view_channel=True,
-                    send_messages=True,
-                    read_message_history=True,
-                    attach_files=True,
-                    embed_links=True,
-                ),
         }
 
+
+        # Zuständige Rolle + alle höheren Team-Ränge
+        staff_access_roles = get_ticket_staff_roles(
+            guild,
+            config,
+        )
+
+        for allowed_role in staff_access_roles:
+
+            overwrites[
+                allowed_role
+            ] = discord.PermissionOverwrite(
+                view_channel=True,
+                send_messages=True,
+                read_message_history=True,
+                attach_files=True,
+                embed_links=True,
+            )
+
+
         if guild.me:
+
             overwrites[
                 guild.me
             ] = discord.PermissionOverwrite(
@@ -773,7 +1128,9 @@ class TicketCreateModal(discord.ui.Modal):
                 read_message_history=True,
             )
 
+
         try:
+
             channel = await guild.create_text_channel(
                 name=(
                     "ticket-"
@@ -793,19 +1150,25 @@ class TicketCreateModal(discord.ui.Modal):
             )
 
         except discord.HTTPException as error:
+
             print(
                 f"❌ Ticket Create Fehler: {error}"
             )
 
             await interaction.followup.send(
-                "❌ Das Ticket konnte "
-                "nicht erstellt werden.",
+                "❌ Das Ticket konnte nicht erstellt werden.",
                 ephemeral=True,
             )
+
             return
 
-        # Benutzername + Ticketnummer
+
+        # ====================================================
+        # CHANNEL NAME
+        # ====================================================
+
         try:
+
             await channel.edit(
                 name=(
                     f"ticket-"
@@ -816,9 +1179,15 @@ class TicketCreateModal(discord.ui.Modal):
             )
 
         except discord.HTTPException as error:
+
             print(
                 f"⚠️ Ticket Rename Fehler: {error}"
             )
+
+
+        # ====================================================
+        # FORM DATA
+        # ====================================================
 
         form_fields = [
             (
@@ -832,13 +1201,18 @@ class TicketCreateModal(discord.ui.Modal):
             )
         ]
 
+
         embed = await build_ticket_embed(
             channel,
             "open",
             form_fields,
         )
 
+
         try:
+
+            # Gepingt wird weiterhin NUR
+            # die direkt zuständige Rolle.
             await channel.send(
                 content=(
                     f"{interaction.user.mention} "
@@ -854,26 +1228,28 @@ class TicketCreateModal(discord.ui.Modal):
             )
 
         except discord.HTTPException as error:
+
             print(
                 f"❌ Ticket Message Fehler: {error}"
             )
+
 
         await send_ticket_log(
             guild,
             "🎫 Ticket erstellt",
             (
                 f"**Ticket:** {channel.mention}\n"
-                f"**Ticket-ID:** "
-                f"`{ticket_number(channel)}`\n"
+                f"**Ticket-ID:** `{ticket_number(channel)}`\n"
                 f"**Bereich:** "
                 f"{config['emoji']} {config['name']}\n"
-                f"**Ersteller:** "
-                f"{interaction.user.mention}\n"
-                f"**Zuständig:** "
-                f"{staff_role.mention}"
+                f"**Ersteller:** {interaction.user.mention}\n"
+                f"**Zuständig:** {staff_role.mention}\n"
+                f"**Hierarchie-Zugriff:** "
+                f"{len(staff_access_roles)} Rollen"
             ),
             SUCCESS_COLOR,
         )
+
 
         await interaction.followup.send(
             (
@@ -888,11 +1264,18 @@ class TicketCreateModal(discord.ui.Modal):
 # OPEN TICKET CONTROLS
 # ============================================================
 
-class OpenTicketView(discord.ui.View):
-    def __init__(self):
+class OpenTicketView(
+    discord.ui.View
+):
+
+    def __init__(
+        self,
+    ):
+
         super().__init__(
             timeout=None
         )
+
 
     async def on_error(
         self,
@@ -900,6 +1283,7 @@ class OpenTicketView(discord.ui.View):
         error: Exception,
         item: discord.ui.Item,
     ):
+
         print(
             "❌ Ticket Button Fehler "
             f"[{getattr(item, 'custom_id', 'unknown')}]: "
@@ -907,24 +1291,28 @@ class OpenTicketView(discord.ui.View):
         )
 
         try:
+
             if interaction.response.is_done():
 
                 await interaction.followup.send(
-                    "❌ Bei dieser Aktion ist "
-                    "ein Fehler aufgetreten.",
+                    "❌ Bei dieser Aktion ist ein Fehler aufgetreten.",
                     ephemeral=True,
                 )
 
             else:
 
                 await interaction.response.send_message(
-                    "❌ Bei dieser Aktion ist "
-                    "ein Fehler aufgetreten.",
+                    "❌ Bei dieser Aktion ist ein Fehler aufgetreten.",
                     ephemeral=True,
                 )
 
         except discord.HTTPException:
             pass
+
+
+    # ========================================================
+    # CLAIM
+    # ========================================================
 
     @discord.ui.button(
         label="Übernehmen",
@@ -937,6 +1325,7 @@ class OpenTicketView(discord.ui.View):
         interaction: discord.Interaction,
         button: discord.ui.Button,
     ):
+
         channel = interaction.channel
 
         if not isinstance(
@@ -950,35 +1339,44 @@ class OpenTicketView(discord.ui.View):
         )
 
         if not metadata or not config:
+
             await interaction.response.send_message(
                 "❌ Ungültiges Ticket.",
                 ephemeral=True,
             )
+
             return
 
-        # Ersteller kann eigenes Ticket nicht übernehmen
+
         if (
             interaction.user.id
             == metadata["owner_id"]
         ):
+
             await interaction.response.send_message(
-                "❌ Du kannst dein eigenes Ticket "
-                "nicht übernehmen.",
+                "❌ Du kannst dein eigenes Ticket nicht übernehmen.",
                 ephemeral=True,
             )
+
             return
 
-        # Nur zuständige Rolle
+
+        # Zuständige Rolle ODER höher
         if not user_is_ticket_staff(
             interaction,
             config,
         ):
+
             await interaction.response.send_message(
-                "❌ Nur das zuständige Team kann "
-                "dieses Ticket übernehmen.",
+                (
+                    "❌ Dein Rang ist für dieses Ticket "
+                    "nicht freigeschaltet."
+                ),
                 ephemeral=True,
             )
+
             return
+
 
         if metadata["claimed_id"]:
 
@@ -999,11 +1397,14 @@ class OpenTicketView(discord.ui.View):
                 ),
                 ephemeral=True,
             )
+
             return
+
 
         await interaction.response.defer(
             ephemeral=True
         )
+
 
         await channel.edit(
             topic=make_ticket_topic(
@@ -1017,10 +1418,11 @@ class OpenTicketView(discord.ui.View):
             ),
         )
 
-        # Formulardaten bleiben erhalten
+
         fields = extract_form_fields(
             interaction.message
         )
+
 
         embed = await build_ticket_embed(
             channel,
@@ -1028,26 +1430,33 @@ class OpenTicketView(discord.ui.View):
             fields,
         )
 
+
         await interaction.message.edit(
             embed=embed,
             view=self,
         )
+
 
         await send_ticket_log(
             interaction.guild,
             "👤 Ticket übernommen",
             (
                 f"**Ticket:** {channel.mention}\n"
-                f"**Bearbeiter:** "
-                f"{interaction.user.mention}"
+                f"**Bearbeiter:** {interaction.user.mention}"
             ),
             WARNING_COLOR,
         )
+
 
         await interaction.followup.send(
             "✅ Du hast das Ticket übernommen.",
             ephemeral=True,
         )
+
+
+    # ========================================================
+    # PERSON ADD
+    # ========================================================
 
     @discord.ui.button(
         label="Person hinzufügen",
@@ -1060,6 +1469,7 @@ class OpenTicketView(discord.ui.View):
         interaction: discord.Interaction,
         button: discord.ui.Button,
     ):
+
         channel = interaction.channel
 
         if not isinstance(
@@ -1068,28 +1478,37 @@ class OpenTicketView(discord.ui.View):
         ):
             return
 
+
         metadata, config = get_ticket_info(
             channel
         )
 
+
         if not metadata or not config:
+
             await interaction.response.send_message(
                 "❌ Ungültiges Ticket.",
                 ephemeral=True,
             )
+
             return
 
-        # Nur zuständiges Team
+
         if not user_is_ticket_staff(
             interaction,
             config,
         ):
+
             await interaction.response.send_message(
-                "❌ Nur das zuständige Team kann "
-                "Personen hinzufügen.",
+                (
+                    "❌ Dein Rang darf in diesem Ticket "
+                    "keine Personen hinzufügen."
+                ),
                 ephemeral=True,
             )
+
             return
+
 
         await interaction.response.send_message(
             (
@@ -1100,6 +1519,11 @@ class OpenTicketView(discord.ui.View):
             view=TicketMemberSelectView(),
             ephemeral=True,
         )
+
+
+    # ========================================================
+    # CLOSE
+    # ========================================================
 
     @discord.ui.button(
         label="Schließen",
@@ -1112,6 +1536,7 @@ class OpenTicketView(discord.ui.View):
         interaction: discord.Interaction,
         button: discord.ui.Button,
     ):
+
         channel = interaction.channel
 
         if not isinstance(
@@ -1120,35 +1545,46 @@ class OpenTicketView(discord.ui.View):
         ):
             return
 
+
         metadata, config = get_ticket_info(
             channel
         )
 
+
         if not metadata or not config:
+
             await interaction.response.send_message(
                 "❌ Ungültiges Ticket.",
                 ephemeral=True,
             )
+
             return
+
 
         is_owner = (
             interaction.user.id
             == metadata["owner_id"]
         )
 
+
         is_staff = user_is_ticket_staff(
             interaction,
             config,
         )
 
-        # Ersteller ODER zuständiges Team
-        if not is_owner and not is_staff:
+
+        if (
+            not is_owner
+            and not is_staff
+        ):
+
             await interaction.response.send_message(
-                "❌ Du darfst dieses Ticket "
-                "nicht schließen.",
+                "❌ Du darfst dieses Ticket nicht schließen.",
                 ephemeral=True,
             )
+
             return
+
 
         await interaction.response.send_modal(
             CloseTicketModal()
@@ -1162,17 +1598,23 @@ class OpenTicketView(discord.ui.View):
 class TicketMemberSelect(
     discord.ui.UserSelect
 ):
-    def __init__(self):
+
+    def __init__(
+        self,
+    ):
+
         super().__init__(
             placeholder="Mitglied auswählen …",
             min_values=1,
             max_values=1,
         )
 
+
     async def callback(
         self,
         interaction: discord.Interaction,
     ):
+
         channel = interaction.channel
 
         if not isinstance(
@@ -1181,56 +1623,71 @@ class TicketMemberSelect(
         ):
             return
 
+
         metadata, config = get_ticket_info(
             channel
         )
 
+
         if not metadata or not config:
+
             await interaction.response.send_message(
                 "❌ Ungültiges Ticket.",
                 ephemeral=True,
             )
+
             return
 
-        # Sicherheitscheck:
-        # Auswahl kann nur Team benutzen
+
         if not user_is_ticket_staff(
             interaction,
             config,
         ):
+
             await interaction.response.send_message(
-                "❌ Nur das zuständige Team darf "
-                "Personen hinzufügen.",
+                (
+                    "❌ Dein Rang darf in diesem Ticket "
+                    "keine Personen hinzufügen."
+                ),
                 ephemeral=True,
             )
+
             return
 
+
         selected = self.values[0]
+
 
         member = interaction.guild.get_member(
             selected.id
         )
 
+
         if member is None:
+
             try:
-                member = (
-                    await interaction.guild.fetch_member(
-                        selected.id
-                    )
+
+                member = await interaction.guild.fetch_member(
+                    selected.id
                 )
 
             except discord.HTTPException:
+
                 member = None
 
+
         if member is None:
+
             await interaction.response.send_message(
-                "❌ Dieses Mitglied konnte "
-                "nicht gefunden werden.",
+                "❌ Dieses Mitglied konnte nicht gefunden werden.",
                 ephemeral=True,
             )
+
             return
 
+
         try:
+
             await channel.set_permissions(
                 member,
                 view_channel=True,
@@ -1241,17 +1698,19 @@ class TicketMemberSelect(
             )
 
         except discord.HTTPException as error:
+
             print(
                 "❌ Mitglied hinzufügen Fehler: "
                 f"{error}"
             )
 
             await interaction.response.send_message(
-                "❌ Das Mitglied konnte nicht "
-                "hinzugefügt werden.",
+                "❌ Das Mitglied konnte nicht hinzugefügt werden.",
                 ephemeral=True,
             )
+
             return
+
 
         await interaction.response.edit_message(
             content=(
@@ -1260,6 +1719,7 @@ class TicketMemberSelect(
             ),
             view=None,
         )
+
 
         await send_ticket_log(
             interaction.guild,
@@ -1277,7 +1737,11 @@ class TicketMemberSelect(
 class TicketMemberSelectView(
     discord.ui.View
 ):
-    def __init__(self):
+
+    def __init__(
+        self,
+    ):
+
         super().__init__(
             timeout=60
         )
@@ -1288,22 +1752,24 @@ class TicketMemberSelectView(
 
 
 # ============================================================
-# CLOSE = TRANSCRIPT + LOG + DELETE
+# CLOSE MODAL
 # ============================================================
 
 class CloseTicketModal(
     discord.ui.Modal
 ):
-    def __init__(self):
+
+    def __init__(
+        self,
+    ):
+
         super().__init__(
             title="Ticket schließen"
         )
 
         self.reason = discord.ui.TextInput(
             label="Schließungsgrund",
-            placeholder=(
-                "Warum wird dieses Ticket geschlossen?"
-            ),
+            placeholder="Warum wird dieses Ticket geschlossen?",
             style=discord.TextStyle.paragraph,
             required=False,
             max_length=500,
@@ -1313,10 +1779,12 @@ class CloseTicketModal(
             self.reason
         )
 
+
     async def on_submit(
         self,
         interaction: discord.Interaction,
     ):
+
         channel = interaction.channel
 
         if not isinstance(
@@ -1325,54 +1793,70 @@ class CloseTicketModal(
         ):
             return
 
+
         metadata, config = get_ticket_info(
             channel
         )
 
+
         if not metadata or not config:
+
             await interaction.response.send_message(
-                "❌ Dieses Ticket konnte "
-                "nicht erkannt werden.",
+                "❌ Dieses Ticket konnte nicht erkannt werden.",
                 ephemeral=True,
             )
+
             return
+
 
         is_owner = (
             interaction.user.id
             == metadata["owner_id"]
         )
 
+
         is_staff = user_is_ticket_staff(
             interaction,
             config,
         )
 
-        if not is_owner and not is_staff:
+
+        if (
+            not is_owner
+            and not is_staff
+        ):
+
             await interaction.response.send_message(
-                "❌ Du darfst dieses Ticket "
-                "nicht schließen.",
+                "❌ Du darfst dieses Ticket nicht schließen.",
                 ephemeral=True,
             )
+
             return
+
 
         await interaction.response.defer(
             ephemeral=True
         )
+
 
         owner = await get_ticket_owner(
             interaction.guild,
             metadata["owner_id"],
         )
 
+
         reason_text = (
-            str(self.reason.value).strip()
+            str(
+                self.reason.value
+            ).strip()
             or "Kein Grund angegeben"
         )
 
-        # Transcript VOR dem Löschen
+
         transcript = await create_transcript(
             channel
         )
+
 
         owner_text = (
             owner.mention
@@ -1380,13 +1864,14 @@ class CloseTicketModal(
             else f"<@{metadata['owner_id']}>"
         )
 
+
         claimer_text = (
             f"<@{metadata['claimed_id']}>"
             if metadata["claimed_id"]
             else "Nicht übernommen"
         )
 
-        # Log VOR dem Löschen
+
         await send_ticket_log(
             interaction.guild,
             "🔒 Ticket geschlossen & automatisch gelöscht",
@@ -1394,8 +1879,7 @@ class CloseTicketModal(
                 "## TICKET SESSION BEENDET\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
                 f"**Ticket:** `#{channel.name}`\n"
-                f"**Ticket-ID:** "
-                f"`{ticket_number(channel)}`\n"
+                f"**Ticket-ID:** `{ticket_number(channel)}`\n"
                 f"**Bereich:** "
                 f"{config['emoji']} {config['name']}\n"
                 f"**Ersteller:** {owner_text}\n"
@@ -1404,14 +1888,15 @@ class CloseTicketModal(
                 f"{interaction.user.mention}\n"
                 f"**Grund:** {reason_text}\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                "🗑️ **Status:** "
-                "Ticket automatisch gelöscht"
+                "🗑️ **Status:** Ticket automatisch gelöscht"
             ),
             ERROR_COLOR,
             transcript,
         )
 
+
         try:
+
             await interaction.followup.send(
                 (
                     "✅ **Ticket geschlossen**\n"
@@ -1425,11 +1910,14 @@ class CloseTicketModal(
         except discord.HTTPException:
             pass
 
+
         await asyncio.sleep(
             1.2
         )
 
+
         try:
+
             await channel.delete(
                 reason=(
                     "EHRP Ticket geschlossen von "
@@ -1439,6 +1927,7 @@ class CloseTicketModal(
             )
 
         except discord.HTTPException as error:
+
             print(
                 f"❌ Ticket Delete Fehler: {error}"
             )
@@ -1448,15 +1937,17 @@ class CloseTicketModal(
 # COG
 # ============================================================
 
-class Tickets(commands.Cog):
+class Tickets(
+    commands.Cog
+):
+
     def __init__(
         self,
         bot: commands.Bot,
     ):
+
         self.bot = bot
 
-        # Persistent:
-        # funktionieren auch nach Bot-Restart
         bot.add_view(
             TicketPanelView()
         )
@@ -1465,63 +1956,76 @@ class Tickets(commands.Cog):
             OpenTicketView()
         )
 
+
+    # ========================================================
+    # /TICKET_PANEL
+    # ========================================================
+
     @app_commands.command(
         name="ticket_panel",
-        description=(
-            "Erstellt oder aktualisiert "
-            "das EHRP Service Center."
-        ),
+        description="Erstellt oder aktualisiert das EHRP Service Center.",
     )
     async def ticket_panel(
         self,
         interaction: discord.Interaction,
     ):
+
         if not await ensure_dev(
             interaction
         ):
             return
 
-        channel = (
-            interaction.guild.get_channel(
-                PANEL_CHANNEL_ID
-            )
+
+        channel = interaction.guild.get_channel(
+            PANEL_CHANNEL_ID
         )
+
 
         if not isinstance(
             channel,
             discord.TextChannel,
         ):
+
             await interaction.response.send_message(
-                "❌ Panel-Channel wurde "
-                "nicht gefunden.",
+                "❌ Panel-Channel wurde nicht gefunden.",
                 ephemeral=True,
             )
+
             return
+
 
         await interaction.response.defer(
             ephemeral=True
         )
 
+
         existing_message = None
 
+
         try:
+
             async for message in channel.history(
                 limit=50
             ):
+
                 if (
-                    message.author.id
-                    == self.bot.user.id
+                    self.bot.user
+                    and message.author.id == self.bot.user.id
                     and message.embeds
                     and message.embeds[0].title
                     == "🎫 EHRP | SERVICE CENTER"
                 ):
+
                     existing_message = message
+
                     break
 
         except discord.HTTPException:
             pass
 
+
         try:
+
             if existing_message:
 
                 await existing_message.edit(
@@ -1544,17 +2048,21 @@ class Tickets(commands.Cog):
                     "✅ **Service Center erstellt**"
                 )
 
+
         except discord.HTTPException as error:
+
             print(
                 f"❌ Ticket Panel Fehler: {error}"
             )
 
+
             await interaction.followup.send(
-                "❌ Das Service Center konnte "
-                "nicht erstellt werden.",
+                "❌ Das Service Center konnte nicht erstellt werden.",
                 ephemeral=True,
             )
+
             return
+
 
         await interaction.followup.send(
             (
@@ -1564,30 +2072,35 @@ class Tickets(commands.Cog):
             ephemeral=True,
         )
 
+
+    # ========================================================
+    # /TICKET_STATUS
+    # ========================================================
+
     @app_commands.command(
         name="ticket_status",
-        description=(
-            "Zeigt den Status des Ticket-Systems."
-        ),
+        description="Zeigt den Status des Ticket-Systems.",
     )
     async def ticket_status(
         self,
         interaction: discord.Interaction,
     ):
+
         if not await ensure_dev(
             interaction
         ):
             return
 
+
         open_count = 0
+
 
         for config in TICKET_TYPES.values():
 
-            category = (
-                interaction.guild.get_channel(
-                    config["category_id"]
-                )
+            category = interaction.guild.get_channel(
+                config["category_id"]
             )
+
 
             if not isinstance(
                 category,
@@ -1595,12 +2108,15 @@ class Tickets(commands.Cog):
             ):
                 continue
 
+
             for channel in category.text_channels:
 
                 if read_ticket_topic(
                     channel
                 ):
+
                     open_count += 1
+
 
         embed = discord.Embed(
             title="⚙️ EHRP | TICKET SYSTEM",
@@ -1609,13 +2125,12 @@ class Tickets(commands.Cog):
                 "━━━━━━━━━━━━━━━━━━━━\n"
                 "🟢 **System:** Online\n"
                 "🟢 **Ticket Routing:** Online\n"
+                "🟢 **Rang-Hierarchie:** Aktiv\n"
                 "🟢 **Persistent Controls:** Online\n"
                 "🟢 **Auto Delete:** Aktiv\n"
                 "🟢 **Transcripts:** Aktiv\n\n"
-                f"🎫 **Offene Tickets:** "
-                f"{open_count}\n"
-                f"📂 **Bereiche:** "
-                f"{len(TICKET_TYPES)}\n"
+                f"🎫 **Offene Tickets:** {open_count}\n"
+                f"📂 **Bereiche:** {len(TICKET_TYPES)}\n"
                 "━━━━━━━━━━━━━━━━━━━━"
             ),
             color=SUCCESS_COLOR,
@@ -1624,9 +2139,11 @@ class Tickets(commands.Cog):
             ),
         )
 
+
         embed.set_footer(
             text="EHRP | System • System Status"
         )
+
 
         await interaction.response.send_message(
             embed=embed,
@@ -1634,9 +2151,14 @@ class Tickets(commands.Cog):
         )
 
 
+# ============================================================
+# SETUP
+# ============================================================
+
 async def setup(
     bot: commands.Bot,
 ):
+
     await bot.add_cog(
         Tickets(bot)
     )
