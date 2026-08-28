@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -26,13 +25,8 @@ INFO_COLOR = 0x3498DB
 # CHANNELS
 # ============================================================
 
-# Fertige Bewerbungen landen hier
 APPLICATION_REVIEW_CHANNEL_ID = 1526942850778923181
-
-# Hier findet nach Annahme die Terminvereinbarung statt
 INTERVIEW_PLANNING_CHANNEL_ID = 1543000219321503844
-
-# Hier wird der final bestätigte Gesprächstermin gepostet
 CONFIRMED_INTERVIEW_CHANNEL_ID = 1526951239269744870
 
 
@@ -40,13 +34,12 @@ CONFIRMED_INTERVIEW_CHANNEL_ID = 1526951239269744870
 # ROLES
 # ============================================================
 
-# Rolle der Personen, die Bewerbungen / Gespräche bearbeiten
 INTERVIEW_ROLE_ID = 1526955827770949793
 
-# Wird vergeben, sobald die schriftliche Bewerbung angenommen wurde
+# Schriftliche Bewerbung angenommen
 APPLICATION_ACCEPTED_ROLE_ID = 1526957615765127412
 
-# Wird vergeben, wenn das Bewerbungsgespräch bestanden wurde
+# Gespräch bestanden
 TEAM_ACCEPTED_ROLE_ID = 1526957502078652496
 
 
@@ -58,7 +51,7 @@ DATA_FILE = "applications_data.json"
 
 
 # ============================================================
-# FRAGEN
+# QUESTIONS
 # ============================================================
 
 QUESTIONS = [
@@ -71,7 +64,6 @@ QUESTIONS = [
         "long": False,
         "type": "age",
     },
-
     {
         "title": "Wie lautet Ihr Roblox-Name?",
         "category": "👤 Persönliche Angaben",
@@ -80,7 +72,6 @@ QUESTIONS = [
         "max_length": 100,
         "long": False,
     },
-
     {
         "title": "Seit wann spielen Sie Notruf Hamburg?",
         "category": "👤 Persönliche Angaben",
@@ -89,7 +80,6 @@ QUESTIONS = [
         "max_length": 300,
         "long": False,
     },
-
     {
         "title": "Wie viele Stunden pro Woche können Sie ungefähr auf EHRP/VC aktiv sein?",
         "category": "👤 Persönliche Angaben",
@@ -98,19 +88,14 @@ QUESTIONS = [
         "max_length": 200,
         "long": False,
     },
-
     {
         "title": "Hatten Sie bereits Erfahrung als Teammitglied auf einem anderen RP-Server?",
         "category": "🧩 Erfahrung",
-        "placeholder": (
-            "Falls ja: Wo und welche Aufgaben hatten Sie? "
-            "Falls nein: Nein."
-        ),
+        "placeholder": "Falls ja: Wo und welche Aufgaben hatten Sie? Falls nein: Nein.",
         "min_length": 3,
         "max_length": 1000,
         "long": True,
     },
-
     {
         "title": "Warum möchten Sie Teil des EHRP/VC-Teams werden?",
         "category": "💬 Motivation",
@@ -119,7 +104,6 @@ QUESTIONS = [
         "max_length": 1500,
         "long": True,
     },
-
     {
         "title": "Warum sollten wir gerade Sie auswählen?",
         "category": "💬 Motivation",
@@ -128,7 +112,6 @@ QUESTIONS = [
         "max_length": 1500,
         "long": True,
     },
-
     {
         "title": "Welche Stärken bringen Sie für die Arbeit im Team mit?",
         "category": "💬 Motivation",
@@ -137,7 +120,6 @@ QUESTIONS = [
         "max_length": 1500,
         "long": True,
     },
-
     {
         "title": "Welche Schwächen haben Sie und wie gehen Sie damit um?",
         "category": "💬 Motivation",
@@ -146,7 +128,6 @@ QUESTIONS = [
         "max_length": 1500,
         "long": True,
     },
-
     {
         "title": "Ein Spieler beleidigt Sie nach einer Sanktion. Wie reagieren Sie?",
         "category": "🧠 Situationsfragen",
@@ -155,44 +136,30 @@ QUESTIONS = [
         "max_length": 1500,
         "long": True,
     },
-
     {
-        "title": (
-            "Sie sehen, dass ein anderes Teammitglied seine Rechte "
-            "ausnutzt oder einen Spieler unfair behandelt. Wie handeln Sie?"
-        ),
+        "title": "Sie sehen, dass ein anderes Teammitglied seine Rechte ausnutzt oder einen Spieler unfair behandelt. Wie handeln Sie?",
         "category": "🧠 Situationsfragen",
         "placeholder": "Beschreiben Sie Ihr Vorgehen.",
         "min_length": 30,
         "max_length": 1500,
         "long": True,
     },
-
     {
-        "title": (
-            "Ein guter Freund von Ihnen verstößt eindeutig gegen "
-            "das Regelwerk. Wie gehen Sie damit um?"
-        ),
+        "title": "Ein guter Freund von Ihnen verstößt eindeutig gegen das Regelwerk. Wie gehen Sie damit um?",
         "category": "🧠 Situationsfragen",
         "placeholder": "Beschreiben Sie Ihr Vorgehen.",
         "min_length": 30,
         "max_length": 1500,
         "long": True,
     },
-
     {
-        "title": (
-            "Zwei Spieler beschuldigen sich gegenseitig und Sie können "
-            "zunächst nicht feststellen, wer die Wahrheit sagt. "
-            "Wie gehen Sie vor?"
-        ),
+        "title": "Zwei Spieler beschuldigen sich gegenseitig und Sie können zunächst nicht feststellen, wer die Wahrheit sagt. Wie gehen Sie vor?",
         "category": "🧠 Situationsfragen",
         "placeholder": "Beschreiben Sie Ihr Vorgehen.",
         "min_length": 30,
         "max_length": 1500,
         "long": True,
     },
-
     {
         "title": "Gibt es noch etwas, das wir über Sie wissen sollten?",
         "category": "📝 Abschluss",
@@ -222,39 +189,17 @@ DEFAULT_DATA = {
 
 def load_data() -> dict:
     if not os.path.exists(DATA_FILE):
-        return {
-            "applications_open": True,
-            "counter": 0,
-            "applications": {},
-            "sessions": {},
-        }
+        return DEFAULT_DATA.copy()
 
     try:
-        with open(
-            DATA_FILE,
-            "r",
-            encoding="utf-8",
-        ) as file:
+        with open(DATA_FILE, "r", encoding="utf-8") as file:
             raw = json.load(file)
 
-        data = {
-            "applications_open": True,
-            "counter": 0,
-            "applications": {},
-            "sessions": {},
-        }
-
+        data = DEFAULT_DATA.copy()
         data.update(raw)
 
-        data.setdefault(
-            "applications",
-            {},
-        )
-
-        data.setdefault(
-            "sessions",
-            {},
-        )
+        data.setdefault("applications", {})
+        data.setdefault("sessions", {})
 
         return data
 
@@ -262,13 +207,7 @@ def load_data() -> dict:
         print(
             f"❌ Recruitment Daten konnten nicht geladen werden: {error}"
         )
-
-        return {
-            "applications_open": True,
-            "counter": 0,
-            "applications": {},
-            "sessions": {},
-        }
+        return DEFAULT_DATA.copy()
 
 
 DATA = load_data()
@@ -276,18 +215,13 @@ DATA = load_data()
 
 def save_data():
     try:
-        with open(
-            DATA_FILE,
-            "w",
-            encoding="utf-8",
-        ) as file:
+        with open(DATA_FILE, "w", encoding="utf-8") as file:
             json.dump(
                 DATA,
                 file,
                 indent=4,
                 ensure_ascii=False,
             )
-
     except Exception as error:
         print(
             f"❌ Recruitment Daten konnten nicht gespeichert werden: {error}"
@@ -298,36 +232,17 @@ def save_data():
 # SESSION HELPERS
 # ============================================================
 
-def get_session(
-    user_id: int,
-) -> Optional[dict]:
-
-    return DATA["sessions"].get(
-        str(user_id)
-    )
+def get_session(user_id: int) -> Optional[dict]:
+    return DATA["sessions"].get(str(user_id))
 
 
-def set_session(
-    user_id: int,
-    session: dict,
-):
-
-    DATA["sessions"][
-        str(user_id)
-    ] = session
-
+def set_session(user_id: int, session: dict):
+    DATA["sessions"][str(user_id)] = session
     save_data()
 
 
-def remove_session(
-    user_id: int,
-):
-
-    DATA["sessions"].pop(
-        str(user_id),
-        None,
-    )
-
+def remove_session(user_id: int):
+    DATA["sessions"].pop(str(user_id), None)
     save_data()
 
 
@@ -335,75 +250,31 @@ def remove_session(
 # APPLICATION HELPERS
 # ============================================================
 
-def get_application(
-    application_id: str,
-) -> Optional[dict]:
+def find_application_by_review_message(message_id: int):
+    for app_id, application in DATA["applications"].items():
+        if application.get("review_message_id") == message_id:
+            return app_id, application
 
-    return DATA[
-        "applications"
-    ].get(
-        application_id
-    )
+    return None, None
 
 
-def find_application_by_review_message(
-    message_id: int,
-):
+def find_application_by_interview_message(message_id: int):
+    for app_id, application in DATA["applications"].items():
+        if application.get("interview_message_id") == message_id:
+            return app_id, application
 
-    for app_id, application in DATA[
-        "applications"
-    ].items():
-
-        if (
-            application.get(
-                "review_message_id"
-            )
-            == message_id
-        ):
-            return (
-                app_id,
-                application,
-            )
-
-    return (
-        None,
-        None,
-    )
+    return None, None
 
 
-def find_application_by_interview_message(
-    message_id: int,
-):
+def find_application_by_result_message(message_id: int):
+    for app_id, application in DATA["applications"].items():
+        if application.get("result_message_id") == message_id:
+            return app_id, application
 
-    for app_id, application in DATA[
-        "applications"
-    ].items():
-
-        if (
-            application.get(
-                "interview_message_id"
-            )
-            == message_id
-        ):
-            return (
-                app_id,
-                application,
-            )
-
-    return (
-        None,
-        None,
-    )
+    return None, None
 
 
-# ============================================================
-# OPEN APPLICATION CHECK
-# ============================================================
-
-def has_open_application(
-    user_id: int,
-) -> bool:
-
+def has_open_application(user_id: int) -> bool:
     active_statuses = {
         "pending",
         "claimed",
@@ -412,34 +283,21 @@ def has_open_application(
         "interview_running",
     }
 
-    for application in DATA[
-        "applications"
-    ].values():
-
-        if (
-            application.get(
-                "user_id"
-            )
-            != user_id
-        ):
+    for application in DATA["applications"].values():
+        if application.get("user_id") != user_id:
             continue
 
-        if application.get(
-            "status"
-        ) in active_statuses:
+        if application.get("status") in active_statuses:
             return True
 
     return False
 
 
 # ============================================================
-# STAFF CHECK
+# STAFF
 # ============================================================
 
-def is_interview_staff(
-    member: discord.Member,
-) -> bool:
-
+def is_interview_staff(member: discord.Member) -> bool:
     return any(
         role.id == INTERVIEW_ROLE_ID
         for role in member.roles
@@ -451,22 +309,13 @@ def is_interview_staff(
 # ============================================================
 
 def application_number() -> str:
-
-    DATA[
-        "counter"
-    ] = int(
-        DATA.get(
-            "counter",
-            0,
-        )
+    DATA["counter"] = int(
+        DATA.get("counter", 0)
     ) + 1
 
     save_data()
 
-    return (
-        f"EHRP-"
-        f"{DATA['counter']:04d}"
-    )
+    return f"EHRP-{DATA['counter']:04d}"
 
 
 # ============================================================
@@ -479,14 +328,10 @@ async def add_role_safe(
     reason: str,
 ) -> bool:
 
-    role = member.guild.get_role(
-        role_id
-    )
+    role = member.guild.get_role(role_id)
 
     if role is None:
-        print(
-            f"❌ Rolle nicht gefunden: {role_id}"
-        )
+        print(f"❌ Rolle nicht gefunden: {role_id}")
         return False
 
     if role in member.roles:
@@ -497,7 +342,6 @@ async def add_role_safe(
             role,
             reason=reason,
         )
-
         return True
 
     except discord.HTTPException as error:
@@ -505,7 +349,6 @@ async def add_role_safe(
             f"❌ Rolle konnte nicht hinzugefügt werden "
             f"({role_id}): {error}"
         )
-
         return False
 
 
@@ -515,14 +358,10 @@ async def remove_role_safe(
     reason: str,
 ) -> bool:
 
-    role = member.guild.get_role(
-        role_id
-    )
+    role = member.guild.get_role(role_id)
 
     if role is None:
-        print(
-            f"❌ Rolle nicht gefunden: {role_id}"
-        )
+        print(f"❌ Rolle nicht gefunden: {role_id}")
         return False
 
     if role not in member.roles:
@@ -533,7 +372,6 @@ async def remove_role_safe(
             role,
             reason=reason,
         )
-
         return True
 
     except discord.HTTPException as error:
@@ -541,36 +379,28 @@ async def remove_role_safe(
             f"❌ Rolle konnte nicht entfernt werden "
             f"({role_id}): {error}"
         )
-
         return False
 
 
 # ============================================================
-# APPLICATION PANEL
+# PANEL
 # ============================================================
 
 def build_application_panel() -> discord.Embed:
 
-    if DATA.get(
-        "applications_open",
-        True,
-    ):
-        status = (
-            "🟢 **GEÖFFNET**"
-        )
-    else:
-        status = (
-            "🔴 **GESCHLOSSEN**"
-        )
+    status = (
+        "🟢 **GEÖFFNET**"
+        if DATA.get("applications_open", True)
+        else "🔴 **GESCHLOSSEN**"
+    )
 
     embed = discord.Embed(
         title="📨 EHRP/VC • TEAM RECRUITMENT",
         description=(
             "# Werden Sie Teil des EHRP/VC-Teams\n\n"
 
-            "Sie möchten Verantwortung übernehmen, "
-            "unsere Community unterstützen und aktiv "
-            "am Aufbau von **EHRP/VC** mitwirken?\n\n"
+            "Sie möchten Verantwortung übernehmen, unsere Community "
+            "unterstützen und aktiv am Aufbau von **EHRP/VC** mitwirken?\n\n"
 
             "Dann können Sie hier Ihre Bewerbung starten.\n\n"
 
@@ -600,7 +430,6 @@ def build_application_panel() -> discord.Embed:
             "━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
             "## 📡 Bewerbungsstatus\n\n"
-
             f"{status}\n\n"
 
             "Mit dem Button unten starten Sie den Bewerbungsprozess."
@@ -719,11 +548,7 @@ class ApplicationPanelView(discord.ui.View):
 
 
 # ============================================================
-# REQUIREMENTS CONFIRMATION
-# ============================================================
-
-# ============================================================
-# REQUIREMENTS CONFIRMATION
+# REQUIREMENTS
 # ============================================================
 
 class RequirementsView(discord.ui.View):
@@ -842,9 +667,9 @@ def build_question_embed(
 
             f"### {question['title']}\n\n"
 
-            "Bitte beantworten Sie die Frage vollständig und ehrlich.\n\n"
+            "Bitte beantworten Sie diese Frage vollständig und ehrlich.\n\n"
 
-            "Klicken Sie auf **Weiter**, um Ihre Antwort einzugeben."
+            "Klicken Sie unten auf **Weiter**, um Ihre Antwort einzugeben."
         ),
         color=SYSTEM_COLOR,
     )
@@ -912,427 +737,17 @@ class AnswerModal(discord.ui.Modal):
         if question[
             "long"
         ]:
-            style = (
-                discord.TextStyle.paragraph
-            )
+            style = discord.TextStyle.paragraph
         else:
-            style = (
-                discord.TextStyle.short
-            )
-
-        self.answer_input = (
-            discord.ui.TextInput(
-                label=(
-                    question[
-                        "title"
-                    ][:45]
-                ),
-                placeholder=(
-                    question[
-                        "placeholder"
-                    ][:100]
-                ),
-                style=style,
-                required=True,
-                min_length=(
-                    question[
-                        "min_length"
-                    ]
-                ),
-                max_length=(
-                    question[
-                        "max_length"
-                    ]
-                ),
-            )
-        )
-
-        self.add_item(
-            self.answer_input
-        )
-
-
-    async def on_submit(
-        self,
-        interaction: discord.Interaction,
-    ):
-
-        session = get_session(
-            interaction.user.id
-        )
-
-        if not session:
-
-            await interaction.response.send_message(
-                "❌ Ihre Bewerbungssitzung wurde nicht gefunden.",
-                ephemeral=True,
-            )
-
-            return
-
-
-        question = QUESTIONS[
-            self.question_index
-        ]
-
-        answer = str(
-            self.answer_input.value
-        ).strip()
-
-
-        # ====================================================
-        # AGE CHECK
-        # ====================================================
-
-        if question.get(
-            "type"
-        ) == "age":
-
-            try:
-
-                age = int(
-                    answer
-                )
-
-            except ValueError:
-
-                await interaction.response.send_message(
-                    "❌ Bitte geben Sie Ihr Alter ausschließlich als Zahl an.",
-                    ephemeral=True,
-                )
-
-                return
-
-
-            if age < 13:
-
-                remove_session(
-                    interaction.user.id
-                )
-
-                await interaction.response.send_message(
-                    (
-                        "# ❌ Bewerbung beendet\n\n"
-
-                        "Leider erfüllen Sie aktuell nicht die "
-                        "Mindestvoraussetzungen für eine Bewerbung "
-                        "bei **EHRP/VC**.\n\n"
-
-                        "Das Mindestalter beträgt **13 Jahre**."
-                    ),
-                    ephemeral=True,
-                )
-
-                return
-
-
-        # ====================================================
-        # SAVE ANSWER
-        # ====================================================
-
-        session[
-            "answers"
-        ][
-            str(
-                self.question_index
-            )
-        ] = answer
-
-
-        # ====================================================
-        # LAST QUESTION?
-        # ====================================================
-
-        if (
-            self.question_index
-            >= len(QUESTIONS) - 1
-        ):
-
-            set_session(
-                interaction.user.id,
-                session,
-            )
-
-            await interaction.response.edit_message(
-                embed=build_final_review_embed(
-                    interaction.user.id
-                ),
-                view=FinalReviewView(),
-            )
-
-            return
-
-
-        # ====================================================
-        # AUTOMATICALLY GO TO NEXT QUESTION
-        # ====================================================
-
-        session[
-            "current_question"
-        ] = (
-            self.question_index
-            + 1
-        )
-
-        set_session(
-            interaction.user.id,
-            session,
-        )
-
-        await interaction.response.edit_message(
-            embed=build_question_embed(
-                interaction.user.id
-            ),
-            view=QuestionView(),
-        )
-
-
-# ============================================================
-# QUESTION VIEW
-# ============================================================
-
-class QuestionView(discord.ui.View):
-
-    def __init__(self):
-
-        super().__init__(
-            timeout=1800
-        )
-
-
-    @discord.ui.button(
-        label="Weiter",
-        emoji="➡️",
-        style=discord.ButtonStyle.primary,
-    )
-    async def continue_application(
-        self,
-        interaction: discord.Interaction,
-        button: discord.ui.Button,
-    ):
-
-        session = get_session(
-            interaction.user.id
-        )
-
-        if not session:
-
-            await interaction.response.send_message(
-                "❌ Ihre Bewerbungssitzung wurde nicht gefunden.",
-                ephemeral=True,
-            )
-
-            return
-
-
-        await interaction.response.send_modal(
-            AnswerModal(
-                interaction.user.id
-            )
-        )
-
-# ============================================================
-# QUESTION EMBED
-# ============================================================
-
-def build_question_embed(
-    user_id: int,
-) -> discord.Embed:
-
-    session = get_session(
-        user_id
-    )
-
-    if not session:
-        return discord.Embed(
-            title="❌ Sitzung nicht gefunden",
-            description=(
-                "Ihre Bewerbungssitzung ist nicht mehr verfügbar."
-            ),
-            color=ERROR_COLOR,
-        )
-
-    index = int(
-        session.get(
-            "current_question",
-            0,
-        )
-    )
-
-    question = QUESTIONS[
-        index
-    ]
-
-    answer = session[
-        "answers"
-    ].get(
-        str(index)
-    )
-
-    progress = int(
-        (
-            (index + 1)
-            / len(QUESTIONS)
-        )
-        * 100
-    )
-
-    progress_bar_length = 10
-
-    filled = round(
-        progress
-        / 100
-        * progress_bar_length
-    )
-
-    progress_bar = (
-        "🟩" * filled
-        + "⬜" * (
-            progress_bar_length
-            - filled
-        )
-    )
-
-    description = (
-        f"# Frage {index + 1} von {len(QUESTIONS)}\n\n"
-
-        f"## {question['category']}\n\n"
-
-        f"### {question['title']}\n\n"
-    )
-
-    if answer:
-        description += (
-            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-
-            "## ✅ Ihre Antwort\n\n"
-
-            f"{answer}\n\n"
-
-            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-
-            "Ihre Antwort wurde erfolgreich gespeichert.\n\n"
-            "Sie können die Antwort noch ändern oder mit "
-            "**Weiter** zur nächsten Frage wechseln."
-        )
-    else:
-        description += (
-            "Bitte beantworten Sie diese Frage vollständig und ehrlich.\n\n"
-
-            "Klicken Sie unten auf **Antwort eingeben**, "
-            "um Ihre Antwort einzutragen."
-        )
-
-    embed = discord.Embed(
-        title="📨 EHRP/VC • TEAMBEWERBUNG",
-        description=description,
-        color=SYSTEM_COLOR,
-    )
-
-    embed.add_field(
-        name="📊 Fortschritt",
-        value=(
-            f"{progress_bar}\n"
-            f"**{progress}% abgeschlossen**"
-        ),
-        inline=False,
-    )
-
-    embed.set_footer(
-        text=(
-            "EHRP/VC | Recruitment System • "
-            f"Frage {index + 1}/{len(QUESTIONS)}"
-        )
-    )
-
-    return embed
-
-
-# ============================================================
-# ANSWER MODAL
-# ============================================================
-
-class AnswerModal(discord.ui.Modal):
-
-    def __init__(
-        self,
-        user_id: int,
-    ):
-
-        session = get_session(
-            user_id
-        )
-
-        index = int(
-            session[
-                "current_question"
-            ]
-        )
-
-        self.question_index = (
-            index
-        )
-
-        question = QUESTIONS[
-            index
-        ]
-
-        super().__init__(
-            title=(
-                f"Frage {index + 1} "
-                f"von {len(QUESTIONS)}"
-            )
-        )
-
-        current_answer = (
-            session[
-                "answers"
-            ].get(
-                str(index)
-            )
-        )
-
-        if question[
-            "long"
-        ]:
-            style = (
-                discord.TextStyle.paragraph
-            )
-        else:
-            style = (
-                discord.TextStyle.short
-            )
-
-        self.answer_input = (
-            discord.ui.TextInput(
-                label=(
-                    question[
-                        "title"
-                    ][:45]
-                ),
-                placeholder=(
-                    question[
-                        "placeholder"
-                    ][:100]
-                ),
-                style=style,
-                required=True,
-                min_length=(
-                    question[
-                        "min_length"
-                    ]
-                ),
-                max_length=(
-                    question[
-                        "max_length"
-                    ]
-                ),
-                default=(
-                    current_answer
-                    if current_answer
-                    else None
-                ),
-            )
+            style = discord.TextStyle.short
+
+        self.answer_input = discord.ui.TextInput(
+            label=question["title"][:45],
+            placeholder=question["placeholder"][:100],
+            style=style,
+            required=True,
+            min_length=question["min_length"],
+            max_length=question["max_length"],
         )
 
         self.add_item(
@@ -1393,14 +808,10 @@ class AnswerModal(discord.ui.Modal):
 
                 await interaction.response.send_message(
                     "# ❌ Bewerbung beendet\n\n"
-
                     "Leider erfüllen Sie aktuell nicht die "
                     "Mindestvoraussetzungen für eine Bewerbung bei "
                     "**EHRP/VC**.\n\n"
-
-                    "Das Mindestalter beträgt **13 Jahre**.\n\n"
-
-                    "Ihre Bewerbung wurde daher automatisch beendet.",
+                    "Das Mindestalter beträgt **13 Jahre**.",
                     ephemeral=True,
                 )
                 return
@@ -1418,136 +829,39 @@ class AnswerModal(discord.ui.Modal):
             )
         ] = answer
 
-        set_session(
-            interaction.user.id,
-            session,
-        )
-
-        await interaction.response.edit_message(
-            embed=build_question_embed(
-                interaction.user.id
-            ),
-            view=QuestionView(),
-        )
-
-
-# ============================================================
-# QUESTION BUTTONS
-# ============================================================
-
-class QuestionView(discord.ui.View):
-
-    def __init__(self):
-        super().__init__(
-            timeout=1800
-        )
-
-
-    # ========================================================
-    # ANSWER
-    # ========================================================
-
-    @discord.ui.button(
-        label="Antwort eingeben",
-        emoji="✍️",
-        style=discord.ButtonStyle.primary,
-    )
-    async def answer_question(
-        self,
-        interaction: discord.Interaction,
-        button: discord.ui.Button,
-    ):
-
-        session = get_session(
-            interaction.user.id
-        )
-
-        if not session:
-            await interaction.response.send_message(
-                "❌ Ihre Bewerbungssitzung wurde nicht gefunden.",
-                ephemeral=True,
-            )
-            return
-
-        await interaction.response.send_modal(
-            AnswerModal(
-                interaction.user.id
-            )
-        )
-
-
-    # ========================================================
-    # NEXT QUESTION
-    # ========================================================
-
-    @discord.ui.button(
-        label="Weiter",
-        emoji="➡️",
-        style=discord.ButtonStyle.success,
-    )
-    async def next_question(
-        self,
-        interaction: discord.Interaction,
-        button: discord.ui.Button,
-    ):
-
-        session = get_session(
-            interaction.user.id
-        )
-
-        if not session:
-            await interaction.response.send_message(
-                "❌ Ihre Bewerbungssitzung wurde nicht gefunden.",
-                ephemeral=True,
-            )
-            return
-
-        current_question = int(
-            session[
-                "current_question"
-            ]
-        )
-
-        if (
-            str(
-                current_question
-            )
-            not in session[
-                "answers"
-            ]
-        ):
-            await interaction.response.send_message(
-                "⚠️ Sie müssen die aktuelle Frage zuerst beantworten.",
-                ephemeral=True,
-            )
-            return
-
 
         # ====================================================
-        # LAST QUESTION → FINAL REVIEW
+        # LAST QUESTION
         # ====================================================
 
         if (
-            current_question
+            self.question_index
             >= len(QUESTIONS) - 1
         ):
+
+            set_session(
+                interaction.user.id,
+                session,
+            )
+
             await interaction.response.edit_message(
                 embed=build_final_review_embed(
                     interaction.user.id
                 ),
                 view=FinalReviewView(),
             )
+
             return
 
 
         # ====================================================
-        # GO NEXT
+        # NEXT QUESTION AUTOMATICALLY
         # ====================================================
 
         session[
             "current_question"
         ] = (
-            current_question
+            self.question_index
             + 1
         )
 
@@ -1564,16 +878,23 @@ class QuestionView(discord.ui.View):
         )
 
 
-    # ========================================================
-    # CHANGE ANSWER
-    # ========================================================
+# ============================================================
+# QUESTION VIEW
+# ============================================================
+
+class QuestionView(discord.ui.View):
+
+    def __init__(self):
+        super().__init__(
+            timeout=1800
+        )
 
     @discord.ui.button(
-        label="Antwort ändern",
-        emoji="✏️",
-        style=discord.ButtonStyle.secondary,
+        label="Weiter",
+        emoji="➡️",
+        style=discord.ButtonStyle.primary,
     )
-    async def change_answer(
+    async def continue_application(
         self,
         interaction: discord.Interaction,
         button: discord.ui.Button,
@@ -1590,33 +911,13 @@ class QuestionView(discord.ui.View):
             )
             return
 
-        current_question = int(
-            session[
-                "current_question"
-            ]
-        )
-
-        if (
-            str(
-                current_question
-            )
-            not in session[
-                "answers"
-            ]
-        ):
-            await interaction.response.send_message(
-                "⚠️ Sie haben für diese Frage noch keine Antwort gespeichert.",
-                ephemeral=True,
-            )
-            return
-
         await interaction.response.send_modal(
             AnswerModal(
                 interaction.user.id
             )
         )
 
-  # ============================================================
+# ============================================================
 # FINAL REVIEW
 # ============================================================
 
@@ -1633,17 +934,15 @@ def build_final_review_embed(
         description=(
             "# 📋 Abschlusskontrolle\n\n"
 
-            "Sie haben alle Fragen erfolgreich beantwortet.\n\n"
+            "Sie haben alle Fragen beantwortet.\n\n"
 
             "Bitte prüfen Sie Ihre Angaben vor dem endgültigen Absenden.\n\n"
 
-            "Mit dem Absenden wird Ihre Bewerbung verbindlich "
-            "an das zuständige Team von **EHRP/VC** weitergeleitet.\n\n"
-
-            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-
             "Falls Sie noch eine Antwort ändern möchten, "
-            "wählen Sie die entsprechende Frage unten aus."
+            "wählen Sie unten die entsprechende Frage aus.\n\n"
+
+            "Mit dem Absenden wird Ihre Bewerbung verbindlich "
+            "an das zuständige Team von **EHRP/VC** weitergeleitet."
         ),
         color=SUCCESS_COLOR,
     )
@@ -1663,10 +962,7 @@ def build_final_review_embed(
 
             shortened = answer
 
-            if len(
-                shortened
-            ) > 180:
-
+            if len(shortened) > 180:
                 shortened = (
                     shortened[:177]
                     + "..."
@@ -1689,30 +985,20 @@ def build_final_review_embed(
 
 
 # ============================================================
-# SELECT QUESTION TO EDIT
+# REVIEW QUESTION SELECT
 # ============================================================
 
 class ReviewQuestionSelect(
     discord.ui.Select
 ):
 
-    def __init__(
-        self,
-    ):
+    def __init__(self):
 
         options = [
             discord.SelectOption(
-                label=(
-                    f"Frage {index + 1}"
-                ),
-                description=(
-                    question[
-                        "title"
-                    ][:90]
-                ),
-                value=str(
-                    index
-                ),
+                label=f"Frage {index + 1}",
+                description=question["title"][:90],
+                value=str(index),
             )
             for index, question
             in enumerate(
@@ -1721,9 +1007,7 @@ class ReviewQuestionSelect(
         ]
 
         super().__init__(
-            placeholder=(
-                "Antwort auswählen und bearbeiten …"
-            ),
+            placeholder="Antwort auswählen und bearbeiten …",
             min_values=1,
             max_values=1,
             options=options,
@@ -1740,12 +1024,10 @@ class ReviewQuestionSelect(
         )
 
         if not session:
-
             await interaction.response.send_message(
                 "❌ Ihre Bewerbungssitzung wurde nicht gefunden.",
                 ephemeral=True,
             )
-
             return
 
         session[
@@ -1759,11 +1041,170 @@ class ReviewQuestionSelect(
             session,
         )
 
+        await interaction.response.send_modal(
+            ReviewAnswerModal(
+                interaction.user.id
+            )
+        )
+
+
+# ============================================================
+# REVIEW ANSWER MODAL
+# ============================================================
+
+class ReviewAnswerModal(
+    discord.ui.Modal
+):
+
+    def __init__(
+        self,
+        user_id: int,
+    ):
+
+        session = get_session(
+            user_id
+        )
+
+        if not session:
+            raise RuntimeError(
+                "Bewerbungssitzung nicht gefunden."
+            )
+
+        index = int(
+            session[
+                "current_question"
+            ]
+        )
+
+        self.question_index = (
+            index
+        )
+
+        question = QUESTIONS[
+            index
+        ]
+
+        current_answer = session[
+            "answers"
+        ].get(
+            str(index),
+            "",
+        )
+
+        super().__init__(
+            title=(
+                f"Antwort ändern • "
+                f"Frage {index + 1}"
+            )
+        )
+
+        if question["long"]:
+            style = (
+                discord.TextStyle.paragraph
+            )
+        else:
+            style = (
+                discord.TextStyle.short
+            )
+
+        self.answer_input = (
+            discord.ui.TextInput(
+                label=(
+                    question[
+                        "title"
+                    ][:45]
+                ),
+                placeholder=(
+                    question[
+                        "placeholder"
+                    ][:100]
+                ),
+                style=style,
+                required=True,
+                min_length=(
+                    question[
+                        "min_length"
+                    ]
+                ),
+                max_length=(
+                    question[
+                        "max_length"
+                    ]
+                ),
+                default=current_answer,
+            )
+        )
+
+        self.add_item(
+            self.answer_input
+        )
+
+
+    async def on_submit(
+        self,
+        interaction: discord.Interaction,
+    ):
+
+        session = get_session(
+            interaction.user.id
+        )
+
+        if not session:
+            await interaction.response.send_message(
+                "❌ Ihre Bewerbungssitzung wurde nicht gefunden.",
+                ephemeral=True,
+            )
+            return
+
+        question = QUESTIONS[
+            self.question_index
+        ]
+
+        answer = str(
+            self.answer_input.value
+        ).strip()
+
+
+        if question.get(
+            "type"
+        ) == "age":
+
+            try:
+                age = int(answer)
+
+            except ValueError:
+                await interaction.response.send_message(
+                    "❌ Bitte geben Sie Ihr Alter ausschließlich als Zahl an.",
+                    ephemeral=True,
+                )
+                return
+
+            if age < 13:
+                await interaction.response.send_message(
+                    "❌ Das Mindestalter beträgt **13 Jahre**.",
+                    ephemeral=True,
+                )
+                return
+
+
+        session[
+            "answers"
+        ][
+            str(
+                self.question_index
+            )
+        ] = answer
+
+        set_session(
+            interaction.user.id,
+            session,
+        )
+
         await interaction.response.edit_message(
-            embed=build_question_embed(
+            embed=build_final_review_embed(
                 interaction.user.id
             ),
-            view=QuestionView(),
+            view=FinalReviewView(),
         )
 
 
@@ -1775,9 +1216,7 @@ class FinalReviewView(
     discord.ui.View
 ):
 
-    def __init__(
-        self,
-    ):
+    def __init__(self):
 
         super().__init__(
             timeout=1800
@@ -1805,18 +1244,12 @@ class FinalReviewView(
         )
 
         if not session:
-
             await interaction.response.send_message(
                 "❌ Ihre Bewerbungssitzung wurde nicht gefunden.",
                 ephemeral=True,
             )
-
             return
 
-
-        # ====================================================
-        # CHECK ALL ANSWERS
-        # ====================================================
 
         if len(
             session[
@@ -1825,18 +1258,12 @@ class FinalReviewView(
         ) != len(
             QUESTIONS
         ):
-
             await interaction.response.send_message(
                 "❌ Bitte beantworten Sie zuerst alle Fragen.",
                 ephemeral=True,
             )
-
             return
 
-
-        # ====================================================
-        # GET REVIEW CHANNEL
-        # ====================================================
 
         review_channel = (
             interaction.guild.get_channel(
@@ -1844,29 +1271,26 @@ class FinalReviewView(
             )
         )
 
+
         if not isinstance(
             review_channel,
             discord.TextChannel,
         ):
-
             await interaction.response.send_message(
                 "❌ Der interne Bewerbungs-Channel wurde nicht gefunden.",
                 ephemeral=True,
             )
-
             return
 
-
-        # ====================================================
-        # CREATE APPLICATION
-        # ====================================================
 
         app_id = (
             application_number()
         )
 
+
         application = {
-            "application_id": app_id,
+            "application_id":
+                app_id,
 
             "user_id":
                 interaction.user.id,
@@ -1891,6 +1315,9 @@ class FinalReviewView(
                 0,
 
             "interview_message_id":
+                0,
+
+            "result_message_id":
                 0,
 
             "proposal_date":
@@ -1927,6 +1354,7 @@ class FinalReviewView(
                 0,
         }
 
+
         DATA[
             "applications"
         ][
@@ -1935,10 +1363,6 @@ class FinalReviewView(
 
         save_data()
 
-
-        # ====================================================
-        # SEND REVIEW MESSAGE
-        # ====================================================
 
         review_message = (
             await review_channel.send(
@@ -1961,9 +1385,13 @@ class FinalReviewView(
             )
         )
 
+
         application[
             "review_message_id"
-        ] = review_message.id
+        ] = (
+            review_message.id
+        )
+
 
         DATA[
             "applications"
@@ -1973,22 +1401,19 @@ class FinalReviewView(
 
         save_data()
 
+
         remove_session(
             interaction.user.id
         )
 
-
-        # ====================================================
-        # USER CONFIRMATION
-        # ====================================================
 
         result = discord.Embed(
             title="✅ Bewerbung eingegangen",
             description=(
                 "# Vielen Dank für Ihre Bewerbung\n\n"
 
-                "Ihre Bewerbung wurde erfolgreich an das "
-                "zuständige Team von **EHRP/VC** weitergeleitet.\n\n"
+                "Ihre Bewerbung wurde erfolgreich an das zuständige "
+                "Team von **EHRP/VC** weitergeleitet.\n\n"
 
                 f"**Bewerbungs-ID:** `{app_id}`\n"
                 "**Status:** 🟡 Ausstehend\n\n"
@@ -2002,9 +1427,11 @@ class FinalReviewView(
             color=SUCCESS_COLOR,
         )
 
+
         result.set_footer(
             text="EHRP/VC | Recruitment System"
         )
+
 
         await interaction.response.edit_message(
             embed=result,
@@ -2026,6 +1453,7 @@ def build_review_embed(
             "user_id"
         ]
     )
+
 
     if member:
         member_text = (
@@ -2069,6 +1497,7 @@ def build_review_embed(
         0,
     )
 
+
     if claimed_by:
         claimed_text = (
             f"<@{claimed_by}>"
@@ -2109,10 +1538,6 @@ def build_review_embed(
     )
 
 
-    # ========================================================
-    # ANSWERS
-    # ========================================================
-
     for index, question in enumerate(
         QUESTIONS
     ):
@@ -2135,13 +1560,8 @@ def build_review_embed(
 
 
     if member:
-
         embed.set_thumbnail(
-            url=(
-                member
-                .display_avatar
-                .url
-            )
+            url=member.display_avatar.url
         )
 
 
@@ -2153,26 +1573,23 @@ def build_review_embed(
 
 
 # ============================================================
-# REJECTION MODAL
+# REJECT MODAL
 # ============================================================
 
 class RejectModal(
     discord.ui.Modal
 ):
 
-    def __init__(
-        self,
-    ):
+    def __init__(self):
 
         super().__init__(
             title="Bewerbung ablehnen"
         )
 
+
         self.reason = (
             discord.ui.TextInput(
-                label=(
-                    "Grund der Ablehnung"
-                ),
+                label="Grund der Ablehnung",
                 placeholder=(
                     "Bitte geben Sie den Ablehnungsgrund an."
                 ),
@@ -2183,6 +1600,7 @@ class RejectModal(
                 max_length=1000,
             )
         )
+
 
         self.add_item(
             self.reason
@@ -2204,12 +1622,10 @@ class RejectModal(
         if not is_interview_staff(
             interaction.user
         ):
-
             await interaction.response.send_message(
                 "❌ Sie dürfen diese Bewerbung nicht bearbeiten.",
                 ephemeral=True,
             )
-
             return
 
 
@@ -2221,12 +1637,10 @@ class RejectModal(
 
 
         if not application:
-
             await interaction.response.send_message(
                 "❌ Bewerbung nicht gefunden.",
                 ephemeral=True,
             )
-
             return
 
 
@@ -2268,12 +1682,11 @@ class RejectModal(
 
             "**Sehr geehrte/r Bewerber/in,**\n\n"
 
-            "vielen Dank für Ihre Bewerbung und das damit "
-            "verbundene Interesse an einer Position im Team "
-            "von **EHRP/VC**.\n\n"
+            "vielen Dank für Ihre Bewerbung und das damit verbundene "
+            "Interesse an einer Position im Team von **EHRP/VC**.\n\n"
 
-            "Nach sorgfältiger Prüfung müssen wir Ihnen leider "
-            "mitteilen, dass Ihre Bewerbung zum jetzigen Zeitpunkt "
+            "Nach sorgfältiger Prüfung müssen wir Ihnen leider mitteilen, "
+            "dass Ihre Bewerbung zum jetzigen Zeitpunkt "
             "**abgelehnt wurde**.\n\n"
 
             "## 📋 Grund der Ablehnung\n\n"
@@ -2294,15 +1707,11 @@ class RejectModal(
 
 
         if applicant:
-
             try:
-
                 await applicant.send(
                     rejection_text
                 )
-
             except discord.HTTPException:
-
                 pass
 
 
@@ -2323,18 +1732,12 @@ class ApplicationReviewView(
     discord.ui.View
 ):
 
-    def __init__(
-        self,
-    ):
+    def __init__(self):
 
         super().__init__(
             timeout=None
         )
 
-
-    # ========================================================
-    # CLAIM
-    # ========================================================
 
     @discord.ui.button(
         label="Übernehmen",
@@ -2358,12 +1761,10 @@ class ApplicationReviewView(
         if not is_interview_staff(
             interaction.user
         ):
-
             await interaction.response.send_message(
                 "❌ Sie dürfen keine Bewerbungen bearbeiten.",
                 ephemeral=True,
             )
-
             return
 
 
@@ -2375,19 +1776,16 @@ class ApplicationReviewView(
 
 
         if not application:
-
             await interaction.response.send_message(
                 "❌ Bewerbung nicht gefunden.",
                 ephemeral=True,
             )
-
             return
 
 
         if application.get(
             "claimed_by"
         ):
-
             await interaction.response.send_message(
                 (
                     "⚠️ Diese Bewerbung wurde bereits von "
@@ -2395,7 +1793,6 @@ class ApplicationReviewView(
                 ),
                 ephemeral=True,
             )
-
             return
 
 
@@ -2426,10 +1823,6 @@ class ApplicationReviewView(
         )
 
 
-    # ========================================================
-    # ACCEPT
-    # ========================================================
-
     @discord.ui.button(
         label="Annehmen",
         emoji="✅",
@@ -2452,12 +1845,10 @@ class ApplicationReviewView(
         if not is_interview_staff(
             interaction.user
         ):
-
             await interaction.response.send_message(
                 "❌ Sie dürfen keine Bewerbungen bearbeiten.",
                 ephemeral=True,
             )
-
             return
 
 
@@ -2469,12 +1860,10 @@ class ApplicationReviewView(
 
 
         if not application:
-
             await interaction.response.send_message(
                 "❌ Bewerbung nicht gefunden.",
                 ephemeral=True,
             )
-
             return
 
 
@@ -2486,12 +1875,10 @@ class ApplicationReviewView(
             "interview_running",
             "completed",
         }:
-
             await interaction.response.send_message(
                 "⚠️ Diese Bewerbung wurde bereits angenommen.",
                 ephemeral=True,
             )
-
             return
 
 
@@ -2505,40 +1892,33 @@ class ApplicationReviewView(
 
 
         if applicant is None:
-
             await interaction.response.send_message(
                 "❌ Der Bewerber befindet sich nicht mehr auf dem Server.",
                 ephemeral=True,
             )
-
             return
 
 
-        # ====================================================
-        # GIVE APPLICATION ACCEPTED ROLE
-        # ====================================================
-
-        role_success = await add_role_safe(
-            applicant,
-            APPLICATION_ACCEPTED_ROLE_ID,
-            (
-                "EHRP Recruitment: "
-                "Schriftliche Bewerbung angenommen"
-            ),
+        role_success = (
+            await add_role_safe(
+                applicant,
+                APPLICATION_ACCEPTED_ROLE_ID,
+                (
+                    "EHRP Recruitment: "
+                    "Schriftliche Bewerbung angenommen"
+                ),
+            )
         )
 
 
         if not role_success:
-
             await interaction.response.send_message(
                 (
-                    "❌ Die Bewerbung konnte nicht vollständig angenommen werden.\n\n"
-                    "Die Bewerberrolle konnte nicht vergeben werden. "
+                    "❌ Die Bewerberrolle konnte nicht vergeben werden.\n\n"
                     "Bitte prüfen Sie die Rollen-Hierarchie des Bots."
                 ),
                 ephemeral=True,
             )
-
             return
 
 
@@ -2560,26 +1940,22 @@ class ApplicationReviewView(
         save_data()
 
 
-        # ====================================================
-        # ACCEPTANCE MESSAGE
-        # ====================================================
-
         acceptance_text = (
             "# ✅ Bewerbung angenommen\n\n"
 
             "**Sehr geehrte/r Bewerber/in,**\n\n"
 
-            "vielen Dank für Ihre Bewerbung und Ihr Interesse "
-            "an einer Position im Team von **EHRP/VC**.\n\n"
+            "vielen Dank für Ihre Bewerbung und Ihr Interesse an einer "
+            "Position im Team von **EHRP/VC**.\n\n"
 
-            "Wir freuen uns, Ihnen mitteilen zu können, "
-            "dass Ihre Bewerbung **angenommen wurde**.\n\n"
+            "Wir freuen uns, Ihnen mitteilen zu können, dass Ihre Bewerbung "
+            "**angenommen wurde**.\n\n"
 
             "## 📞 Nächster Schritt: Bewerbungsgespräch\n\n"
 
-            "Als nächsten Schritt bitten wir Sie, gemeinsam mit "
-            "unserem zuständigen Gesprächsteam einen Termin für "
-            "Ihr Bewerbungsgespräch zu vereinbaren.\n\n"
+            "Als nächsten Schritt bitten wir Sie, gemeinsam mit unserem "
+            "zuständigen Gesprächsteam einen Termin für Ihr "
+            "Bewerbungsgespräch zu vereinbaren.\n\n"
 
             "Im Kanal **Gespräch Termin** können sowohl Sie als auch "
             "das zuständige Team einen Termin vorschlagen.\n\n"
@@ -2587,11 +1963,11 @@ class ApplicationReviewView(
             "Ein Termin gilt erst dann als verbindlich, wenn "
             "**beide Seiten diesen bestätigt haben**.\n\n"
 
-            "Sollten Sie einen vereinbarten Termin nicht wahrnehmen "
-            "können, informieren Sie das Team bitte rechtzeitig.\n\n"
+            "Sollten Sie den Termin nicht wahrnehmen können, informieren "
+            "Sie das Team bitte rechtzeitig.\n\n"
 
-            "Wir freuen uns auf das Gespräch mit Ihnen und wünschen "
-            "Ihnen weiterhin viel Erfolg.\n\n"
+            "Wir freuen uns auf das Gespräch mit Ihnen und wünschen Ihnen "
+            "weiterhin viel Erfolg.\n\n"
 
             "**Mit freundlichen Grüßen**\n"
             "**Das EHRP/VC-Team**"
@@ -2599,19 +1975,12 @@ class ApplicationReviewView(
 
 
         try:
-
             await applicant.send(
                 acceptance_text
             )
-
         except discord.HTTPException:
-
             pass
 
-
-        # ====================================================
-        # PLANNING CHANNEL
-        # ====================================================
 
         planning_channel = (
             interaction.guild.get_channel(
@@ -2624,7 +1993,6 @@ class ApplicationReviewView(
             planning_channel,
             discord.TextChannel,
         ):
-
             await interaction.response.send_message(
                 (
                     "⚠️ Bewerbung angenommen und Rolle vergeben, "
@@ -2632,7 +2000,6 @@ class ApplicationReviewView(
                 ),
                 ephemeral=True,
             )
-
             return
 
 
@@ -2681,10 +2048,6 @@ class ApplicationReviewView(
         )
 
 
-    # ========================================================
-    # REJECT
-    # ========================================================
-
     @discord.ui.button(
         label="Ablehnen",
         emoji="❌",
@@ -2707,12 +2070,10 @@ class ApplicationReviewView(
         if not is_interview_staff(
             interaction.user
         ):
-
             await interaction.response.send_message(
                 "❌ Sie dürfen keine Bewerbungen bearbeiten.",
                 ephemeral=True,
             )
-
             return
 
 
@@ -2720,7 +2081,7 @@ class ApplicationReviewView(
             RejectModal()
         )
 
-  # ============================================================
+# ============================================================
 # INTERVIEW EMBED
 # ============================================================
 
@@ -2766,11 +2127,6 @@ def build_interview_embed(
         0,
     )
 
-
-    # ========================================================
-    # TERMIN
-    # ========================================================
-
     if proposal_date and proposal_time:
 
         proposal_text = (
@@ -2781,7 +2137,6 @@ def build_interview_embed(
         )
 
         if proposal_note:
-
             proposal_text += (
                 f"**Hinweis:** {proposal_note}\n"
             )
@@ -2795,73 +2150,41 @@ def build_interview_embed(
             "können unten einen Termin vorschlagen."
         )
 
+    applicant_status = (
+        "✅ Bestätigt"
+        if applicant_confirmed
+        else "⏳ Noch nicht bestätigt"
+    )
 
-    # ========================================================
-    # CONFIRMATIONS
-    # ========================================================
+    team_status = (
+        "✅ Bestätigt"
+        if team_confirmed
+        else "⏳ Noch nicht bestätigt"
+    )
 
-    if applicant_confirmed:
-        applicant_status = (
-            "✅ Bestätigt"
-        )
-    else:
-        applicant_status = (
-            "⏳ Noch nicht bestätigt"
-        )
+    interviewer_text = (
+        f"<@{interviewer_id}>"
+        if interviewer_id
+        else "Noch nicht festgelegt"
+    )
 
+    if applicant_confirmed and team_confirmed:
 
-    if team_confirmed:
-        team_status = (
-            "✅ Bestätigt"
-        )
-    else:
-        team_status = (
-            "⏳ Noch nicht bestätigt"
-        )
-
-
-    if interviewer_id:
-
-        interviewer_text = (
-            f"<@{interviewer_id}>"
-        )
-
-    else:
-
-        interviewer_text = (
-            "Noch nicht festgelegt"
-        )
-
-
-    # ========================================================
-    # FINAL STATUS
-    # ========================================================
-
-    if (
-        applicant_confirmed
-        and team_confirmed
-    ):
-
-        status_text = (
+        final_status = (
             "# 🟢 TERMIN VERBINDLICH BESTÄTIGT\n\n"
             "Der Termin wurde von beiden Seiten bestätigt."
         )
 
-        color = (
-            SUCCESS_COLOR
-        )
+        color = SUCCESS_COLOR
 
     else:
 
-        status_text = (
+        final_status = (
             "⚠️ Ein Termin gilt erst dann als verbindlich, "
             "wenn **Bewerber und Gesprächsteam bestätigt haben**."
         )
 
-        color = (
-            INFO_COLOR
-        )
-
+        color = INFO_COLOR
 
     embed = discord.Embed(
         title=(
@@ -2901,7 +2224,7 @@ def build_interview_embed(
 
             "━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
-            f"{status_text}"
+            f"{final_status}"
         ),
         color=color,
     )
@@ -2929,7 +2252,6 @@ class InterviewProposalModal(
             title="Gesprächstermin vorschlagen"
         )
 
-
         self.date_input = (
             discord.ui.TextInput(
                 label="Datum",
@@ -2938,7 +2260,6 @@ class InterviewProposalModal(
                 max_length=10,
             )
         )
-
 
         self.time_input = (
             discord.ui.TextInput(
@@ -2949,22 +2270,18 @@ class InterviewProposalModal(
             )
         )
 
-
         self.note_input = (
             discord.ui.TextInput(
                 label="Zusätzlicher Hinweis",
                 placeholder=(
-                    "Optional, z. B. "
-                    "Ich kann zwischen 18:00 und 20:00 Uhr."
+                    "Optional, z. B. Ich kann zwischen "
+                    "18:00 und 20:00 Uhr."
                 ),
-                style=(
-                    discord.TextStyle.paragraph
-                ),
+                style=discord.TextStyle.paragraph,
                 required=False,
                 max_length=500,
             )
         )
-
 
         self.add_item(
             self.date_input
@@ -2978,7 +2295,6 @@ class InterviewProposalModal(
             self.note_input
         )
 
-
     async def on_submit(
         self,
         interaction: discord.Interaction,
@@ -2990,7 +2306,6 @@ class InterviewProposalModal(
             )
         )
 
-
         if not application:
 
             await interaction.response.send_message(
@@ -3000,18 +2315,12 @@ class InterviewProposalModal(
 
             return
 
-
-        # ====================================================
-        # ACCESS CHECK
-        # ====================================================
-
         is_applicant = (
             interaction.user.id
             == application[
                 "user_id"
             ]
         )
-
 
         is_team = (
             isinstance(
@@ -3023,11 +2332,7 @@ class InterviewProposalModal(
             )
         )
 
-
-        if (
-            not is_applicant
-            and not is_team
-        ):
+        if not is_applicant and not is_team:
 
             await interaction.response.send_message(
                 "❌ Sie gehören nicht zu diesem Bewerbungsgespräch.",
@@ -3036,37 +2341,24 @@ class InterviewProposalModal(
 
             return
 
-
-        # ====================================================
-        # DATE / TIME
-        # ====================================================
-
         proposal_date = str(
             self.date_input.value
         ).strip()
 
-
         proposal_time = str(
             self.time_input.value
         ).strip()
-
 
         proposal_note = str(
             self.note_input.value
             or ""
         ).strip()
 
-
         try:
 
-            parsed_datetime = (
-                datetime.strptime(
-                    (
-                        f"{proposal_date} "
-                        f"{proposal_time}"
-                    ),
-                    "%d.%m.%Y %H:%M",
-                )
+            parsed_datetime = datetime.strptime(
+                f"{proposal_date} {proposal_time}",
+                "%d.%m.%Y %H:%M",
             )
 
         except ValueError:
@@ -3083,7 +2375,6 @@ class InterviewProposalModal(
 
             return
 
-
         if parsed_datetime < datetime.now():
 
             await interaction.response.send_message(
@@ -3092,11 +2383,6 @@ class InterviewProposalModal(
             )
 
             return
-
-
-        # ====================================================
-        # SAVE NEW PROPOSAL
-        # ====================================================
 
         application[
             "proposal_date"
@@ -3114,11 +2400,6 @@ class InterviewProposalModal(
             "proposal_by"
         ] = interaction.user.id
 
-
-        # ====================================================
-        # RESET OLD CONFIRMATIONS
-        # ====================================================
-
         application[
             "applicant_confirmed"
         ] = False
@@ -3131,17 +2412,11 @@ class InterviewProposalModal(
             "confirmed_message_sent"
         ] = False
 
-
-        # ====================================================
-        # PROPOSER AUTOMATICALLY CONFIRMS OWN PROPOSAL
-        # ====================================================
-
         if is_applicant:
 
             application[
                 "applicant_confirmed"
             ] = True
-
 
         if is_team:
 
@@ -3153,7 +2428,6 @@ class InterviewProposalModal(
                 "interviewer_id"
             ] = interaction.user.id
 
-
         DATA[
             "applications"
         ][
@@ -3162,7 +2436,6 @@ class InterviewProposalModal(
 
         save_data()
 
-
         await interaction.response.edit_message(
             embed=build_interview_embed(
                 interaction.guild,
@@ -3170,11 +2443,6 @@ class InterviewProposalModal(
             ),
             view=InterviewPlanningView(),
         )
-
-
-        # ====================================================
-        # MAYBE BOTH ALREADY CONFIRMED
-        # ====================================================
 
         if (
             application.get(
@@ -3195,7 +2463,217 @@ class InterviewProposalModal(
 
 
 # ============================================================
-# FINAL CONFIRMED INTERVIEW MESSAGE
+# INTERVIEW PLANNING VIEW
+# ============================================================
+
+class InterviewPlanningView(
+    discord.ui.View
+):
+
+    def __init__(
+        self,
+    ):
+
+        super().__init__(
+            timeout=None
+        )
+
+    @discord.ui.button(
+        label="Termin vorschlagen / ändern",
+        emoji="📅",
+        style=discord.ButtonStyle.primary,
+        custom_id="ehrp:application:interview_propose",
+    )
+    async def propose_interview(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button,
+    ):
+
+        app_id, application = (
+            find_application_by_interview_message(
+                interaction.message.id
+            )
+        )
+
+        if not application:
+
+            await interaction.response.send_message(
+                "❌ Das Bewerbungsgespräch wurde nicht gefunden.",
+                ephemeral=True,
+            )
+
+            return
+
+        is_applicant = (
+            interaction.user.id
+            == application[
+                "user_id"
+            ]
+        )
+
+        is_team = (
+            isinstance(
+                interaction.user,
+                discord.Member,
+            )
+            and is_interview_staff(
+                interaction.user
+            )
+        )
+
+        if not is_applicant and not is_team:
+
+            await interaction.response.send_message(
+                "❌ Sie dürfen für dieses Gespräch keinen Termin vorschlagen.",
+                ephemeral=True,
+            )
+
+            return
+
+        await interaction.response.send_modal(
+            InterviewProposalModal()
+        )
+
+    @discord.ui.button(
+        label="Termin bestätigen",
+        emoji="✅",
+        style=discord.ButtonStyle.success,
+        custom_id="ehrp:application:interview_confirm",
+    )
+    async def confirm_interview(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button,
+    ):
+
+        app_id, application = (
+            find_application_by_interview_message(
+                interaction.message.id
+            )
+        )
+
+        if not application:
+
+            await interaction.response.send_message(
+                "❌ Das Bewerbungsgespräch wurde nicht gefunden.",
+                ephemeral=True,
+            )
+
+            return
+
+        if (
+            not application.get(
+                "proposal_date"
+            )
+            or not application.get(
+                "proposal_time"
+            )
+        ):
+
+            await interaction.response.send_message(
+                "⚠️ Es wurde noch kein Termin vorgeschlagen.",
+                ephemeral=True,
+            )
+
+            return
+
+        if (
+            interaction.user.id
+            == application[
+                "user_id"
+            ]
+        ):
+
+            if application.get(
+                "applicant_confirmed"
+            ):
+
+                await interaction.response.send_message(
+                    "✅ Sie haben diesen Termin bereits bestätigt.",
+                    ephemeral=True,
+                )
+
+                return
+
+            application[
+                "applicant_confirmed"
+            ] = True
+
+        elif (
+            isinstance(
+                interaction.user,
+                discord.Member,
+            )
+            and is_interview_staff(
+                interaction.user
+            )
+        ):
+
+            if application.get(
+                "team_confirmed"
+            ):
+
+                await interaction.response.send_message(
+                    "✅ Das Gesprächsteam hat diesen Termin bereits bestätigt.",
+                    ephemeral=True,
+                )
+
+                return
+
+            application[
+                "team_confirmed"
+            ] = True
+
+            application[
+                "interviewer_id"
+            ] = interaction.user.id
+
+        else:
+
+            await interaction.response.send_message(
+                "❌ Sie dürfen diesen Termin nicht bestätigen.",
+                ephemeral=True,
+            )
+
+            return
+
+        DATA[
+            "applications"
+        ][
+            app_id
+        ] = application
+
+        save_data()
+
+        await interaction.response.edit_message(
+            embed=build_interview_embed(
+                interaction.guild,
+                application,
+            ),
+            view=self,
+        )
+
+        if (
+            application.get(
+                "applicant_confirmed"
+            )
+            and application.get(
+                "team_confirmed"
+            )
+            and application.get(
+                "interviewer_id"
+            )
+        ):
+
+            await send_confirmed_interview(
+                interaction.guild,
+                application,
+            )
+
+
+# ============================================================
+# SEND CONFIRMED INTERVIEW
 # ============================================================
 
 async def send_confirmed_interview(
@@ -3209,13 +2687,11 @@ async def send_confirmed_interview(
     ):
         return
 
-
     confirmed_channel = (
         guild.get_channel(
             CONFIRMED_INTERVIEW_CHANNEL_ID
         )
     )
-
 
     if not isinstance(
         confirmed_channel,
@@ -3223,19 +2699,17 @@ async def send_confirmed_interview(
     ):
 
         print(
-            "❌ Channel für bestätigte Bewerbungsgespräche "
-            "wurde nicht gefunden."
+            "❌ Channel für bestätigte Bewerbungsgespräche wurde nicht gefunden."
         )
 
         return
-
 
     embed = discord.Embed(
         title="📅 BEWERBUNGSGESPRÄCH BESTÄTIGT",
         description=(
             "# ✅ Verbindlicher Gesprächstermin\n\n"
 
-            "Ein neuer Termin für ein Bewerbungsgespräch wurde "
+            "Ein Termin für ein Bewerbungsgespräch wurde "
             "von beiden Seiten verbindlich bestätigt.\n\n"
 
             "━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -3262,21 +2736,15 @@ async def send_confirmed_interview(
 
             "Bitte erscheinen Sie rechtzeitig zum vereinbarten Termin.\n\n"
 
-            "Sollte der Termin aus wichtigen Gründen nicht "
-            "wahrgenommen werden können, informieren Sie die "
-            "andere Seite bitte frühzeitig.\n\n"
-
             "Nach Abschluss des Gespräches muss das zuständige "
-            "Gesprächsteam das Ergebnis unten eintragen."
+            "Gesprächsteam das Ergebnis unten bestätigen."
         ),
         color=SUCCESS_COLOR,
     )
 
-
     embed.set_footer(
         text="EHRP/VC | Recruitment System"
     )
-
 
     result_message = (
         await confirmed_channel.send(
@@ -3296,7 +2764,6 @@ async def send_confirmed_interview(
         )
     )
 
-
     application[
         "result_message_id"
     ] = result_message.id
@@ -3309,7 +2776,6 @@ async def send_confirmed_interview(
         "status"
     ] = "interview_running"
 
-
     DATA[
         "applications"
     ][
@@ -3319,290 +2785,6 @@ async def send_confirmed_interview(
     ] = application
 
     save_data()
-
-
-# ============================================================
-# FIND APPLICATION BY RESULT MESSAGE
-# ============================================================
-
-def find_application_by_result_message(
-    message_id: int,
-):
-
-    for app_id, application in DATA[
-        "applications"
-    ].items():
-
-        if (
-            application.get(
-                "result_message_id"
-            )
-            == message_id
-        ):
-
-            return (
-                app_id,
-                application,
-            )
-
-    return (
-        None,
-        None,
-    )
-
-
-# ============================================================
-# INTERVIEW PLANNING VIEW
-# ============================================================
-
-class InterviewPlanningView(
-    discord.ui.View
-):
-
-    def __init__(
-        self,
-    ):
-
-        super().__init__(
-            timeout=None
-        )
-
-
-    # ========================================================
-    # PROPOSE / CHANGE
-    # ========================================================
-
-    @discord.ui.button(
-        label="Termin vorschlagen / ändern",
-        emoji="📅",
-        style=discord.ButtonStyle.primary,
-        custom_id="ehrp:application:interview_propose",
-    )
-    async def propose_interview(
-        self,
-        interaction: discord.Interaction,
-        button: discord.ui.Button,
-    ):
-
-        app_id, application = (
-            find_application_by_interview_message(
-                interaction.message.id
-            )
-        )
-
-
-        if not application:
-
-            await interaction.response.send_message(
-                "❌ Das Bewerbungsgespräch wurde nicht gefunden.",
-                ephemeral=True,
-            )
-
-            return
-
-
-        is_applicant = (
-            interaction.user.id
-            == application[
-                "user_id"
-            ]
-        )
-
-
-        is_team = (
-            isinstance(
-                interaction.user,
-                discord.Member,
-            )
-            and is_interview_staff(
-                interaction.user
-            )
-        )
-
-
-        if (
-            not is_applicant
-            and not is_team
-        ):
-
-            await interaction.response.send_message(
-                "❌ Sie dürfen für dieses Gespräch keinen Termin vorschlagen.",
-                ephemeral=True,
-            )
-
-            return
-
-
-        await interaction.response.send_modal(
-            InterviewProposalModal()
-        )
-
-
-    # ========================================================
-    # CONFIRM
-    # ========================================================
-
-    @discord.ui.button(
-        label="Termin bestätigen",
-        emoji="✅",
-        style=discord.ButtonStyle.success,
-        custom_id="ehrp:application:interview_confirm",
-    )
-    async def confirm_interview(
-        self,
-        interaction: discord.Interaction,
-        button: discord.ui.Button,
-    ):
-
-        app_id, application = (
-            find_application_by_interview_message(
-                interaction.message.id
-            )
-        )
-
-
-        if not application:
-
-            await interaction.response.send_message(
-                "❌ Das Bewerbungsgespräch wurde nicht gefunden.",
-                ephemeral=True,
-            )
-
-            return
-
-
-        if (
-            not application.get(
-                "proposal_date"
-            )
-            or not application.get(
-                "proposal_time"
-            )
-        ):
-
-            await interaction.response.send_message(
-                "⚠️ Es wurde noch kein Termin vorgeschlagen.",
-                ephemeral=True,
-            )
-
-            return
-
-
-        # ====================================================
-        # APPLICANT CONFIRMATION
-        # ====================================================
-
-        if (
-            interaction.user.id
-            == application[
-                "user_id"
-            ]
-        ):
-
-            if application.get(
-                "applicant_confirmed"
-            ):
-
-                await interaction.response.send_message(
-                    "✅ Sie haben diesen Termin bereits bestätigt.",
-                    ephemeral=True,
-                )
-
-                return
-
-
-            application[
-                "applicant_confirmed"
-            ] = True
-
-
-        # ====================================================
-        # TEAM CONFIRMATION
-        # ====================================================
-
-        elif (
-            isinstance(
-                interaction.user,
-                discord.Member,
-            )
-            and is_interview_staff(
-                interaction.user
-            )
-        ):
-
-            if application.get(
-                "team_confirmed"
-            ):
-
-                await interaction.response.send_message(
-                    "✅ Das Gesprächsteam hat diesen Termin bereits bestätigt.",
-                    ephemeral=True,
-                )
-
-                return
-
-
-            application[
-                "team_confirmed"
-            ] = True
-
-            application[
-                "interviewer_id"
-            ] = interaction.user.id
-
-
-        # ====================================================
-        # NO ACCESS
-        # ====================================================
-
-        else:
-
-            await interaction.response.send_message(
-                "❌ Sie dürfen diesen Termin nicht bestätigen.",
-                ephemeral=True,
-            )
-
-            return
-
-
-        DATA[
-            "applications"
-        ][
-            app_id
-        ] = application
-
-        save_data()
-
-
-        await interaction.response.edit_message(
-            embed=build_interview_embed(
-                interaction.guild,
-                application,
-            ),
-            view=self,
-        )
-
-
-        # ====================================================
-        # BOTH CONFIRMED
-        # ====================================================
-
-        if (
-            application.get(
-                "applicant_confirmed"
-            )
-            and application.get(
-                "team_confirmed"
-            )
-            and application.get(
-                "interviewer_id"
-            )
-        ):
-
-            await send_confirmed_interview(
-                interaction.guild,
-                application,
-            )
 
 
 # ============================================================
@@ -3621,7 +2803,6 @@ class InterviewFailedModal(
             title="Gespräch nicht bestanden"
         )
 
-
         self.reason = (
             discord.ui.TextInput(
                 label="Grund",
@@ -3629,19 +2810,15 @@ class InterviewFailedModal(
                     "Warum wurde das Bewerbungsgespräch "
                     "nicht bestanden?"
                 ),
-                style=(
-                    discord.TextStyle.paragraph
-                ),
+                style=discord.TextStyle.paragraph,
                 min_length=5,
                 max_length=1000,
             )
         )
 
-
         self.add_item(
             self.reason
         )
-
 
     async def on_submit(
         self,
@@ -3652,9 +2829,7 @@ class InterviewFailedModal(
             interaction.user,
             discord.Member,
         ):
-
             return
-
 
         if not is_interview_staff(
             interaction.user
@@ -3667,13 +2842,11 @@ class InterviewFailedModal(
 
             return
 
-
         app_id, application = (
             find_application_by_result_message(
                 interaction.message.id
             )
         )
-
 
         if not application:
 
@@ -3683,7 +2856,6 @@ class InterviewFailedModal(
             )
 
             return
-
 
         if application.get(
             "interview_result"
@@ -3696,7 +2868,6 @@ class InterviewFailedModal(
 
             return
 
-
         applicant = (
             interaction.guild.get_member(
                 application[
@@ -3705,15 +2876,9 @@ class InterviewFailedModal(
             )
         )
 
-
         reason = str(
             self.reason.value
         ).strip()
-
-
-        # ====================================================
-        # REMOVE APPLICATION ACCEPTED ROLE
-        # ====================================================
 
         if applicant:
 
@@ -3725,7 +2890,6 @@ class InterviewFailedModal(
                     "Bewerbungsgespräch nicht bestanden"
                 ),
             )
-
 
         application[
             "status"
@@ -3743,7 +2907,6 @@ class InterviewFailedModal(
             "result_by"
         ] = interaction.user.id
 
-
         DATA[
             "applications"
         ][
@@ -3751,11 +2914,6 @@ class InterviewFailedModal(
         ] = application
 
         save_data()
-
-
-        # ====================================================
-        # USER MESSAGE
-        # ====================================================
 
         failed_text = (
             "# ❌ Bewerbungsgespräch nicht bestanden\n\n"
@@ -3776,8 +2934,7 @@ class InterviewFailedModal(
             "Diese Entscheidung bedeutet nicht, dass eine spätere "
             "Bewerbung grundsätzlich ausgeschlossen ist.\n\n"
 
-            "Sie können sich zu einem späteren Zeitpunkt erneut bewerben, "
-            "wenn die genannten Punkte entsprechend verbessert wurden.\n\n"
+            "Sie können sich zu einem späteren Zeitpunkt erneut bewerben.\n\n"
 
             "Wir bedanken uns für Ihr Verständnis und wünschen Ihnen "
             "weiterhin viel Spaß auf **EHRP/VC**.\n\n"
@@ -3786,23 +2943,14 @@ class InterviewFailedModal(
             "**Das EHRP/VC-Team**"
         )
 
-
         if applicant:
 
             try:
-
                 await applicant.send(
                     failed_text
                 )
-
             except discord.HTTPException:
-
                 pass
-
-
-        # ====================================================
-        # UPDATE RESULT MESSAGE
-        # ====================================================
 
         embed = discord.Embed(
             title="❌ BEWERBUNGSGESPRÄCH NICHT BESTANDEN",
@@ -3821,19 +2969,14 @@ class InterviewFailedModal(
 
                 "━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
-                "**Status:** 🔴 Nicht aufgenommen\n\n"
-
-                f"<@&{APPLICATION_ACCEPTED_ROLE_ID}> wurde entfernt.\n"
-                f"<@&{TEAM_ACCEPTED_ROLE_ID}> wurde **nicht** vergeben."
+                "**Status:** 🔴 Nicht aufgenommen"
             ),
             color=ERROR_COLOR,
         )
 
-
         embed.set_footer(
             text="EHRP/VC | Recruitment System"
         )
-
 
         await interaction.response.edit_message(
             embed=embed,
@@ -3857,11 +3000,6 @@ class InterviewResultView(
             timeout=None
         )
 
-
-    # ========================================================
-    # PASSED
-    # ========================================================
-
     @discord.ui.button(
         label="Gespräch bestanden",
         emoji="✅",
@@ -3878,9 +3016,7 @@ class InterviewResultView(
             interaction.user,
             discord.Member,
         ):
-
             return
-
 
         if not is_interview_staff(
             interaction.user
@@ -3893,13 +3029,11 @@ class InterviewResultView(
 
             return
 
-
         app_id, application = (
             find_application_by_result_message(
                 interaction.message.id
             )
         )
-
 
         if not application:
 
@@ -3909,7 +3043,6 @@ class InterviewResultView(
             )
 
             return
-
 
         if application.get(
             "interview_result"
@@ -3922,7 +3055,6 @@ class InterviewResultView(
 
             return
 
-
         applicant = (
             interaction.guild.get_member(
                 application[
@@ -3930,7 +3062,6 @@ class InterviewResultView(
                 ]
             )
         )
-
 
         if applicant is None:
 
@@ -3940,11 +3071,6 @@ class InterviewResultView(
             )
 
             return
-
-
-        # ====================================================
-        # FIRST ADD NEW ROLE
-        # ====================================================
 
         added_new_role = (
             await add_role_safe(
@@ -3957,36 +3083,26 @@ class InterviewResultView(
             )
         )
 
-
         if not added_new_role:
 
             await interaction.response.send_message(
                 (
                     "❌ Die neue Rolle konnte nicht vergeben werden.\n\n"
-                    "Bitte prüfen Sie, ob die Bot-Rolle über "
-                    "der neuen Rolle steht."
+                    "Bitte prüfen Sie die Rollen-Hierarchie des Bots."
                 ),
                 ephemeral=True,
             )
 
             return
 
-
-        # ====================================================
-        # REMOVE OLD ROLE
-        # ====================================================
-
-        removed_old_role = (
-            await remove_role_safe(
-                applicant,
-                APPLICATION_ACCEPTED_ROLE_ID,
-                (
-                    "EHRP Recruitment: "
-                    "Bewerbungsverfahren abgeschlossen"
-                ),
-            )
+        await remove_role_safe(
+            applicant,
+            APPLICATION_ACCEPTED_ROLE_ID,
+            (
+                "EHRP Recruitment: "
+                "Bewerbungsverfahren abgeschlossen"
+            ),
         )
-
 
         application[
             "status"
@@ -4000,7 +3116,6 @@ class InterviewResultView(
             "result_by"
         ] = interaction.user.id
 
-
         DATA[
             "applications"
         ][
@@ -4009,26 +3124,15 @@ class InterviewResultView(
 
         save_data()
 
-
-        # ====================================================
-        # DM TO APPLICANT
-        # ====================================================
-
         passed_text = (
             "# 🎉 Bewerbungsgespräch bestanden\n\n"
 
             "**Sehr geehrte/r Bewerber/in,**\n\n"
 
             "wir freuen uns, Ihnen mitteilen zu können, dass Sie "
-            "Ihr Bewerbungsgespräch bei **EHRP/VC erfolgreich "
-            "bestanden haben**.\n\n"
+            "Ihr Bewerbungsgespräch bei **EHRP/VC erfolgreich bestanden haben**.\n\n"
 
             "Damit wurde Ihr Bewerbungsverfahren erfolgreich abgeschlossen.\n\n"
-
-            "## ✅ Aufnahme\n\n"
-
-            "Sie wurden für die weitere Aufnahme in das "
-            "**EHRP/VC-Team** freigegeben.\n\n"
 
             "Ihre bisherige Bewerberrolle wurde entfernt und Ihre "
             "neue Rolle wurde automatisch vergeben.\n\n"
@@ -4040,37 +3144,12 @@ class InterviewResultView(
             "**Das EHRP/VC-Team**"
         )
 
-
         try:
-
             await applicant.send(
                 passed_text
             )
-
         except discord.HTTPException:
-
             pass
-
-
-        # ====================================================
-        # FINAL INTERNAL MESSAGE
-        # ====================================================
-
-        if removed_old_role:
-
-            role_status = (
-                f"<@&{APPLICATION_ACCEPTED_ROLE_ID}> ❌ entfernt\n"
-                f"<@&{TEAM_ACCEPTED_ROLE_ID}> ✅ hinzugefügt"
-            )
-
-        else:
-
-            role_status = (
-                f"<@&{TEAM_ACCEPTED_ROLE_ID}> ✅ hinzugefügt\n"
-                f"⚠️ <@&{APPLICATION_ACCEPTED_ROLE_ID}> konnte "
-                "nicht automatisch entfernt werden."
-            )
-
 
         embed = discord.Embed(
             title="🎉 BEWERBUNG ERFOLGREICH ABGESCHLOSSEN",
@@ -4085,7 +3164,8 @@ class InterviewResultView(
 
                 "## 🔐 Rollenänderung\n\n"
 
-                f"{role_status}\n\n"
+                f"<@&{APPLICATION_ACCEPTED_ROLE_ID}> ❌ entfernt\n"
+                f"<@&{TEAM_ACCEPTED_ROLE_ID}> ✅ hinzugefügt\n\n"
 
                 "━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
@@ -4096,21 +3176,14 @@ class InterviewResultView(
             color=SUCCESS_COLOR,
         )
 
-
         embed.set_footer(
             text="EHRP/VC | Recruitment System"
         )
-
 
         await interaction.response.edit_message(
             embed=embed,
             view=None,
         )
-
-
-    # ========================================================
-    # FAILED
-    # ========================================================
 
     @discord.ui.button(
         label="Nicht bestanden",
@@ -4128,9 +3201,7 @@ class InterviewResultView(
             interaction.user,
             discord.Member,
         ):
-
             return
-
 
         if not is_interview_staff(
             interaction.user
@@ -4142,7 +3213,6 @@ class InterviewResultView(
             )
 
             return
-
 
         await interaction.response.send_modal(
             InterviewFailedModal()
@@ -4163,11 +3233,6 @@ class Applications(
     ):
 
         self.bot = bot
-
-
-        # ====================================================
-        # PERSISTENT VIEWS
-        # ====================================================
 
         bot.add_view(
             ApplicationPanelView()
@@ -4203,9 +3268,7 @@ class Applications(
             interaction.user,
             discord.Member,
         ):
-
             return
-
 
         if (
             not is_interview_staff(
@@ -4221,12 +3284,10 @@ class Applications(
 
             return
 
-
         await interaction.channel.send(
             embed=build_application_panel(),
             view=ApplicationPanelView(),
         )
-
 
         await interaction.response.send_message(
             "✅ Das Bewerbungsportal wurde erfolgreich erstellt.",
@@ -4251,9 +3312,7 @@ class Applications(
             interaction.user,
             discord.Member,
         ):
-
             return
-
 
         if (
             not is_interview_staff(
@@ -4269,13 +3328,11 @@ class Applications(
 
             return
 
-
         DATA[
             "applications_open"
         ] = True
 
         save_data()
-
 
         await interaction.response.send_message(
             (
@@ -4304,9 +3361,7 @@ class Applications(
             interaction.user,
             discord.Member,
         ):
-
             return
-
 
         if (
             not is_interview_staff(
@@ -4322,13 +3377,11 @@ class Applications(
 
             return
 
-
         DATA[
             "applications_open"
         ] = False
 
         save_data()
-
 
         await interaction.response.send_message(
             (
@@ -4357,9 +3410,7 @@ class Applications(
             interaction.user,
             discord.Member,
         ):
-
             return
-
 
         if (
             not is_interview_staff(
@@ -4375,13 +3426,11 @@ class Applications(
 
             return
 
-
         total = len(
             DATA[
                 "applications"
             ]
         )
-
 
         pending = sum(
             1
@@ -4396,7 +3445,6 @@ class Applications(
                 "claimed",
             }
         )
-
 
         interviews = sum(
             1
@@ -4413,7 +3461,6 @@ class Applications(
             }
         )
 
-
         completed = sum(
             1
             for application
@@ -4424,7 +3471,6 @@ class Applications(
                 "status"
             ) == "completed"
         )
-
 
         failed = sum(
             1
@@ -4440,22 +3486,14 @@ class Applications(
             }
         )
 
-
-        if DATA.get(
-            "applications_open",
-            True,
-        ):
-
-            application_status = (
-                "🟢 Geöffnet"
+        application_status = (
+            "🟢 Geöffnet"
+            if DATA.get(
+                "applications_open",
+                True,
             )
-
-        else:
-
-            application_status = (
-                "🔴 Geschlossen"
-            )
-
+            else "🔴 Geschlossen"
+        )
 
         embed = discord.Embed(
             title="⚙️ EHRP/VC | RECRUITMENT SYSTEM",
@@ -4483,11 +3521,9 @@ class Applications(
             color=SUCCESS_COLOR,
         )
 
-
         embed.set_footer(
             text="EHRP/VC | Recruitment System"
         )
-
 
         await interaction.response.send_message(
             embed=embed,
