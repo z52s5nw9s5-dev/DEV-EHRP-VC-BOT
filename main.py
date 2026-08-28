@@ -1,13 +1,14 @@
+import asyncio
 import os
 
 import discord
 from discord.ext import commands
 
-from health_server import start_health_server
+from health_server import keep_alive
 
 
 # ============================================================
-# EHRP | SYSTEM — MAIN
+# BOT CONFIG
 # ============================================================
 
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -23,15 +24,18 @@ if not TOKEN:
 # ============================================================
 
 intents = discord.Intents.default()
+
 intents.guilds = True
 intents.members = True
+intents.message_content = True
+intents.messages = True
 
 
 # ============================================================
 # BOT
 # ============================================================
 
-class EHRPSystem(commands.Bot):
+class EHRPBot(commands.Bot):
 
     def __init__(self):
         super().__init__(
@@ -39,103 +43,197 @@ class EHRPSystem(commands.Bot):
             intents=intents,
         )
 
+
     async def setup_hook(self):
 
-        print("🔄 Lade EHRP | System Module ...")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("🚀 EHRP | System startet …")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
-        # Recovery
-        await self.load_extension(
-            "cogs.recovery"
+
+        # ====================================================
+        # COGS
+        # ====================================================
+
+        extensions = [
+            "cogs.recovery",
+            "cogs.team",
+            "cogs.tickets",
+            "cogs.rp_control",
+            "cogs.selfroles",
+            "cogs.team_ideas",
+            "cogs.system_dashboard",
+            "cogs.applications",
+        ]
+
+
+        for extension in extensions:
+
+            try:
+
+                await self.load_extension(
+                    extension
+                )
+
+                print(
+                    f"✅ Geladen: {extension}"
+                )
+
+            except Exception as error:
+
+                print(
+                    f"❌ Fehler beim Laden von {extension}"
+                )
+
+                print(
+                    f"   {type(error).__name__}: {error}"
+                )
+
+
+        # ====================================================
+        # SLASH COMMAND SYNC
+        # ====================================================
+
+        try:
+
+            synced = await self.tree.sync()
+
+            print(
+                f"✅ Slash Commands synchronisiert: {len(synced)}"
+            )
+
+            for command in synced:
+
+                print(
+                    f"   /{command.name}"
+                )
+
+        except Exception as error:
+
+            print(
+                "❌ Slash Commands konnten nicht "
+                "synchronisiert werden:"
+            )
+
+            print(
+                f"   {type(error).__name__}: {error}"
+            )
+
+
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("✅ Setup abgeschlossen")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+
+    async def on_ready(self):
+
+        if self.user is None:
+            return
+
+        print("")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("🟢 EHRP | SYSTEM ONLINE")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print(
+            f"🤖 Bot: {self.user}"
         )
-        print("✅ Recovery geladen")
-
-        # Team
-        await self.load_extension(
-            "cogs.team"
+        print(
+            f"🆔 Bot-ID: {self.user.id}"
         )
-        print("✅ Team-System geladen")
-
-        # Tickets
-        await self.load_extension(
-            "cogs.tickets"
+        print(
+            f"🌐 Server: {len(self.guilds)}"
         )
-        print("✅ Ticket-System geladen")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
-        # RP Control
-        await self.load_extension(
-            "cogs.rp_control"
-        )
-        print("✅ RP-Control geladen")
 
-        # Self Roles
-        await self.load_extension(
-            "cogs.selfroles"
-        )
-        print("✅ Self-Roles geladen")
+        # ====================================================
+        # STATUS
+        # ====================================================
 
-        # Team Ideen
-        await self.load_extension(
-            "cogs.team_ideas"
-        )
-        print("✅ Team-Ideen geladen")
+        try:
 
-        # System Dashboard
-        await self.load_extension(
-            "cogs.system_dashboard"
-        )
-        print("✅ System Dashboard geladen")
+            activity = discord.Activity(
+                type=discord.ActivityType.watching,
+                name="EHRP/VC",
+            )
 
-        # Slash Commands synchronisieren
-        synced = await self.tree.sync()
+            await self.change_presence(
+                status=discord.Status.online,
+                activity=activity,
+            )
+
+        except Exception as error:
+
+            print(
+                f"⚠️ Status konnte nicht gesetzt werden: {error}"
+            )
+
+
+    async def on_error(
+        self,
+        event_method,
+        *args,
+        **kwargs,
+    ):
 
         print(
-            f"✅ {len(synced)} Slash-Commands synchronisiert"
+            f"❌ Unbehandelter Fehler bei Event: {event_method}"
         )
 
 
 # ============================================================
-# BOT INSTANZ
+# START BOT
 # ============================================================
 
-bot = EHRPSystem()
+bot = EHRPBot()
+
+
+async def main():
+
+    # Render Health Server
+    keep_alive()
+
+    try:
+
+        async with bot:
+
+            await bot.start(
+                TOKEN
+            )
+
+    except discord.LoginFailure:
+
+        print(
+            "❌ Discord Login fehlgeschlagen."
+        )
+
+        print(
+            "Bitte DISCORD_TOKEN auf Render prüfen."
+        )
+
+    except KeyboardInterrupt:
+
+        print(
+            "🛑 Bot wurde gestoppt."
+        )
+
+    except Exception as error:
+
+        print(
+            "❌ Kritischer Bot-Fehler:"
+        )
+
+        print(
+            f"{type(error).__name__}: {error}"
+        )
 
 
 # ============================================================
-# READY
+# RUN
 # ============================================================
 
-@bot.event
-async def on_ready():
+if __name__ == "__main__":
 
-    print("")
-    print("========================================")
-    print("✅ EHRP | SYSTEM ONLINE")
-    print(f"🤖 Bot: {bot.user}")
-
-    if bot.user:
-        print(f"🆔 Bot-ID: {bot.user.id}")
-
-    print(f"🌐 Server: {len(bot.guilds)}")
-    print("👥 Team-System: ONLINE")
-    print("🎫 Ticket-System: ONLINE")
-    print("🎮 RP-Control: ONLINE")
-    print("🔔 Self-Roles: ONLINE")
-    print("💡 Team-Ideen: ONLINE")
-    print("⚙️ System Dashboard: ONLINE")
-    print("🕐 Alter 13:00 RP-Start: ENTFERNT")
-    print("========================================")
-    print("")
-
-
-# ============================================================
-# RENDER HEALTH SERVER
-# ============================================================
-
-start_health_server()
-
-
-# ============================================================
-# BOT START
-# ============================================================
-
-bot.run(TOKEN)
+    asyncio.run(
+        main()
+    )
