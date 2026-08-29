@@ -25,9 +25,19 @@ if not TOKEN:
 
 intents = discord.Intents.default()
 
+# Server
 intents.guilds = True
 intents.members = True
-intents.messages = True
+
+# Normale Nachrichten auf dem Server
+intents.guild_messages = True
+
+# Direktnachrichten an den Bot
+# WICHTIG für das Bewerbungssystem
+intents.dm_messages = True
+
+# Nachrichteninhalt lesen
+# WICHTIG für Antworten per DM
 intents.message_content = True
 
 
@@ -84,7 +94,7 @@ class EHRPBot(commands.Bot):
             except Exception as error:
 
                 print(
-                    f"❌ Fehler bei: {extension}"
+                    f"❌ Fehler beim Laden: {extension}"
                 )
 
                 print(
@@ -115,7 +125,8 @@ class EHRPBot(commands.Bot):
 
             print("")
             print(
-                "❌ Slash Commands konnten nicht synchronisiert werden."
+                "❌ Slash Commands konnten nicht "
+                "synchronisiert werden."
             )
 
             print(
@@ -150,31 +161,25 @@ class EHRPBot(commands.Bot):
             f"🆔 Bot-ID: {self.user.id}"
         )
         print(
-            f"🌐 Server: {len(self.guilds)}"
+            f"🌐 Server verbunden: {len(self.guilds)}"
         )
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 
-        # ====================================================
-        # BOT STATUS
-        # ====================================================
-
         try:
-
-            activity = discord.Activity(
-                type=discord.ActivityType.watching,
-                name="EHRP/VC",
-            )
 
             await self.change_presence(
                 status=discord.Status.online,
-                activity=activity,
+                activity=discord.Activity(
+                    type=discord.ActivityType.watching,
+                    name="EHRP/VC",
+                ),
             )
 
         except Exception as error:
 
             print(
-                f"⚠️ Status konnte nicht gesetzt werden: {error}"
+                f"⚠️ Bot-Status konnte nicht gesetzt werden: {error}"
             )
 
 
@@ -189,13 +194,14 @@ class EHRPBot(commands.Bot):
         **kwargs,
     ):
 
+        print("")
         print(
-            f"❌ Fehler bei Discord Event: {event_method}"
+            f"❌ Discord Event Fehler: {event_method}"
         )
 
 
 # ============================================================
-# CREATE BOT
+# BOT ERSTELLEN
 # ============================================================
 
 bot = EHRPBot()
@@ -207,7 +213,7 @@ bot = EHRPBot()
 
 async def main():
 
-    # Render Health Server starten
+    # Render Health Server
     start_health_server()
 
     print(
@@ -227,9 +233,11 @@ async def main():
     except discord.LoginFailure:
 
         print("")
-        print("❌ Discord Login fehlgeschlagen.")
         print(
-            "Prüfe DISCORD_TOKEN in den Render Environment Variables."
+            "❌ Discord Login fehlgeschlagen."
+        )
+        print(
+            "Prüfe den DISCORD_TOKEN bei Render."
         )
 
 
@@ -253,7 +261,7 @@ async def main():
 
 
 # ============================================================
-# RUN
+# START
 # ============================================================
 
 if __name__ == "__main__":
