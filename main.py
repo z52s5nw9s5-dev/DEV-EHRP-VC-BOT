@@ -1,10 +1,11 @@
 import asyncio
 import os
+import threading
 
 import discord
 from discord.ext import commands
 
-from health_server import start_health_server
+from app import app
 
 
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -29,16 +30,46 @@ intents.message_content = True
 
 
 # =========================================================
+# WEB CASINO
+# =========================================================
+
+def start_web_casino():
+
+    port = int(
+        os.getenv(
+            "PORT",
+            "10000"
+        )
+    )
+
+    print("")
+    print("======================================")
+    print("🎰 EHRP/VC WEB CASINO START")
+    print(f"🌐 PORT: {port}")
+    print("======================================")
+    print("")
+
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False,
+        use_reloader=False
+    )
+
+
+# =========================================================
 # BOT
 # =========================================================
 
 class EHRPBot(commands.Bot):
 
     def __init__(self):
+
         super().__init__(
             command_prefix="!",
             intents=intents
         )
+
 
     async def setup_hook(self):
 
@@ -64,7 +95,9 @@ class EHRPBot(commands.Bot):
 
             try:
 
-                await self.load_extension(extension)
+                await self.load_extension(
+                    extension
+                )
 
                 print(
                     f"✅ Geladen: {extension}"
@@ -82,7 +115,9 @@ class EHRPBot(commands.Bot):
 
         print("")
         print("--------------------------------------")
-        print("🔄 Slash Commands werden synchronisiert...")
+        print(
+            "🔄 Slash Commands werden synchronisiert..."
+        )
         print("--------------------------------------")
 
         try:
@@ -126,7 +161,7 @@ class EHRPBot(commands.Bot):
         print("")
         print("======================================")
         print(
-            f"🟢 EHRP | SYSTEM ONLINE"
+            "🟢 EHRP | SYSTEM ONLINE"
         )
         print(
             f"🤖 Bot: {self.user}"
@@ -144,7 +179,7 @@ class EHRPBot(commands.Bot):
             status=discord.Status.online,
             activity=discord.Activity(
                 type=discord.ActivityType.watching,
-                name="EHRP/VC"
+                name="EHRP/VC Casino"
             ),
         )
 
@@ -162,8 +197,15 @@ bot = EHRPBot()
 
 async def main():
 
-    start_health_server()
+    # Web-Casino im Hintergrund starten
+    web_thread = threading.Thread(
+        target=start_web_casino,
+        daemon=True
+    )
 
+    web_thread.start()
+
+    # Discord Bot starten
     async with bot:
 
         await bot.start(
