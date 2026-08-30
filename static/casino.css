@@ -1,0 +1,678 @@
+* {
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+    background: #030303;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    color: #f7f0dc;
+    background:
+        radial-gradient(circle at 50% -10%, rgba(151, 108, 26, 0.35), transparent 38%),
+        radial-gradient(circle at 10% 40%, rgba(116, 76, 10, 0.12), transparent 30%),
+        linear-gradient(180deg, #090909 0%, #030303 60%, #000000 100%);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(
+            90deg,
+            transparent 49.8%,
+            rgba(212, 175, 55, 0.035) 50%,
+            transparent 50.2%
+        );
+    z-index: -1;
+}
+
+.glow {
+    position: fixed;
+    width: 650px;
+    height: 650px;
+    left: 50%;
+    top: -430px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: rgba(218, 171, 60, 0.17);
+    filter: blur(100px);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+header {
+    min-height: 88px;
+    padding: 14px 6vw;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+
+    position: sticky;
+    top: 0;
+    z-index: 5;
+
+    background: rgba(5, 5, 5, 0.88);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    border-bottom: 1px solid rgba(218, 178, 78, 0.28);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.brand > span {
+    color: #e7bd59;
+    font-size: 38px;
+    text-shadow: 0 0 22px rgba(226, 177, 61, 0.45);
+}
+
+.brand b {
+    display: block;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 25px;
+    letter-spacing: 2px;
+    color: #fff6dc;
+}
+
+.brand small {
+    display: block;
+    margin-top: 2px;
+    color: #ad8c45;
+    font-size: 9px;
+    letter-spacing: 4px;
+}
+
+.wallet {
+    min-width: 155px;
+    padding: 11px 16px;
+
+    border: 1px solid rgba(217, 175, 72, 0.55);
+    border-radius: 14px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(64, 46, 9, 0.72),
+            rgba(8, 8, 8, 0.94)
+        );
+
+    box-shadow:
+        inset 0 0 20px rgba(218, 169, 49, 0.08),
+        0 8px 30px rgba(0, 0, 0, 0.35);
+
+    color: #f4ce70;
+    font-size: 20px;
+    font-weight: 900;
+    text-align: center;
+}
+
+.wallet small {
+    display: block;
+    margin-top: 3px;
+    color: #9f854d;
+    font-size: 8px;
+    letter-spacing: 2px;
+}
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+main {
+    width: min(1250px, 100%);
+    margin: 0 auto;
+    padding: 42px 28px 80px;
+}
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.hero {
+    padding: 48px 10px 42px;
+    text-align: center;
+}
+
+.eyebrow {
+    color: #d9ad49;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 7px;
+}
+
+.hero h1 {
+    margin: 9px 0 12px;
+
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(52px, 9vw, 105px);
+    line-height: 0.95;
+    letter-spacing: -2px;
+
+    color: #fff8e8;
+}
+
+.hero h1 em {
+    color: #e5b94e;
+    font-style: normal;
+
+    text-shadow:
+        0 0 18px rgba(230, 181, 65, 0.28),
+        0 0 55px rgba(201, 147, 28, 0.18);
+}
+
+.hero p {
+    max-width: 620px;
+    margin: 18px auto 0;
+
+    color: #aaa18d;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+/* =========================================================
+   BETS
+========================================================= */
+
+.bets {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    margin-top: 28px;
+}
+
+.bets button {
+    min-width: 62px;
+    padding: 11px 15px;
+
+    border: 1px solid #735a28;
+    border-radius: 10px;
+
+    background: rgba(10, 10, 10, 0.95);
+
+    color: #d7b25b;
+    font-weight: 800;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.18s ease,
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.bets button:hover {
+    transform: translateY(-2px);
+    border-color: #e4b950;
+    box-shadow: 0 8px 25px rgba(216, 165, 46, 0.16);
+}
+
+.bets button.active {
+    color: #080808;
+    border-color: #f0cb6b;
+
+    background:
+        linear-gradient(
+            180deg,
+            #f2d177 0%,
+            #d7a839 45%,
+            #9a6a12 100%
+        );
+
+    box-shadow:
+        0 0 24px rgba(219, 169, 47, 0.24);
+}
+
+/* =========================================================
+   STATS
+========================================================= */
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+
+    margin: 10px 0 48px;
+}
+
+.stats > div {
+    padding: 20px 15px;
+
+    border: 1px solid rgba(121, 94, 39, 0.55);
+    border-radius: 15px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(20, 17, 10, 0.92),
+            rgba(6, 6, 6, 0.96)
+        );
+
+    text-align: center;
+}
+
+.stats small {
+    color: #9e8348;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.stats b {
+    display: block;
+    margin-top: 8px;
+
+    color: #f5e7bd;
+
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 29px;
+}
+
+/* =========================================================
+   CASINO FLOOR
+========================================================= */
+
+main > h2 {
+    margin: 0 0 20px;
+
+    color: #e9d49a;
+
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 20px;
+    letter-spacing: 4px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+/* =========================================================
+   GAME CARDS
+========================================================= */
+
+.card {
+    position: relative;
+    min-height: 215px;
+    padding: 25px;
+
+    overflow: hidden;
+
+    border: 1px solid rgba(132, 100, 38, 0.72);
+    border-radius: 19px;
+
+    background:
+        radial-gradient(
+            circle at 50% 15%,
+            rgba(110, 78, 17, 0.55),
+            rgba(17, 14, 8, 0.94) 40%,
+            rgba(6, 6, 6, 0.98) 75%
+        );
+
+    box-shadow:
+        inset 0 1px rgba(255, 224, 141, 0.08),
+        0 12px 35px rgba(0, 0, 0, 0.35);
+
+    cursor: pointer;
+
+    transition:
+        transform 0.22s ease,
+        border-color 0.22s ease,
+        box-shadow 0.22s ease;
+}
+
+.card::after {
+    content: "";
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    right: -80px;
+    top: -100px;
+
+    border-radius: 50%;
+
+    background: rgba(230, 181, 65, 0.08);
+    filter: blur(20px);
+}
+
+.card:hover {
+    transform: translateY(-6px) scale(1.01);
+
+    border-color: #dfb54e;
+
+    box-shadow:
+        0 18px 55px rgba(0, 0, 0, 0.55),
+        0 0 30px rgba(216, 167, 48, 0.12);
+}
+
+.card .icon {
+    font-size: 57px;
+
+    filter:
+        drop-shadow(
+            0 0 16px rgba(230, 182, 68, 0.42)
+        );
+}
+
+.card h3 {
+    margin: 18px 0 5px;
+
+    color: #f6e8be;
+
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 25px;
+    letter-spacing: 1px;
+}
+
+.card p {
+    margin: 0;
+
+    color: #8e887a;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+/* =========================================================
+   GAME MODAL
+========================================================= */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+
+    display: grid;
+    place-items: center;
+
+    padding: 20px;
+
+    background: rgba(0, 0, 0, 0.88);
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.hidden {
+    display: none !important;
+}
+
+.table {
+    position: relative;
+
+    width: min(700px, 95vw);
+    min-height: 510px;
+
+    padding: 45px 35px;
+
+    border: 1px solid rgba(226, 181, 72, 0.78);
+    border-radius: 26px;
+
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(112, 78, 12, 0.55),
+            rgba(14, 12, 8, 0.97) 42%,
+            #050505 78%
+        );
+
+    box-shadow:
+        0 0 80px rgba(211, 162, 44, 0.22),
+        0 30px 100px rgba(0, 0, 0, 0.75);
+
+    text-align: center;
+}
+
+.close {
+    position: absolute;
+    right: 18px;
+    top: 12px;
+
+    width: 42px;
+    height: 42px;
+
+    border: 1px solid rgba(203, 164, 68, 0.24);
+    border-radius: 50%;
+
+    background: rgba(0, 0, 0, 0.35);
+
+    color: #aaa18d;
+    font-size: 27px;
+
+    cursor: pointer;
+}
+
+.gameIcon {
+    margin-top: 8px;
+
+    font-size: 80px;
+
+    filter:
+        drop-shadow(
+            0 0 22px rgba(223, 175, 57, 0.4)
+        );
+}
+
+.table h2 {
+    margin: 15px 0;
+
+    color: #f3d986;
+
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 32px;
+    letter-spacing: 4px;
+}
+
+.machine {
+    margin: 30px auto 25px;
+    padding: 32px 15px;
+
+    border: 1px solid rgba(195, 150, 48, 0.72);
+    border-radius: 16px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #020202,
+            #0c0a05,
+            #020202
+        );
+
+    box-shadow:
+        inset 0 0 35px rgba(218, 166, 42, 0.12),
+        0 10px 40px rgba(0, 0, 0, 0.4);
+
+    color: #f5d77e;
+
+    font-size: clamp(30px, 8vw, 52px);
+    font-weight: 900;
+
+    overflow: hidden;
+}
+
+#result {
+    min-height: 28px;
+
+    color: #c7b889;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.play {
+    margin-top: 14px;
+    padding: 16px 34px;
+
+    border: 0;
+    border-radius: 12px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #f3d374,
+            #d4a234 48%,
+            #95640f
+        );
+
+    box-shadow:
+        0 8px 30px rgba(213, 161, 39, 0.22);
+
+    color: #080705;
+
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 2px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.play:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 12px 40px rgba(218, 168, 45, 0.32);
+}
+
+.play:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 800px) {
+
+    header {
+        min-height: 78px;
+        padding: 11px 16px;
+    }
+
+    .brand > span {
+        font-size: 28px;
+    }
+
+    .brand b {
+        font-size: 18px;
+    }
+
+    .brand small {
+        font-size: 7px;
+        letter-spacing: 2.5px;
+    }
+
+    .wallet {
+        min-width: 125px;
+        padding: 9px 11px;
+        font-size: 16px;
+    }
+
+    main {
+        padding:
+            24px
+            15px
+            calc(70px + env(safe-area-inset-bottom));
+    }
+
+    .hero {
+        padding: 31px 5px 32px;
+    }
+
+    .eyebrow {
+        font-size: 8px;
+        letter-spacing: 4px;
+    }
+
+    .hero h1 {
+        margin-top: 12px;
+        font-size: clamp(48px, 15vw, 72px);
+    }
+
+    .hero p {
+        font-size: 13px;
+    }
+
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 9px;
+        margin-bottom: 38px;
+    }
+
+    .stats > div {
+        padding: 17px 8px;
+    }
+
+    .stats b {
+        font-size: 24px;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .card {
+        min-height: 165px;
+        padding: 21px;
+    }
+
+    .card .icon {
+        font-size: 45px;
+    }
+
+    .card h3 {
+        margin-top: 12px;
+        font-size: 22px;
+    }
+
+    .table {
+        min-height: 480px;
+        padding: 38px 18px 28px;
+    }
+
+    .gameIcon {
+        font-size: 64px;
+    }
+
+    .machine {
+        padding: 28px 8px;
+    }
+}
+
+@media (max-width: 390px) {
+
+    .brand small {
+        display: none;
+    }
+
+    .wallet {
+        min-width: 112px;
+        font-size: 14px;
+    }
+
+    .bets button {
+        padding: 9px 11px;
+        min-width: 54px;
+    }
+}
