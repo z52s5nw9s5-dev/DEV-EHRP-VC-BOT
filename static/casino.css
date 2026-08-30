@@ -676,3 +676,1484 @@ main > h2 {
         min-width: 54px;
     }
 }
+
+/* =========================================================
+   EHRP/VC CASINO ENTRANCE
+========================================================= */
+
+body:not(.casino-open) {
+    overflow: hidden;
+}
+
+.casino-entrance {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    overflow: hidden;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #020202;
+
+    transition:
+        opacity 0.6s ease,
+        visibility 0.6s ease;
+}
+
+
+/* =========================================================
+   ENTRANCE BACKGROUND
+========================================================= */
+
+.entrance-bg {
+    position: absolute;
+    inset: -4%;
+
+    background-image:
+        url("/assets/casino_entrance.png");
+
+    background-size: cover;
+    background-position: center;
+
+    transform: scale(1.06);
+
+    filter:
+        brightness(0.52)
+        contrast(1.08)
+        saturate(1.05);
+
+    animation:
+        entranceBackgroundMove
+        12s
+        ease-in-out
+        infinite
+        alternate;
+}
+
+
+@keyframes entranceBackgroundMove {
+
+    0% {
+        transform:
+            scale(1.06)
+            translate3d(0, 0, 0);
+    }
+
+    100% {
+        transform:
+            scale(1.12)
+            translate3d(0, -1%, 0);
+    }
+}
+
+
+.entrance-darkness {
+    position: absolute;
+    inset: 0;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(0, 0, 0, 0.28),
+            rgba(0, 0, 0, 0.04) 40%,
+            rgba(0, 0, 0, 0.68) 100%
+        ),
+        radial-gradient(
+            circle at center,
+            transparent 20%,
+            rgba(0, 0, 0, 0.28) 65%,
+            rgba(0, 0, 0, 0.8) 100%
+        );
+}
+
+
+.entrance-gold-glow {
+    position: absolute;
+
+    width: 900px;
+    height: 600px;
+
+    left: 50%;
+    top: 50%;
+
+    transform:
+        translate(-50%, -50%);
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(234, 187, 76, 0.22),
+            rgba(186, 124, 20, 0.08) 38%,
+            transparent 70%
+        );
+
+    filter: blur(25px);
+
+    animation:
+        entranceGlowPulse
+        3.2s
+        ease-in-out
+        infinite;
+}
+
+
+@keyframes entranceGlowPulse {
+
+    0%,
+    100% {
+        opacity: 0.55;
+
+        transform:
+            translate(-50%, -50%)
+            scale(0.95);
+    }
+
+    50% {
+        opacity: 1;
+
+        transform:
+            translate(-50%, -50%)
+            scale(1.08);
+    }
+}
+
+
+/* =========================================================
+   ROULETTE STAGE
+========================================================= */
+
+.roulette-stage {
+    position: absolute;
+
+    left: 50%;
+    top: 59%;
+
+    width: min(44vw, 560px);
+    aspect-ratio: 1;
+
+    transform:
+        translate(-50%, -50%);
+
+    pointer-events: none;
+
+    opacity: 0.92;
+}
+
+
+.roulette-aura {
+    position: absolute;
+
+    inset: -12%;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(255, 208, 94, 0.22),
+            rgba(190, 127, 20, 0.08) 40%,
+            transparent 70%
+        );
+
+    filter: blur(25px);
+
+    animation:
+        rouletteAura
+        2.4s
+        ease-in-out
+        infinite;
+}
+
+
+@keyframes rouletteAura {
+
+    0%,
+    100% {
+        opacity: 0.45;
+        transform: scale(0.95);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.08);
+    }
+}
+
+
+/* =========================================================
+   ROULETTE WHEEL
+========================================================= */
+
+.roulette-wheel {
+    position: absolute;
+    inset: 0;
+
+    border-radius: 50%;
+
+    background:
+
+        repeating-conic-gradient(
+            from -5deg,
+
+            #121212 0deg 5deg,
+            #65130d 5deg 10deg,
+            #111111 10deg 15deg,
+            #8b2118 15deg 20deg
+        );
+
+    border:
+        clamp(7px, 1vw, 13px)
+        solid
+        #b98124;
+
+    box-shadow:
+
+        0 0 0 5px #352109,
+
+        0 0 0 9px #d6a647,
+
+        0 0 35px rgba(227, 174, 57, 0.62),
+
+        0 0 90px rgba(197, 128, 17, 0.28),
+
+        inset 0 0 45px rgba(0, 0, 0, 0.95);
+
+
+    animation:
+        rouletteSpin
+        12s
+        linear
+        infinite;
+
+    will-change: transform;
+}
+
+
+@keyframes rouletteSpin {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* =========================================================
+   ROULETTE RINGS
+========================================================= */
+
+.roulette-ring {
+    position: absolute;
+
+    border-radius: 50%;
+
+    pointer-events: none;
+}
+
+
+.ring-one {
+    inset: 10%;
+
+    border:
+        3px solid
+        rgba(238, 191, 82, 0.82);
+
+    box-shadow:
+        inset 0 0 25px
+        rgba(255, 204, 92, 0.2);
+}
+
+
+.ring-two {
+    inset: 25%;
+
+    border:
+        5px solid
+        #a8721d;
+
+    background:
+        radial-gradient(
+            circle,
+            #33200b 0%,
+            #15100a 60%,
+            #050505 100%
+        );
+
+    box-shadow:
+        inset 0 0 30px #000;
+}
+
+
+.ring-three {
+    inset: 37%;
+
+    border:
+        3px solid
+        #d8aa4d;
+
+    background:
+        radial-gradient(
+            circle,
+            #2b1a07,
+            #080604
+        );
+}
+
+
+/* =========================================================
+   ROULETTE CENTER
+========================================================= */
+
+.roulette-center {
+    position: absolute;
+
+    width: 19%;
+    height: 19%;
+
+    left: 50%;
+    top: 50%;
+
+    transform:
+        translate(-50%, -50%);
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle at 38% 32%,
+            #ffe49b,
+            #d5a13e 20%,
+            #7c4d0d 55%,
+            #211304 100%
+        );
+
+    border:
+        3px solid
+        #e4bb64;
+
+    box-shadow:
+
+        0 0 25px
+        rgba(255, 210, 100, 0.55),
+
+        inset 0 0 18px
+        rgba(255, 228, 160, 0.2);
+}
+
+
+.roulette-center-light {
+    position: absolute;
+
+    width: 32%;
+    height: 32%;
+
+    left: 21%;
+    top: 16%;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255, 246, 205, 0.78);
+
+    filter: blur(5px);
+}
+
+
+/* =========================================================
+   ROULETTE NUMBERS
+========================================================= */
+
+.roulette-numbers {
+    position: absolute;
+    inset: 0;
+}
+
+
+.roulette-numbers span {
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    color:
+        rgba(255, 229, 165, 0.88);
+
+    font-size:
+        clamp(8px, 1vw, 13px);
+
+    font-weight: 900;
+
+    text-shadow:
+        0 1px 3px #000;
+}
+
+
+.roulette-numbers span:nth-child(1) {
+    transform:
+        translate(-50%, -50%)
+        rotate(0deg)
+        translateY(-43vw);
+}
+
+.roulette-numbers span:nth-child(2) {
+    transform:
+        translate(-50%, -50%)
+        rotate(30deg)
+        translateY(-43vw);
+}
+
+.roulette-numbers span:nth-child(3) {
+    transform:
+        translate(-50%, -50%)
+        rotate(60deg)
+        translateY(-43vw);
+}
+
+.roulette-numbers span:nth-child(4) {
+    transform:
+        translate(-50%, -50%)
+        rotate(90deg)
+        translateY(-43vw);
+}
+
+.roulette-numbers span:nth-child(5) {
+    transform:
+        translate(-50%, -50%)
+        rotate(120deg)
+        translateY(-43vw);
+}
+
+.roulette-numbers span:nth-child(6) {
+    transform:
+        translate(-50%, -50%)
+        rotate(150deg)
+        translateY(-43vw);
+}
+
+.roulette-numbers span:nth-child(7) {
+    transform:
+        translate(-50%, -50%)
+        rotate(180deg)
+        translateY(-43vw);
+}
+
+.roulette-numbers span:nth-child(8) {
+    transform:
+        translate(-50%, -50%)
+        rotate(210deg)
+        translateY(-43vw);
+}
+
+.roulette-numbers span:nth-child(9) {
+    transform:
+        translate(-50%, -50%)
+        rotate(240deg)
+        translateY(-43vw);
+}
+
+.roulette-numbers span:nth-child(10) {
+    transform:
+        translate(-50%, -50%)
+        rotate(270deg)
+        translateY(-43vw);
+}
+
+.roulette-numbers span:nth-child(11) {
+    transform:
+        translate(-50%, -50%)
+        rotate(300deg)
+        translateY(-43vw);
+}
+
+.roulette-numbers span:nth-child(12) {
+    transform:
+        translate(-50%, -50%)
+        rotate(330deg)
+        translateY(-43vw);
+}
+
+
+/* =========================================================
+   ENTRANCE CONTENT
+========================================================= */
+
+.entrance-content {
+    position: relative;
+    z-index: 20;
+
+    width: min(850px, 92vw);
+
+    margin-top: -11vh;
+
+    text-align: center;
+
+    animation:
+        entranceContentIn
+        1.2s
+        cubic-bezier(
+            0.16,
+            1,
+            0.3,
+            1
+        )
+        both;
+}
+
+
+@keyframes entranceContentIn {
+
+    from {
+        opacity: 0;
+
+        transform:
+            translateY(30px)
+            scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateY(0)
+            scale(1);
+    }
+}
+
+
+.entrance-crown {
+    color: #e7ba58;
+
+    font-size: 28px;
+
+    text-shadow:
+        0 0 25px
+        rgba(231, 183, 75, 0.8);
+
+    animation:
+        crownPulse
+        2s
+        ease-in-out
+        infinite;
+}
+
+
+@keyframes crownPulse {
+
+    50% {
+        transform: scale(1.2);
+
+        text-shadow:
+            0 0 40px
+            rgba(255, 210, 105, 1);
+    }
+}
+
+
+.entrance-brand {
+    margin-top: 8px;
+
+    color: #fff2c7;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size:
+        clamp(45px, 8vw, 92px);
+
+    font-weight: 900;
+
+    letter-spacing: 5px;
+
+    line-height: 0.95;
+
+    text-shadow:
+
+        0 3px 0 #684510,
+
+        0 0 22px
+        rgba(226, 174, 58, 0.5),
+
+        0 0 60px
+        rgba(194, 125, 16, 0.3);
+}
+
+
+.entrance-casino-title {
+    margin-top: 6px;
+
+    color: #d8a63e;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size:
+        clamp(24px, 4vw, 48px);
+
+    font-weight: 900;
+
+    letter-spacing:
+        clamp(9px, 2vw, 18px);
+
+    text-shadow:
+        0 0 24px
+        rgba(222, 170, 55, 0.45);
+}
+
+
+.entrance-line {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 13px;
+
+    width: min(480px, 78vw);
+
+    margin: 18px auto 10px;
+}
+
+
+.entrance-line span {
+    height: 1px;
+
+    flex: 1;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            #d0a044
+        );
+}
+
+
+.entrance-line span:last-child {
+    background:
+        linear-gradient(
+            90deg,
+            #d0a044,
+            transparent
+        );
+}
+
+
+.entrance-line b {
+    color: #d6a33c;
+
+    font-size: 17px;
+}
+
+
+.entrance-subtitle {
+    margin: 0 0 26px;
+
+    color: #d5c28e;
+
+    font-size:
+        clamp(9px, 1.6vw, 13px);
+
+    font-weight: 700;
+
+    letter-spacing:
+        clamp(2px, 0.7vw, 5px);
+}
+
+
+/* =========================================================
+   ENTER BUTTON
+========================================================= */
+
+.enter-casino-button {
+    position: relative;
+
+    min-width:
+        min(390px, 84vw);
+
+    padding:
+        18px
+        34px;
+
+    overflow: hidden;
+
+    border:
+        1px solid
+        #f3d27a;
+
+    border-radius:
+        12px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #f5d87f 0%,
+            #d8aa42 45%,
+            #986515 100%
+        );
+
+    box-shadow:
+
+        0 0 0 1px
+        rgba(96, 57, 5, 0.9),
+
+        0 8px 0
+        #4d3009,
+
+        0 18px 45px
+        rgba(216, 165, 47, 0.32),
+
+        0 0 50px
+        rgba(220, 170, 50, 0.17);
+
+    color: #120d04;
+
+    font-size:
+        clamp(12px, 2vw, 16px);
+
+    font-weight: 1000;
+
+    letter-spacing: 3px;
+
+    cursor: pointer;
+
+    transform: translateY(0);
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
+
+    animation:
+        enterButtonPulse
+        2.4s
+        ease-in-out
+        infinite;
+}
+
+
+@keyframes enterButtonPulse {
+
+    0%,
+    100% {
+        box-shadow:
+
+            0 0 0 1px
+            rgba(96, 57, 5, 0.9),
+
+            0 8px 0
+            #4d3009,
+
+            0 18px 45px
+            rgba(216, 165, 47, 0.26),
+
+            0 0 35px
+            rgba(220, 170, 50, 0.12);
+    }
+
+    50% {
+        box-shadow:
+
+            0 0 0 1px
+            rgba(96, 57, 5, 0.9),
+
+            0 8px 0
+            #4d3009,
+
+            0 22px 55px
+            rgba(216, 165, 47, 0.42),
+
+            0 0 65px
+            rgba(220, 170, 50, 0.25);
+    }
+}
+
+
+.enter-casino-button:hover {
+    transform:
+        translateY(-3px)
+        scale(1.015);
+}
+
+
+.enter-casino-button:active {
+    transform:
+        translateY(5px);
+
+    box-shadow:
+
+        0 0 0 1px
+        rgba(96, 57, 5, 0.9),
+
+        0 3px 0
+        #4d3009,
+
+        0 10px 25px
+        rgba(216, 165, 47, 0.3);
+}
+
+
+.button-icon {
+    margin-right: 10px;
+
+    font-size: 18px;
+}
+
+
+.button-shine {
+    position: absolute;
+
+    width: 80px;
+    height: 160%;
+
+    left: -130px;
+    top: -30%;
+
+    transform:
+        rotate(20deg);
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.65),
+            transparent
+        );
+
+    animation:
+        buttonShine
+        3.5s
+        ease-in-out
+        infinite;
+}
+
+
+@keyframes buttonShine {
+
+    0%,
+    65% {
+        left: -130px;
+    }
+
+    100% {
+        left: calc(100% + 130px);
+    }
+}
+
+
+/* =========================================================
+   COMMUNITY
+========================================================= */
+
+.entrance-community {
+    margin-top: 26px;
+
+    color: #b89550;
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    letter-spacing: 5px;
+}
+
+
+.entrance-features {
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    gap: 25px;
+
+    margin-top: 15px;
+}
+
+
+.entrance-features div {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 4px;
+}
+
+
+.entrance-features b {
+    color: #d3a449;
+
+    font-size: 17px;
+}
+
+
+.entrance-features span {
+    color: #74674c;
+
+    font-size: 7px;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   GOLD PARTICLES
+========================================================= */
+
+.entrance-particles {
+    position: absolute;
+    inset: 0;
+
+    z-index: 8;
+
+    overflow: hidden;
+
+    pointer-events: none;
+}
+
+
+.entrance-particles span {
+    position: absolute;
+
+    bottom: -20px;
+
+    width: 4px;
+    height: 4px;
+
+    border-radius: 50%;
+
+    background: #f4c85d;
+
+    box-shadow:
+        0 0 10px #e8b749;
+
+    animation:
+        goldParticle
+        linear
+        infinite;
+}
+
+
+.entrance-particles span:nth-child(1) {
+    left: 7%;
+    animation-duration: 7s;
+}
+
+.entrance-particles span:nth-child(2) {
+    left: 15%;
+    animation-duration: 10s;
+    animation-delay: 2s;
+}
+
+.entrance-particles span:nth-child(3) {
+    left: 24%;
+    animation-duration: 8s;
+    animation-delay: 4s;
+}
+
+.entrance-particles span:nth-child(4) {
+    left: 33%;
+    animation-duration: 12s;
+}
+
+.entrance-particles span:nth-child(5) {
+    left: 42%;
+    animation-duration: 9s;
+    animation-delay: 1s;
+}
+
+.entrance-particles span:nth-child(6) {
+    left: 50%;
+    animation-duration: 11s;
+    animation-delay: 5s;
+}
+
+.entrance-particles span:nth-child(7) {
+    left: 58%;
+    animation-duration: 8s;
+    animation-delay: 2s;
+}
+
+.entrance-particles span:nth-child(8) {
+    left: 66%;
+    animation-duration: 13s;
+}
+
+.entrance-particles span:nth-child(9) {
+    left: 73%;
+    animation-duration: 9s;
+    animation-delay: 3s;
+}
+
+.entrance-particles span:nth-child(10) {
+    left: 81%;
+    animation-duration: 11s;
+    animation-delay: 6s;
+}
+
+.entrance-particles span:nth-child(11) {
+    left: 89%;
+    animation-duration: 8s;
+    animation-delay: 2s;
+}
+
+.entrance-particles span:nth-child(12) {
+    left: 96%;
+    animation-duration: 12s;
+    animation-delay: 4s;
+}
+
+
+@keyframes goldParticle {
+
+    0% {
+        transform:
+            translateY(0)
+            scale(0.5);
+
+        opacity: 0;
+    }
+
+    15% {
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 0.7;
+    }
+
+    100% {
+        transform:
+            translateY(-105vh)
+            translateX(35px)
+            scale(1.4);
+
+        opacity: 0;
+    }
+}
+
+
+/* =========================================================
+   OPENING ANIMATION
+========================================================= */
+
+.entrance-opening .roulette-wheel {
+    animation:
+        rouletteFastSpin
+        0.42s
+        linear
+        infinite;
+}
+
+
+@keyframes rouletteFastSpin {
+
+    from {
+        transform:
+            rotate(0deg)
+            scale(1);
+    }
+
+    to {
+        transform:
+            rotate(360deg)
+            scale(1.025);
+    }
+}
+
+
+.entrance-opening .roulette-stage {
+    animation:
+        rouletteZoom
+        2.1s
+        cubic-bezier(
+            0.4,
+            0,
+            0.2,
+            1
+        )
+        forwards;
+}
+
+
+@keyframes rouletteZoom {
+
+    0% {
+        transform:
+            translate(-50%, -50%)
+            scale(1);
+
+        opacity: 1;
+    }
+
+    55% {
+        transform:
+            translate(-50%, -50%)
+            scale(1.2);
+
+        opacity: 1;
+    }
+
+    100% {
+        transform:
+            translate(-50%, -50%)
+            scale(5.5);
+
+        opacity: 0;
+    }
+}
+
+
+.entrance-opening .entrance-content {
+    animation:
+        entranceContentOut
+        0.65s
+        ease
+        forwards;
+}
+
+
+@keyframes entranceContentOut {
+
+    to {
+        opacity: 0;
+
+        transform:
+            translateY(-20px)
+            scale(1.05);
+
+        filter: blur(7px);
+    }
+}
+
+
+.entrance-opening .entrance-bg {
+    animation:
+        entranceBackgroundZoom
+        2.3s
+        ease-in
+        forwards;
+}
+
+
+@keyframes entranceBackgroundZoom {
+
+    to {
+        transform:
+            scale(1.35);
+
+        filter:
+            brightness(0.2)
+            blur(5px);
+    }
+}
+
+
+/* =========================================================
+   TRANSITION SCREEN
+========================================================= */
+
+.casino-transition {
+    position: absolute;
+    inset: 0;
+
+    z-index: 100;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    opacity: 0;
+
+    visibility: hidden;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(91, 61, 11, 0.55),
+            #050403 42%,
+            #000 100%
+        );
+
+    transition:
+        opacity 0.35s ease;
+}
+
+
+.casino-transition.transition-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+.transition-wheel {
+    width: 120px;
+    height: 120px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    border:
+        5px solid
+        #c89431;
+
+    background:
+        repeating-conic-gradient(
+            #6f1710 0deg 10deg,
+            #0c0c0c 10deg 20deg
+        );
+
+    box-shadow:
+        0 0 45px
+        rgba(218, 168, 50, 0.4);
+
+    animation:
+        transitionSpin
+        0.7s
+        linear
+        infinite;
+}
+
+
+@keyframes transitionSpin {
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+.transition-inner {
+    width: 54px;
+    height: 54px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            #f0cf78,
+            #8d5c11
+        );
+
+    color: #251604;
+
+    font-size: 23px;
+}
+
+
+.transition-title {
+    margin-top: 27px;
+
+    color: #e9c35f;
+
+    font-family:
+        Georgia,
+        serif;
+
+    font-size: 28px;
+
+    font-weight: 900;
+
+    letter-spacing: 5px;
+}
+
+
+.transition-text {
+    margin-top: 8px;
+
+    color: #9f8751;
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    letter-spacing: 4px;
+}
+
+
+.transition-loader {
+    display: flex;
+
+    gap: 7px;
+
+    margin-top: 19px;
+}
+
+
+.transition-loader span {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+
+    background: #d9a945;
+
+    animation:
+        loaderDot
+        0.8s
+        ease-in-out
+        infinite
+        alternate;
+}
+
+
+.transition-loader span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+
+.transition-loader span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+
+@keyframes loaderDot {
+
+    to {
+        opacity: 0.25;
+
+        transform:
+            translateY(-6px);
+    }
+}
+
+
+/* =========================================================
+   CASINO APP REVEAL
+========================================================= */
+
+.casino-app {
+    min-height: 100vh;
+}
+
+
+.casino-app-hidden {
+    opacity: 0;
+
+    visibility: hidden;
+
+    transform:
+        scale(1.04);
+}
+
+
+.casino-app-visible {
+    opacity: 1;
+
+    visibility: visible;
+
+    transform:
+        scale(1);
+
+    transition:
+        opacity 0.8s ease,
+        transform 0.8s ease;
+}
+
+
+.entrance-finished {
+    opacity: 0;
+
+    visibility: hidden;
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   MOBILE ENTRANCE
+========================================================= */
+
+@media (max-width: 800px) {
+
+    .entrance-bg {
+        background-position: center center;
+    }
+
+    .entrance-content {
+        margin-top: -7vh;
+    }
+
+    .roulette-stage {
+        top: 65%;
+
+        width:
+            min(74vw, 430px);
+    }
+
+    .entrance-brand {
+        font-size:
+            clamp(48px, 16vw, 72px);
+
+        letter-spacing: 2px;
+    }
+
+    .entrance-casino-title {
+        font-size:
+            clamp(25px, 8vw, 38px);
+
+        letter-spacing: 10px;
+    }
+
+    .entrance-subtitle {
+        max-width: 90%;
+
+        margin-left: auto;
+        margin-right: auto;
+
+        line-height: 1.7;
+    }
+
+    .entrance-features {
+        gap: 15px;
+    }
+
+    .enter-casino-button {
+        padding:
+            17px
+            22px;
+    }
+}
+
+
+@media (max-width: 430px) {
+
+    .roulette-stage {
+        top: 67%;
+
+        width: 82vw;
+    }
+
+    .entrance-content {
+        margin-top: -12vh;
+    }
+
+    .entrance-features span {
+        display: none;
+    }
+
+    .entrance-community {
+        margin-top: 22px;
+    }
+}
