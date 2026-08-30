@@ -1,1169 +1,693 @@
 /* =========================================================
-   EHRP/VC CASINO
+   EHRP/VC GAME INTERFACES
 ========================================================= */
 
-* {
-    box-sizing: border-box;
-}
 
-html,
-body {
-    margin: 0;
-    padding: 0;
-    min-height: 100%;
-}
+/* =========================
+   SLOTS
+========================= */
 
-body {
-    background: #050505;
-    color: #f5f5f5;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-body.entrance-active {
-    overflow: hidden;
-}
-
-
-/* =========================================================
-   ORIGINAL CASINO ENTRANCE
-   DAS BILD WIRD NICHT VERÄNDERT
-========================================================= */
-
-.original-casino-entrance {
-    position: fixed;
-    inset: 0;
-
-    z-index: 9999;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    overflow: hidden;
-
-    background: #000;
-}
-
-
-/* =========================================================
-   ORIGINALBILD
-========================================================= */
-
-.original-entrance-image {
-    position: absolute;
-
+.slot-machine {
     width: 100%;
-    height: 100%;
-
-    object-fit: contain;
-    object-position: center;
-
-    display: block;
-
-    user-select: none;
-    -webkit-user-select: none;
-
-    pointer-events: none;
-
-    transform: scale(1);
-
-    will-change: transform, opacity, filter;
-}
-
-
-/* =========================================================
-   UNSICHTBARER CASINO-BUTTON
-
-   Das Bild selbst bleibt 1:1.
-   Diese Fläche liegt nur über dem Button im Bild.
-========================================================= */
-
-.original-enter-button {
-    position: absolute;
-
-    z-index: 20;
-
-    left: 50%;
-    top: 72%;
-
-    transform: translate(-50%, -50%);
-
-    width: min(30vw, 460px);
-    height: min(8vw, 100px);
-
-    border: 0;
-    outline: 0;
-
-    padding: 0;
-    margin: 0;
-
-    background: transparent;
-
-    cursor: pointer;
-
-    -webkit-tap-highlight-color: transparent;
-}
-
-
-/* =========================================================
-   KLEINER HOVER-EFFEKT
-   KEINE VERÄNDERUNG DES BILDES
-========================================================= */
-
-.original-enter-button:hover {
-    filter:
-        drop-shadow(
-            0 0 18px
-            rgba(238, 188, 71, 0.35)
-        );
-}
-
-
-/* =========================================================
-   GOLD PARTICLES
-========================================================= */
-
-.original-particles {
-    position: absolute;
-    inset: 0;
-
-    z-index: 10;
-
-    overflow: hidden;
-
-    pointer-events: none;
-}
-
-.original-particles span {
-    position: absolute;
-
-    bottom: -20px;
-
-    width: 3px;
-    height: 3px;
-
-    border-radius: 50%;
-
-    background: #efc35b;
-
-    box-shadow:
-        0 0 8px
-        rgba(239, 195, 91, 0.8);
-
-    opacity: 0;
-
-    animation:
-        originalParticle
-        linear
-        infinite;
-}
-
-.original-particles span:nth-child(1) {
-    left: 8%;
-    animation-duration: 8s;
-}
-
-.original-particles span:nth-child(2) {
-    left: 17%;
-    animation-duration: 11s;
-    animation-delay: 2s;
-}
-
-.original-particles span:nth-child(3) {
-    left: 27%;
-    animation-duration: 9s;
-    animation-delay: 4s;
-}
-
-.original-particles span:nth-child(4) {
-    left: 38%;
-    animation-duration: 12s;
-    animation-delay: 1s;
-}
-
-.original-particles span:nth-child(5) {
-    left: 48%;
-    animation-duration: 8s;
-    animation-delay: 3s;
-}
-
-.original-particles span:nth-child(6) {
-    left: 58%;
-    animation-duration: 10s;
-    animation-delay: 5s;
-}
-
-.original-particles span:nth-child(7) {
-    left: 68%;
-    animation-duration: 13s;
-    animation-delay: 1s;
-}
-
-.original-particles span:nth-child(8) {
-    left: 77%;
-    animation-duration: 9s;
-    animation-delay: 4s;
-}
-
-.original-particles span:nth-child(9) {
-    left: 87%;
-    animation-duration: 11s;
-    animation-delay: 2s;
-}
-
-.original-particles span:nth-child(10) {
-    left: 94%;
-    animation-duration: 8s;
-    animation-delay: 6s;
-}
-
-@keyframes originalParticle {
-
-    0% {
-        transform:
-            translateY(0)
-            translateX(0)
-            scale(0.5);
-
-        opacity: 0;
-    }
-
-    15% {
-        opacity: 0.8;
-    }
-
-    75% {
-        opacity: 0.55;
-    }
-
-    100% {
-        transform:
-            translateY(-105vh)
-            translateX(30px)
-            scale(1.3);
-
-        opacity: 0;
-    }
-}
-
-
-/* =========================================================
-   CASINO OPENING
-========================================================= */
-
-.original-opening
-.original-entrance-image {
-    animation:
-        originalCasinoZoom
-        1.9s
-        cubic-bezier(
-            0.65,
-            0,
-            0.35,
-            1
-        )
-        forwards;
-}
-
-@keyframes originalCasinoZoom {
-
-    0% {
-        transform: scale(1);
-
-        filter:
-            brightness(1)
-            blur(0);
-
-        opacity: 1;
-    }
-
-    35% {
-        transform: scale(1.06);
-
-        filter:
-            brightness(1.08)
-            blur(0);
-
-        opacity: 1;
-    }
-
-    70% {
-        transform: scale(1.55);
-
-        filter:
-            brightness(0.7)
-            blur(1px);
-
-        opacity: 1;
-    }
-
-    100% {
-        transform: scale(2.8);
-
-        filter:
-            brightness(0.15)
-            blur(7px);
-
-        opacity: 0;
-    }
-}
-
-
-.original-opening
-.original-enter-button {
-    pointer-events: none;
-}
-
-
-/* =========================================================
-   TRANSITION
-========================================================= */
-
-.original-transition {
-    position: absolute;
-    inset: 0;
-
-    z-index: 50;
-
-    display: flex;
-    flex-direction: column;
-
-    align-items: center;
-    justify-content: center;
-
-    background:
-        radial-gradient(
-            circle at center,
-            #211604 0%,
-            #080603 38%,
-            #000 75%
-        );
-
-    opacity: 0;
-    visibility: hidden;
-
-    transition:
-        opacity 0.35s ease;
-}
-
-.original-transition-visible {
-    opacity: 1;
-    visibility: visible;
-}
-
-.transition-logo {
-    width: 90px;
-    height: 90px;
 
     display: grid;
-    place-items: center;
+    grid-template-columns: repeat(3, 1fr);
 
-    border-radius: 50%;
+    gap: 10px;
 
-    border:
-        2px solid
-        #c99b3c;
+    padding: 14px;
 
-    color: #e8bd59;
-
-    font-size: 38px;
+    border: 2px solid #b88628;
+    border-radius: 14px;
 
     background:
-        radial-gradient(
-            circle,
-            #342108,
-            #080603
+        linear-gradient(
+            180deg,
+            #201707,
+            #070604
         );
 
     box-shadow:
-        0 0 40px
-        rgba(220, 166, 49, 0.25);
-
-    animation:
-        transitionLogoPulse
-        1s
-        ease-in-out
-        infinite
-        alternate;
-}
-
-@keyframes transitionLogoPulse {
-
-    from {
-        transform: scale(0.95);
-
-        box-shadow:
-            0 0 20px
-            rgba(220, 166, 49, 0.18);
-    }
-
-    to {
-        transform: scale(1.05);
-
-        box-shadow:
-            0 0 55px
-            rgba(220, 166, 49, 0.5);
-    }
-}
-
-.transition-name {
-    margin-top: 20px;
-
-    color: #d6aa4a;
-
-    font-family:
-        Georgia,
-        "Times New Roman",
-        serif;
-
-    font-size: 22px;
-
-    font-weight: 900;
-
-    letter-spacing: 5px;
+        inset 0 0 30px rgba(0, 0, 0, 0.9),
+        0 0 25px rgba(213, 164, 54, 0.15);
 }
 
 
-/* =========================================================
-   CASINO APP
-========================================================= */
+.slot-reel {
+    height: 105px;
 
-.casino-app {
-    position: relative;
-
-    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     overflow: hidden;
 
-    background:
-        radial-gradient(
-            circle at 50% 0%,
-            rgba(121, 83, 18, 0.18),
-            transparent 34%
-        ),
-        linear-gradient(
-            180deg,
-            #080706,
-            #030303
-        );
-}
-
-.casino-app-hidden {
-    opacity: 0;
-    visibility: hidden;
-
-    transform: scale(1.03);
-}
-
-.casino-app-visible {
-    opacity: 1;
-    visibility: visible;
-
-    transform: scale(1);
-
-    transition:
-        opacity 0.8s ease,
-        transform 0.8s ease;
-}
-
-.glow {
-    position: fixed;
-
-    width: 600px;
-    height: 600px;
-
-    left: 50%;
-    top: -350px;
-
-    transform: translateX(-50%);
-
-    border-radius: 50%;
-
-    background:
-        rgba(191, 135, 28, 0.12);
-
-    filter: blur(90px);
-
-    pointer-events: none;
-}
-
-
-/* =========================================================
-   HEADER
-========================================================= */
-
-header {
-    position: sticky;
-    top: 0;
-
-    z-index: 100;
-
-    min-height: 76px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 20px;
-
-    padding:
-        14px
-        clamp(18px, 4vw, 60px);
-
-    background:
-        rgba(5, 5, 5, 0.92);
-
-    border-bottom:
-        1px solid
-        rgba(205, 158, 62, 0.2);
-
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-
-    gap: 12px;
-}
-
-.brand > span {
-    color: #d7a844;
-
-    font-size: 30px;
-}
-
-.brand div {
-    display: flex;
-    flex-direction: column;
-}
-
-.brand b {
-    color: #e9c364;
-
-    font-family:
-        Georgia,
-        "Times New Roman",
-        serif;
-
-    font-size: 19px;
-
-    letter-spacing: 2px;
-}
-
-.brand small {
-    margin-top: 3px;
-
-    color: #74694f;
-
-    font-size: 8px;
-
-    font-weight: 800;
-
-    letter-spacing: 2px;
-}
-
-.wallet {
-    display: flex;
-    align-items: center;
-
-    gap: 8px;
-
-    padding:
-        9px
-        14px;
-
-    border:
-        1px solid
-        rgba(209, 164, 70, 0.28);
-
+    border: 2px solid #d0a347;
     border-radius: 10px;
 
     background:
         linear-gradient(
             180deg,
-            rgba(37, 28, 12, 0.8),
-            rgba(13, 11, 8, 0.8)
+            #faf3df,
+            #c9b98d
         );
 
-    color: #e8bd59;
+    box-shadow:
+        inset 0 8px 15px rgba(0, 0, 0, 0.2),
+        inset 0 -8px 15px rgba(0, 0, 0, 0.2);
+
+    color: #111;
+
+    font-size: clamp(38px, 10vw, 64px);
+
+    transition: transform 0.15s ease;
+}
+
+
+.slot-reel.spinning {
+    animation:
+        slotShake
+        0.13s
+        linear
+        infinite;
+}
+
+
+@keyframes slotShake {
+
+    0% {
+        transform: translateY(-3px);
+        filter: blur(1px);
+    }
+
+    50% {
+        transform: translateY(4px);
+        filter: blur(2px);
+    }
+
+    100% {
+        transform: translateY(-3px);
+        filter: blur(1px);
+    }
+}
+
+
+/* =========================
+   ROULETTE
+========================= */
+
+.roulette-game {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 20px;
+}
+
+
+.roulette-game-wheel {
+    width: 145px;
+    height: 145px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    border: 7px solid #c99836;
+
+    background:
+        repeating-conic-gradient(
+            #8c2017 0deg 10deg,
+            #111 10deg 20deg
+        );
+
+    box-shadow:
+        0 0 0 4px #4c320b,
+        0 0 35px rgba(218, 167, 54, 0.35),
+        inset 0 0 25px #000;
+
+    color: #f4d16d;
+
+    font-size: 42px;
+
+    font-weight: 1000;
+}
+
+
+.roulette-game-wheel.roulette-spinning {
+    animation:
+        gameRouletteSpin
+        0.22s
+        linear
+        infinite;
+}
+
+
+@keyframes gameRouletteSpin {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+.roulette-choices {
+    width: 100%;
+
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 8px;
+}
+
+
+.roulette-choice {
+    padding: 13px 8px;
+
+    border: 2px solid transparent;
+    border-radius: 8px;
+
+    color: #fff;
 
     font-weight: 900;
-}
 
-.wallet small {
-    color: #77684a;
+    cursor: pointer;
 
-    font-size: 7px;
+    opacity: 0.6;
 
-    letter-spacing: 1px;
-}
-
-
-/* =========================================================
-   MAIN
-========================================================= */
-
-main {
-    position: relative;
-
-    z-index: 2;
-
-    width:
-        min(1180px, 92%);
-
-    margin: 0 auto;
-
-    padding:
-        70px
-        0
-        100px;
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease,
+        border-color 0.2s ease;
 }
 
 
-/* =========================================================
-   HERO
-========================================================= */
-
-.hero {
-    text-align: center;
-
-    padding:
-        25px
-        0
-        45px;
+.roulette-choice:hover {
+    opacity: 1;
+    transform: translateY(-2px);
 }
 
-.eyebrow {
-    color: #9f8248;
+
+.roulette-choice.active {
+    opacity: 1;
+
+    border-color: #e5bd5a;
+
+    box-shadow:
+        0 0 20px
+        rgba(222, 174, 63, 0.25);
+}
+
+
+.roulette-red {
+    background:
+        linear-gradient(
+            180deg,
+            #a3261d,
+            #5c100c
+        );
+}
+
+
+.roulette-black {
+    background:
+        linear-gradient(
+            180deg,
+            #252525,
+            #070707
+        );
+}
+
+
+.roulette-green {
+    background:
+        linear-gradient(
+            180deg,
+            #197c46,
+            #084426
+        );
+}
+
+
+/* =========================
+   COINFLIP
+========================= */
+
+.coinflip-game {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 25px;
+}
+
+
+.casino-coin {
+    width: 125px;
+    height: 125px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    border: 6px solid #e2b84d;
+
+    background:
+        radial-gradient(
+            circle at 35% 30%,
+            #fff0a3,
+            #d8a634 35%,
+            #8c5a0c 70%,
+            #3c2505
+        );
+
+    box-shadow:
+        0 0 35px rgba(224, 176, 60, 0.4),
+        inset 0 0 20px rgba(255, 242, 174, 0.35);
+
+    font-size: 54px;
+
+    transform-style: preserve-3d;
+}
+
+
+.casino-coin.flipping {
+    animation:
+        coinFlip
+        0.28s
+        linear
+        infinite;
+}
+
+
+@keyframes coinFlip {
+
+    from {
+        transform:
+            rotateY(0deg)
+            translateY(0);
+    }
+
+    50% {
+        transform:
+            rotateY(180deg)
+            translateY(-18px);
+    }
+
+    to {
+        transform:
+            rotateY(360deg)
+            translateY(0);
+    }
+}
+
+
+.coin-choices {
+    width: 100%;
+
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 10px;
+}
+
+
+.coin-choice {
+    padding: 13px;
+
+    border:
+        1px solid
+        rgba(210, 162, 59, 0.3);
+
+    border-radius: 8px;
+
+    background: #0b0a08;
+
+    color: #9f8959;
+
+    font-weight: 900;
+
+    cursor: pointer;
+}
+
+
+.coin-choice.active {
+    border-color: #e2b550;
+
+    color: #f0ca68;
+
+    background:
+        linear-gradient(
+            180deg,
+            #38270c,
+            #151005
+        );
+
+    box-shadow:
+        0 0 18px
+        rgba(213, 163, 55, 0.18);
+}
+
+
+/* =========================
+   DICE
+========================= */
+
+.dice-game {
+    width: 100%;
+
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+
+    align-items: center;
+
+    gap: 18px;
+}
+
+
+.dice-side {
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+
+.dice-side small {
+    color: #85734d;
 
     font-size: 9px;
 
     font-weight: 900;
 
-    letter-spacing: 4px;
+    letter-spacing: 2px;
 }
 
-.hero h1 {
-    margin:
-        12px
-        0
-        10px;
 
-    color: #eee4ca;
+#yourDice,
+#casinoDice {
+    color: #edc65e;
 
-    font-family:
-        Georgia,
-        "Times New Roman",
-        serif;
+    font-size: clamp(65px, 15vw, 95px);
 
-    font-size:
-        clamp(45px, 8vw, 88px);
+    line-height: 1;
 
-    line-height: 0.95;
+    text-shadow:
+        0 0 25px
+        rgba(223, 174, 60, 0.25);
+}
+
+
+.dice-vs {
+    color: #66583c;
+
+    font-size: 12px;
+
+    font-weight: 1000;
 
     letter-spacing: 2px;
 }
 
-.hero h1 em {
-    color: #d4a541;
 
-    font-style: normal;
-}
+/* =========================
+   BLACKJACK PREVIEW
+========================= */
 
-.hero p {
-    max-width: 620px;
+.blackjack-preview {
+    width: 100%;
 
-    margin:
-        18px
-        auto
-        30px;
-
-    color: #8e8778;
-
-    font-size: 14px;
-
-    line-height: 1.7;
-}
-
-
-/* =========================================================
-   BET BUTTONS
-========================================================= */
-
-.bets {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
 
-    justify-content: center;
+    gap: 18px;
+}
+
+
+.blackjack-preview > div:not(.blackjack-line) {
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
 
     gap: 9px;
 }
 
-.bets button {
-    min-width: 70px;
 
-    padding:
-        11px
-        15px;
+.blackjack-preview small {
+    color: #87754f;
 
-    border:
-        1px solid
-        rgba(198, 151, 54, 0.22);
+    font-size: 9px;
 
-    border-radius: 8px;
+    font-weight: 900;
 
-    background:
-        #0c0b09;
-
-    color: #b79a5e;
-
-    font-weight: 800;
-
-    cursor: pointer;
-
-    transition:
-        transform 0.18s ease,
-        border-color 0.18s ease,
-        background 0.18s ease,
-        color 0.18s ease;
+    letter-spacing: 2px;
 }
 
-.bets button:hover {
-    transform: translateY(-2px);
 
-    border-color: #c99938;
+.blackjack-preview strong {
+    color: #f3d475;
 
-    color: #ebc968;
+    font-size: 52px;
 }
 
-.bets button.active {
-    border-color: #e0b44e;
+
+.blackjack-line {
+    width: 75%;
+    height: 1px;
+
+    margin: 0 auto;
 
     background:
         linear-gradient(
-            180deg,
-            #3a290c,
-            #171006
+            90deg,
+            transparent,
+            #9e762b,
+            transparent
         );
-
-    color: #f0cb68;
-
-    box-shadow:
-        0 0 20px
-        rgba(208, 157, 48, 0.12);
 }
 
 
-/* =========================================================
-   STATS
-========================================================= */
+/* =========================
+   MINES PREVIEW
+========================= */
 
-.stats {
+.mines-preview {
+    width: min(300px, 100%);
+
     display: grid;
 
     grid-template-columns:
         repeat(4, 1fr);
 
-    gap: 12px;
-
-    margin:
-        10px
-        0
-        55px;
+    gap: 8px;
 }
 
-.stats > div {
-    padding:
-        20px
-        15px;
 
-    text-align: center;
+.mines-preview span {
+    aspect-ratio: 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     border:
         1px solid
-        rgba(192, 146, 52, 0.16);
+        rgba(209, 160, 59, 0.25);
 
-    border-radius: 12px;
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(19, 16, 10, 0.95),
-            rgba(8, 8, 7, 0.95)
-        );
-}
-
-.stats small {
-    display: block;
-
-    margin-bottom: 9px;
-
-    color: #71664f;
-
-    font-size: 8px;
-
-    font-weight: 900;
-
-    letter-spacing: 1.5px;
-}
-
-.stats b {
-    color: #dfb44e;
-
-    font-size: 22px;
-}
-
-
-/* =========================================================
-   CASINO FLOOR
-========================================================= */
-
-main > h2 {
-    margin-bottom: 22px;
-
-    color: #cda147;
-
-    font-family:
-        Georgia,
-        "Times New Roman",
-        serif;
-
-    font-size: 20px;
-
-    letter-spacing: 3px;
-}
-
-.grid {
-    display: grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap: 16px;
-}
-
-.card {
-    position: relative;
-
-    min-height: 190px;
-
-    padding: 24px;
-
-    overflow: hidden;
-
-    border:
-        1px solid
-        rgba(199, 151, 55, 0.18);
-
-    border-radius: 15px;
+    border-radius: 8px;
 
     background:
         linear-gradient(
             145deg,
-            #15120c,
-            #090908 70%
+            #20190d,
+            #0b0906
         );
 
-    cursor: pointer;
+    color: #c3973e;
 
-    transition:
-        transform 0.22s ease,
-        border-color 0.22s ease,
-        box-shadow 0.22s ease;
-}
-
-.card:hover {
-    transform:
-        translateY(-5px);
-
-    border-color:
-        rgba(222, 174, 72, 0.55);
+    font-size: 20px;
 
     box-shadow:
-        0 18px 45px
-        rgba(0, 0, 0, 0.4);
-}
-
-.card .icon {
-    margin-bottom: 25px;
-
-    font-size: 42px;
-}
-
-.card h3 {
-    margin:
-        0
-        0
-        7px;
-
-    color: #e4c16b;
-
-    font-size: 16px;
-
-    letter-spacing: 1px;
-}
-
-.card p {
-    margin: 0;
-
-    color: #706a5e;
-
-    font-size: 11px;
-
-    line-height: 1.5;
+        inset 0 0 12px
+        rgba(0, 0, 0, 0.5);
 }
 
 
-/* =========================================================
-   GAME MODAL
-========================================================= */
+/* =========================
+   CRASH PREVIEW
+========================= */
 
-.modal {
-    position: fixed;
-    inset: 0;
+.crash-preview {
+    width: 100%;
 
-    z-index: 20000;
+    min-height: 160px;
 
     display: flex;
+    flex-direction: column;
+
     align-items: center;
     justify-content: center;
 
-    padding: 20px;
-
-    background:
-        rgba(0, 0, 0, 0.86);
-
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-}
-
-.hidden {
-    display: none !important;
-}
-
-.table {
-    position: relative;
-
-    width:
-        min(540px, 100%);
-
-    padding:
-        42px
-        28px
-        32px;
-
-    text-align: center;
-
-    border:
-        1px solid
-        rgba(223, 175, 73, 0.38);
-
-    border-radius: 18px;
+    gap: 15px;
 
     background:
         radial-gradient(
-            circle at top,
-            #241a09,
-            #0b0a08 52%,
-            #060606
+            circle at center,
+            rgba(203, 151, 43, 0.12),
+            transparent 60%
         );
-
-    box-shadow:
-        0 25px 90px
-        rgba(0, 0, 0, 0.7);
 }
 
-.close {
-    position: absolute;
 
-    right: 14px;
-    top: 12px;
+#crashMultiplier {
+    color: #efc861;
 
-    width: 38px;
-    height: 38px;
-
-    border: 0;
-
-    background: transparent;
-
-    color: #8c7b58;
-
-    font-size: 28px;
-
-    cursor: pointer;
-}
-
-.gameIcon {
-    font-size: 58px;
-}
-
-.table h2 {
-    margin:
-        12px
-        0
-        22px;
-
-    color: #dfb552;
-
-    font-family:
-        Georgia,
-        "Times New Roman",
-        serif;
-
-    letter-spacing: 2px;
-}
-
-.machine {
-    min-height: 90px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 20px;
-
-    border:
-        1px solid
-        rgba(203, 156, 61, 0.22);
-
-    border-radius: 12px;
-
-    background: #050505;
-
-    color: #f1d37b;
-
-    font-size:
-        clamp(24px, 7vw, 45px);
-}
-
-#result {
-    min-height: 45px;
-
-    margin:
-        22px
-        0;
-
-    color: #a59b84;
-
-    line-height: 1.5;
-}
-
-.play {
-    width: 100%;
-
-    padding:
-        15px
-        20px;
-
-    border:
-        1px solid
-        #f1d17a;
-
-    border-radius: 9px;
-
-    background:
-        linear-gradient(
-            180deg,
-            #e6c15f,
-            #a8761c
-        );
-
-    color: #130d03;
+    font-size: clamp(45px, 12vw, 75px);
 
     font-weight: 1000;
 
-    letter-spacing: 2px;
-
-    cursor: pointer;
+    text-shadow:
+        0 0 30px
+        rgba(226, 176, 61, 0.25);
 }
 
 
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media (max-width: 800px) {
-
-    header {
-        min-height: 66px;
-
-        padding:
-            11px
-            14px;
-    }
-
-    .brand > span {
-        font-size: 24px;
-    }
-
-    .brand b {
-        font-size: 15px;
-    }
-
-    .wallet {
-        padding:
-            8px
-            10px;
-
-        font-size: 13px;
-    }
-
-    .wallet small {
-        display: none;
-    }
-
-    main {
-        width: 92%;
-
-        padding-top: 45px;
-    }
-
-    .stats {
-        grid-template-columns:
-            repeat(2, 1fr);
-    }
-
-    .grid {
-        grid-template-columns:
-            repeat(2, 1fr);
-    }
-
-    .original-enter-button {
-        top: 72%;
-
-        width: 32vw;
-        height: 9vw;
-    }
+.crash-preview > div:last-child {
+    font-size: 40px;
 }
 
+
+/* =========================
+   GENERIC GAME
+========================= */
+
+.generic-game {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-height: 130px;
+
+    font-size: 80px;
+}
+
+
+/* =========================
+   RESULTS
+========================= */
+
+#result strong {
+    font-weight: 1000;
+}
+
+
+.result-win {
+    color: #e7bd55 !important;
+
+    text-shadow:
+        0 0 18px
+        rgba(224, 175, 59, 0.25);
+}
+
+
+.result-loss {
+    color: #c95c50 !important;
+}
+
+
+.result-draw {
+    color: #aaa08a !important;
+}
+
+
+/* =========================
+   PLAY BUTTON STATES
+========================= */
+
+.play:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+
+.play:not(:disabled):hover {
+    filter: brightness(1.08);
+
+    transform: translateY(-2px);
+}
+
+
+/* =========================
+   MOBILE GAME UI
+========================= */
 
 @media (max-width: 520px) {
 
-    .grid {
-        grid-template-columns: 1fr;
+    .table {
+        padding:
+            36px
+            16px
+            20px;
     }
 
-    .card {
-        min-height: 150px;
+
+    .slot-machine {
+        gap: 6px;
+
+        padding: 8px;
     }
 
-    /*
-       Auf Hochkant-Handys bleibt das komplette
-       Originalbild sichtbar. Schwarze Flächen
-       oben/unten sind absichtlich möglich,
-       damit NICHTS vom Bild abgeschnitten wird.
-    */
 
-    .original-entrance-image {
-        object-fit: contain;
+    .slot-reel {
+        height: 85px;
+
+        font-size: 38px;
     }
 
-    .original-enter-button {
-        top: 71.5%;
 
-        width: 31vw;
-        height: 9vw;
+    .roulette-game-wheel {
+        width: 125px;
+        height: 125px;
+
+        font-size: 36px;
+    }
+
+
+    .casino-coin {
+        width: 105px;
+        height: 105px;
+
+        font-size: 45px;
+    }
+
+
+    .dice-game {
+        gap: 10px;
+    }
+
+
+    #yourDice,
+    #casinoDice {
+        font-size: 65px;
     }
 }
