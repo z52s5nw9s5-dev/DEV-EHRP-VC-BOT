@@ -7,65 +7,40 @@ from discord.ext import commands
 from health_server import start_health_server
 
 
-# ============================================================
-# TOKEN
-# ============================================================
-
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 if not TOKEN:
-    raise RuntimeError(
-        "DISCORD_TOKEN wurde nicht gefunden."
-    )
+    raise RuntimeError("DISCORD_TOKEN wurde nicht gefunden.")
 
 
-# ============================================================
+# =========================================================
 # INTENTS
-# ============================================================
+# =========================================================
 
 intents = discord.Intents.default()
 
-# Server
 intents.guilds = True
 intents.members = True
-
-# Normale Nachrichten auf dem Server
 intents.guild_messages = True
 
-# Direktnachrichten an den Bot
-# WICHTIG für das Bewerbungssystem
+# Wichtig für Bewerbungs-DMs
 intents.dm_messages = True
-
-# Nachrichteninhalt lesen
-# WICHTIG für Antworten per DM
 intents.message_content = True
 
 
-# ============================================================
+# =========================================================
 # BOT
-# ============================================================
+# =========================================================
 
 class EHRPBot(commands.Bot):
 
     def __init__(self):
-
         super().__init__(
             command_prefix="!",
-            intents=intents,
+            intents=intents
         )
 
-
-    # ========================================================
-    # SETUP
-    # ========================================================
-
     async def setup_hook(self):
-
-        print("")
-        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        print("🚀 EHRP | SYSTEM STARTET")
-        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
 
         extensions = [
             "cogs.recovery",
@@ -76,16 +51,20 @@ class EHRPBot(commands.Bot):
             "cogs.team_ideas",
             "cogs.system_dashboard",
             "cogs.applications",
+            "cogs.casino",
         ]
 
+        print("")
+        print("======================================")
+        print("🚀 EHRP/VC SYSTEM START")
+        print("======================================")
+        print("")
 
         for extension in extensions:
 
             try:
 
-                await self.load_extension(
-                    extension
-                )
+                await self.load_extension(extension)
 
                 print(
                     f"✅ Geladen: {extension}"
@@ -101,10 +80,10 @@ class EHRPBot(commands.Bot):
                     f"   {type(error).__name__}: {error}"
                 )
 
-
-        # ====================================================
-        # SLASH COMMANDS
-        # ====================================================
+        print("")
+        print("--------------------------------------")
+        print("🔄 Slash Commands werden synchronisiert...")
+        print("--------------------------------------")
 
         try:
 
@@ -125,144 +104,76 @@ class EHRPBot(commands.Bot):
 
             print("")
             print(
-                "❌ Slash Commands konnten nicht "
-                "synchronisiert werden."
+                "❌ Slash Commands konnten nicht synchronisiert werden."
             )
 
             print(
                 f"{type(error).__name__}: {error}"
             )
 
-
         print("")
-        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("======================================")
         print("✅ SETUP ABGESCHLOSSEN")
-        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("======================================")
+        print("")
 
-
-    # ========================================================
-    # READY
-    # ========================================================
 
     async def on_ready(self):
 
         if self.user is None:
             return
 
-
         print("")
-        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        print("🟢 EHRP | SYSTEM ONLINE")
-        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("======================================")
+        print(
+            f"🟢 EHRP | SYSTEM ONLINE"
+        )
         print(
             f"🤖 Bot: {self.user}"
         )
         print(
-            f"🆔 Bot-ID: {self.user.id}"
+            f"🆔 ID: {self.user.id}"
         )
         print(
-            f"🌐 Server verbunden: {len(self.guilds)}"
+            f"🌐 Server: {len(self.guilds)}"
         )
-        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
-
-        try:
-
-            await self.change_presence(
-                status=discord.Status.online,
-                activity=discord.Activity(
-                    type=discord.ActivityType.watching,
-                    name="EHRP/VC",
-                ),
-            )
-
-        except Exception as error:
-
-            print(
-                f"⚠️ Bot-Status konnte nicht gesetzt werden: {error}"
-            )
-
-
-    # ========================================================
-    # GLOBAL EVENT ERROR
-    # ========================================================
-
-    async def on_error(
-        self,
-        event_method,
-        *args,
-        **kwargs,
-    ):
-
+        print("======================================")
         print("")
-        print(
-            f"❌ Discord Event Fehler: {event_method}"
+
+        await self.change_presence(
+            status=discord.Status.online,
+            activity=discord.Activity(
+                type=discord.ActivityType.watching,
+                name="EHRP/VC"
+            ),
         )
 
 
-# ============================================================
-# BOT ERSTELLEN
-# ============================================================
+# =========================================================
+# BOT INSTANCE
+# =========================================================
 
 bot = EHRPBot()
 
 
-# ============================================================
+# =========================================================
 # MAIN
-# ============================================================
+# =========================================================
 
 async def main():
 
-    # Render Health Server
     start_health_server()
 
-    print(
-        "🟢 Health Server gestartet."
-    )
+    async with bot:
 
-
-    try:
-
-        async with bot:
-
-            await bot.start(
-                TOKEN
-            )
-
-
-    except discord.LoginFailure:
-
-        print("")
-        print(
-            "❌ Discord Login fehlgeschlagen."
-        )
-        print(
-            "Prüfe den DISCORD_TOKEN bei Render."
+        await bot.start(
+            TOKEN
         )
 
 
-    except KeyboardInterrupt:
-
-        print(
-            "🛑 Bot wurde beendet."
-        )
-
-
-    except Exception as error:
-
-        print("")
-        print(
-            "❌ KRITISCHER BOT-FEHLER"
-        )
-
-        print(
-            f"{type(error).__name__}: {error}"
-        )
-
-
-# ============================================================
+# =========================================================
 # START
-# ============================================================
+# =========================================================
 
 if __name__ == "__main__":
 
