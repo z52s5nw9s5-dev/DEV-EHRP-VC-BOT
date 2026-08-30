@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="de">
+
 <head>
     <meta charset="utf-8">
 
@@ -8,7 +9,7 @@
         content="width=device-width, initial-scale=1, viewport-fit=cover"
     >
 
-    <meta name="theme-color" content="#030303">
+    <meta name="theme-color" content="#000000">
 
     <title>EHRP/VC Casino</title>
 
@@ -18,21 +19,33 @@
     >
 </head>
 
-<body>
+
+<body class="entrance-active">
+
 
     <!-- =====================================================
-         CASINO ENTRANCE
+         ORIGINAL CASINO ENTRANCE
     ====================================================== -->
 
-    <section id="casinoEntrance" class="casino-entrance">
+    <section
+        id="casinoEntrance"
+        class="original-casino-entrance"
+    >
 
-        <div class="entrance-bg"></div>
+        <!-- DEIN ORIGINALBILD -->
 
-        <div class="entrance-darkness"></div>
+        <img
+            src="/assets/casino_entrance.png.PNG"
+            alt="EHRP/VC Casino"
+            class="original-entrance-image"
+            draggable="false"
+        >
 
-        <div class="entrance-gold-glow"></div>
 
-        <div class="entrance-particles">
+        <!-- GOLD PARTICLES -->
+
+        <div class="original-particles">
+
             <span></span>
             <span></span>
             <span></span>
@@ -43,172 +56,38 @@
             <span></span>
             <span></span>
             <span></span>
-            <span></span>
-            <span></span>
-        </div>
-
-
-        <!-- ROTATING ROULETTE EFFECT -->
-
-        <div class="roulette-stage">
-
-            <div class="roulette-aura"></div>
-
-            <div class="roulette-wheel">
-
-                <div class="roulette-ring ring-one"></div>
-
-                <div class="roulette-ring ring-two"></div>
-
-                <div class="roulette-ring ring-three"></div>
-
-                <div class="roulette-numbers">
-                    <span>0</span>
-                    <span>32</span>
-                    <span>15</span>
-                    <span>19</span>
-                    <span>4</span>
-                    <span>21</span>
-                    <span>2</span>
-                    <span>25</span>
-                    <span>17</span>
-                    <span>34</span>
-                    <span>6</span>
-                    <span>27</span>
-                </div>
-
-                <div class="roulette-center">
-
-                    <div class="roulette-center-light"></div>
-
-                </div>
-
-            </div>
 
         </div>
 
 
-        <!-- ENTRANCE CONTENT -->
+        <!--
+            UNSICHTBARER BUTTON
 
-        <div class="entrance-content">
+            Er liegt über dem CASINO BETRETEN
+            Button, der bereits IN DEINEM BILD ist.
+        -->
 
-            <div class="entrance-crown">
-                ★
-            </div>
-
-            <div class="entrance-brand">
-                EHRP/VC
-            </div>
-
-            <div class="entrance-casino-title">
-                CASINO
-            </div>
-
-            <div class="entrance-line">
-
-                <span></span>
-
-                <b>
-                    ♣
-                </b>
-
-                <span></span>
-
-            </div>
-
-            <p class="entrance-subtitle">
-                DEIN CASINO · DEINE COINS · DEIN SIEG
-            </p>
+        <button
+            id="enterCasinoButton"
+            class="original-enter-button"
+            type="button"
+            aria-label="Casino betreten"
+        ></button>
 
 
-            <button
-                id="enterCasinoButton"
-                class="enter-casino-button"
-                type="button"
-            >
-
-                <span class="button-shine"></span>
-
-                <span class="button-icon">
-                    ♛
-                </span>
-
-                <span>
-                    CASINO BETRETEN
-                </span>
-
-            </button>
-
-
-            <div class="entrance-community">
-                EHRP/VC COMMUNITY
-            </div>
-
-
-            <div class="entrance-features">
-
-                <div>
-                    <b>♠</b>
-                    <span>
-                        FAIR PLAY
-                    </span>
-                </div>
-
-                <div>
-                    <b>🔒</b>
-                    <span>
-                        SICHER
-                    </span>
-                </div>
-
-                <div>
-                    <b>◉</b>
-                    <span>
-                        EHRP COINS
-                    </span>
-                </div>
-
-                <div>
-                    <b>♛</b>
-                    <span>
-                        STATISTIKEN
-                    </span>
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- TRANSITION -->
+        <!-- ZOOM / TRANSITION -->
 
         <div
             id="casinoTransition"
-            class="casino-transition"
+            class="original-transition"
         >
 
-            <div class="transition-wheel">
-
-                <div class="transition-inner">
-                    ♛
-                </div>
-
+            <div class="transition-logo">
+                ♛
             </div>
 
-            <div class="transition-title">
+            <div class="transition-name">
                 EHRP/VC
-            </div>
-
-            <div class="transition-text">
-                CASINO WIRD GEÖFFNET
-            </div>
-
-            <div class="transition-loader">
-
-                <span></span>
-                <span></span>
-                <span></span>
-
             </div>
 
         </div>
@@ -216,14 +95,16 @@
     </section>
 
 
+
     <!-- =====================================================
-         REAL CASINO APP
+         CASINO APP
     ====================================================== -->
 
     <div
         id="casinoApp"
         class="casino-app casino-app-hidden"
     >
+
 
         <div class="glow"></div>
 
@@ -270,8 +151,9 @@
         </header>
 
 
+
         <!-- =================================================
-             MAIN
+             MAIN CASINO
         ================================================== -->
 
         <main>
@@ -285,6 +167,7 @@
                     WILLKOMMEN IM EHRP/VC CASINO
                 </div>
 
+
                 <h1>
 
                     EHRP
@@ -294,6 +177,7 @@
                     </em>
 
                 </h1>
+
 
                 <p>
                     Dein persönlicher Casino-Floor.
@@ -309,11 +193,13 @@
             </section>
 
 
+
             <!-- =================================================
                  PLAYER STATS
             ================================================== -->
 
             <section class="stats">
+
 
                 <div>
 
@@ -366,7 +252,9 @@
 
                 </div>
 
+
             </section>
+
 
 
             <!-- =================================================
@@ -389,8 +277,9 @@
     </div>
 
 
+
     <!-- =====================================================
-         GAME WINDOW
+         GAME MODAL
     ====================================================== -->
 
     <div
@@ -450,8 +339,9 @@
     </div>
 
 
+
     <!-- =====================================================
-         PLAYER
+         USER
     ====================================================== -->
 
     <script>
@@ -465,8 +355,9 @@
     </script>
 
 
+
     <!-- =====================================================
-         ENTRANCE ENGINE
+         ORIGINAL ENTRANCE ENGINE
     ====================================================== -->
 
     <script>
@@ -474,11 +365,6 @@
         const entrance =
             document.getElementById(
                 "casinoEntrance"
-            );
-
-        const casinoApp =
-            document.getElementById(
-                "casinoApp"
             );
 
         const enterButton =
@@ -491,42 +377,55 @@
                 "casinoTransition"
             );
 
+        const casinoApp =
+            document.getElementById(
+                "casinoApp"
+            );
+
+
+        let casinoOpening = false;
+
 
         enterButton.addEventListener(
             "click",
-            () => {
+            function () {
 
-                if (
-                    entrance.classList.contains(
-                        "entrance-opening"
-                    )
-                ) {
+                if (casinoOpening) {
                     return;
                 }
 
 
+                casinoOpening = true;
+
+
+                if (navigator.vibrate) {
+
+                    navigator.vibrate(
+                        35
+                    );
+
+                }
+
+
                 entrance.classList.add(
-                    "entrance-opening"
+                    "original-opening"
                 );
 
 
-                enterButton.disabled = true;
-
-
                 setTimeout(
-                    () => {
+                    function () {
 
                         transition.classList.add(
-                            "transition-visible"
+                            "original-transition-visible"
                         );
 
                     },
-                    550
+                    850
                 );
 
 
                 setTimeout(
-                    () => {
+                    function () {
 
                         casinoApp.classList.remove(
                             "casino-app-hidden"
@@ -537,15 +436,18 @@
                         );
 
                     },
-                    1900
+                    1700
                 );
 
 
                 setTimeout(
-                    () => {
+                    function () {
 
-                        entrance.classList.add(
-                            "entrance-finished"
+                        entrance.style.display =
+                            "none";
+
+                        document.body.classList.remove(
+                            "entrance-active"
                         );
 
                         document.body.classList.add(
@@ -553,7 +455,7 @@
                         );
 
                     },
-                    2400
+                    2200
                 );
 
             }
@@ -562,12 +464,16 @@
     </script>
 
 
+
     <!-- =====================================================
          CASINO ENGINE
     ====================================================== -->
 
-    <script src="/static/casino.js"></script>
+    <script
+        src="/static/casino.js"
+    ></script>
 
 
 </body>
+
 </html>
