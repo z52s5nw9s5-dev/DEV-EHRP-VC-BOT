@@ -1,31 +1,90 @@
-const casinoGames = [
-    ["slots", "🎰", "SLOTS", "Goldene Walzen & Multiplikatoren"],
-    ["blackjack", "🃏", "BLACKJACK", "Schlag den Dealer"],
-    ["roulette", "🎡", "ROULETTE", "Rot, Schwarz oder Zero"],
-    ["coinflip", "🪙", "COINFLIP", "Kopf oder Zahl"],
-    ["dice", "🎲", "DICE", "Dein Wurf gegen das Casino"],
-    ["baccarat", "👑", "BACCARAT", "Player gegen Banker"],
-    ["highlow", "⬆️", "HIGH / LOW", "Ist die nächste Karte höher?"],
-    ["mines", "💣", "MINES", "Risiko Feld für Feld"],
-    ["crash", "🚀", "CRASH", "Cashout vor dem Absturz"]
-];
+/* =========================================================
+   EHRP/VC CASINO ENGINE
+========================================================= */
+
+const USER_ID = window.USER_ID || "demo";
 
 let selectedBet = 100;
 let currentGame = null;
+let isPlaying = false;
 
-const USER_ID =
-    window.USER_ID ||
-    new URLSearchParams(window.location.search).get("uid") ||
-    "demo";
 
+/* =========================================================
+   GAMES
+========================================================= */
+
+const casinoGames = [
+    {
+        id: "slots",
+        name: "SLOTS",
+        icon: "🎰",
+        description: "Drei Walzen. Ein Spin. Hol dir den Jackpot."
+    },
+    {
+        id: "blackjack",
+        name: "BLACKJACK",
+        icon: "🂡",
+        description: "Schlage den Dealer und komm so nah wie möglich an 21."
+    },
+    {
+        id: "roulette",
+        name: "ROULETTE",
+        icon: "🎡",
+        description: "Rot, Schwarz oder Grün. Setze und lass das Rad entscheiden."
+    },
+    {
+        id: "coinflip",
+        name: "COINFLIP",
+        icon: "🪙",
+        description: "Kopf oder Zahl. Einfach, schnell und 50/50."
+    },
+    {
+        id: "dice",
+        name: "DICE",
+        icon: "🎲",
+        description: "Dein Würfel gegen das Casino."
+    },
+    {
+        id: "baccarat",
+        name: "BACCARAT",
+        icon: "🃏",
+        description: "Player gegen Banker."
+    },
+    {
+        id: "highlow",
+        name: "HIGH / LOW",
+        icon: "♦️",
+        description: "Ist die nächste Karte höher oder niedriger?"
+    },
+    {
+        id: "mines",
+        name: "MINES",
+        icon: "💣",
+        description: "Finde Gewinne und vermeide die Minen."
+    },
+    {
+        id: "crash",
+        name: "CRASH",
+        icon: "🚀",
+        description: "Cashout bevor der Multiplikator crasht."
+    }
+];
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
 
 function formatCoins(value) {
     return Number(value || 0).toLocaleString("de-DE");
 }
 
-
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getGame(id) {
+    return casinoGames.find(game => game.id === id);
 }
 
 
@@ -37,9 +96,9 @@ function renderBets() {
 
     const container = document.getElementById("bets");
 
-    if (!container) {
-        return;
-    }
+    if (!container) return;
+
+    container.innerHTML = "";
 
     const bets = [
         50,
@@ -53,95 +112,67 @@ function renderBets() {
         "all"
     ];
 
-    container.innerHTML = "";
-
-    for (const value of bets) {
+    bets.forEach(bet => {
 
         const button = document.createElement("button");
 
-        const isActive =
-            String(selectedBet) === String(value);
+        button.type = "button";
 
-        if (isActive) {
+        button.textContent =
+            bet === "all"
+                ? "ALL IN"
+                : formatCoins(bet);
+
+        if (bet === selectedBet) {
             button.classList.add("active");
         }
 
-        if (value === "all") {
-            button.textContent = "🔥 ALLES REIN";
-        } else {
-            button.textContent = formatCoins(value);
-        }
+        button.addEventListener("click", () => {
 
-        button.addEventListener(
-            "click",
-            () => {
+            if (isPlaying) return;
 
-                selectedBet = value;
+            selectedBet = bet;
 
-                renderBets();
+            renderBets();
 
-                if (currentGame) {
-                    updateGameBetText();
-                }
-
-            }
-        );
+            updateGameBetText();
+        });
 
         container.appendChild(button);
-    }
+    });
 }
 
 
 /* =========================================================
-   GAME CARDS
+   CASINO FLOOR
 ========================================================= */
 
 function renderGames() {
 
-    const grid =
-        document.getElementById("gamesGrid");
+    const grid = document.getElementById("gamesGrid");
 
-    if (!grid) {
-        return;
-    }
+    if (!grid) return;
 
     grid.innerHTML = "";
 
-    for (const game of casinoGames) {
+    casinoGames.forEach(game => {
 
-        const [
-            id,
-            icon,
-            title,
-            description
-        ] = game;
-
-        const card =
-            document.createElement("div");
+        const card = document.createElement("article");
 
         card.className = "card";
 
         card.innerHTML = `
-            <div class="icon">
-                ${icon}
-            </div>
-
-            <h3>
-                ${title}
-            </h3>
-
-            <p>
-                ${description}
-            </p>
+            <div class="icon">${game.icon}</div>
+            <h3>${game.name}</h3>
+            <p>${game.description}</p>
         `;
 
-        card.addEventListener(
-            "click",
-            () => openGame(id)
-        );
+        card.addEventListener("click", () => {
+            openGame(game.id);
+        });
 
         grid.appendChild(card);
-    }
+    });
 }
 
 
@@ -153,31 +184,21 @@ async function loadPlayer() {
 
     try {
 
-        const response =
-            await fetch(
-                `/api/player/${encodeURIComponent(USER_ID)}`,
-                {
-                    cache: "no-store"
-                }
-            );
+        const response = await fetch(
+            `/api/player/${encodeURIComponent(USER_ID)}`
+        );
 
         if (!response.ok) {
-            throw new Error(
-                `HTTP ${response.status}`
-            );
+            throw new Error("Player konnte nicht geladen werden.");
         }
 
-        const player =
-            await response.json();
+        const player = await response.json();
 
         updatePlayerUI(player);
 
     } catch (error) {
 
-        console.error(
-            "Spielerdaten konnten nicht geladen werden:",
-            error
-        );
+        console.error(error);
 
     }
 }
@@ -185,25 +206,13 @@ async function loadPlayer() {
 
 function updatePlayerUI(player) {
 
-    if (!player) {
-        return;
-    }
+    if (!player) return;
 
-    const balance =
-        document.getElementById("balance");
-
-    const games =
-        document.getElementById("games");
-
-    const wins =
-        document.getElementById("wins");
-
-    const biggest =
-        document.getElementById("biggest");
-
-    const rate =
-        document.getElementById("rate");
-
+    const balance = document.getElementById("balance");
+    const games = document.getElementById("games");
+    const wins = document.getElementById("wins");
+    const biggest = document.getElementById("biggest");
+    const rate = document.getElementById("rate");
 
     if (balance) {
         balance.textContent =
@@ -227,16 +236,10 @@ function updatePlayerUI(player) {
 
     if (rate) {
 
-        const total =
-            Number(player.games || 0);
-
-        const won =
-            Number(player.wins || 0);
-
         const winrate =
-            total > 0
+            player.games > 0
                 ? Math.round(
-                    (won / total) * 100
+                    (player.wins / player.games) * 100
                 )
                 : 0;
 
@@ -247,96 +250,46 @@ function updatePlayerUI(player) {
 
 
 /* =========================================================
-   GAME WINDOW
+   GAME MODAL
 ========================================================= */
 
 function openGame(gameId) {
 
+    const game = getGame(gameId);
+
+    if (!game) return;
+
     currentGame = gameId;
 
-    const game =
-        casinoGames.find(
-            item => item[0] === gameId
-        );
+    const modal = document.getElementById("modal");
+    const icon = document.getElementById("gameIcon");
+    const title = document.getElementById("gameTitle");
 
-    if (!game) {
-        return;
+    if (!modal) return;
+
+    if (icon) {
+        icon.textContent = game.icon;
     }
 
-    const modal =
-        document.getElementById("modal");
-
-    const icon =
-        document.getElementById("gameIcon");
-
-    const title =
-        document.getElementById("gameTitle");
-
-    const machine =
-        document.getElementById("machine");
-
-
-    icon.textContent =
-        game[1];
-
-    title.textContent =
-        game[2];
-
-
-    if (gameId === "slots") {
-
-        machine.textContent =
-            "❔　❔　❔";
-
-    } else if (gameId === "roulette") {
-
-        machine.textContent =
-            "🎡  ◆  🎡";
-
-    } else if (gameId === "blackjack") {
-
-        machine.textContent =
-            "🂠　🂠";
-
-    } else if (gameId === "dice") {
-
-        machine.textContent =
-            "🎲　VS　🎲";
-
-    } else if (gameId === "coinflip") {
-
-        machine.textContent =
-            "🪙";
-
-    } else if (gameId === "mines") {
-
-        machine.textContent =
-            "◆　◆　◆";
-
-    } else if (gameId === "crash") {
-
-        machine.textContent =
-            "🚀 1.00×";
-
-    } else {
-
-        machine.textContent =
-            "◆　READY　◆";
+    if (title) {
+        title.textContent = game.name;
     }
-
-
-    updateGameBetText();
 
     modal.classList.remove("hidden");
+
+    renderGameInterface();
 }
 
 
 function closeGame() {
 
-    const modal =
-        document.getElementById("modal");
+    if (isPlaying) return;
 
-    modal.classList.add("hidden");
+    const modal = document.getElementById("modal");
+
+    if (modal) {
+        modal.classList.add("hidden");
+    }
 
     currentGame = null;
 }
@@ -344,23 +297,393 @@ function closeGame() {
 
 function updateGameBetText() {
 
-    const result =
-        document.getElementById("result");
+    if (!currentGame) return;
 
-    if (!result) {
+    const result = document.getElementById("result");
+
+    if (!result) return;
+
+    result.textContent =
+        selectedBet === "all"
+            ? "Einsatz: ALL IN"
+            : `Einsatz: ${formatCoins(selectedBet)} Coins`;
+}
+
+
+/* =========================================================
+   GAME INTERFACES
+========================================================= */
+
+function renderGameInterface() {
+
+    const machine = document.getElementById("machine");
+    const result = document.getElementById("result");
+    const playButton = document.getElementById("playBtn");
+
+    if (!machine || !result || !playButton) return;
+
+    playButton.disabled = false;
+
+    playButton.textContent = "JETZT SPIELEN";
+
+    result.textContent =
+        selectedBet === "all"
+            ? "Einsatz: ALL IN"
+            : `Einsatz: ${formatCoins(selectedBet)} Coins`;
+
+
+    /* =====================================================
+       SLOTS
+    ====================================================== */
+
+    if (currentGame === "slots") {
+
+        machine.innerHTML = `
+            <div class="slot-machine">
+                <div class="slot-reel" id="reel1">7️⃣</div>
+                <div class="slot-reel" id="reel2">💎</div>
+                <div class="slot-reel" id="reel3">👑</div>
+            </div>
+        `;
+
+        playButton.textContent = "🎰 SPIN";
+
         return;
     }
 
-    if (selectedBet === "all") {
 
-        result.textContent =
-            "Einsatz: 🔥 ALLES REIN";
+    /* =====================================================
+       ROULETTE
+    ====================================================== */
 
-    } else {
+    if (currentGame === "roulette") {
 
-        result.textContent =
-            `Einsatz: ${formatCoins(selectedBet)} EHRP Coins`;
+        machine.innerHTML = `
+            <div class="roulette-game">
+                <div class="roulette-game-wheel">
+                    🎡
+                </div>
+
+                <div class="roulette-choices">
+                    <button
+                        type="button"
+                        class="roulette-choice roulette-red active"
+                        data-choice="red"
+                    >
+                        ROT
+                    </button>
+
+                    <button
+                        type="button"
+                        class="roulette-choice roulette-black"
+                        data-choice="black"
+                    >
+                        SCHWARZ
+                    </button>
+
+                    <button
+                        type="button"
+                        class="roulette-choice roulette-green"
+                        data-choice="green"
+                    >
+                        0
+                    </button>
+                </div>
+            </div>
+        `;
+
+        setupRouletteChoices();
+
+        playButton.textContent = "🎡 DREHEN";
+
+        return;
     }
+
+
+    /* =====================================================
+       COINFLIP
+    ====================================================== */
+
+    if (currentGame === "coinflip") {
+
+        machine.innerHTML = `
+            <div class="coinflip-game">
+
+                <div
+                    class="casino-coin"
+                    id="casinoCoin"
+                >
+                    🪙
+                </div>
+
+                <div class="coin-choices">
+
+                    <button
+                        type="button"
+                        class="coin-choice active"
+                        data-choice="Kopf"
+                    >
+                        KOPF
+                    </button>
+
+                    <button
+                        type="button"
+                        class="coin-choice"
+                        data-choice="Zahl"
+                    >
+                        ZAHL
+                    </button>
+
+                </div>
+
+            </div>
+        `;
+
+        setupCoinChoices();
+
+        playButton.textContent = "🪙 WERFEN";
+
+        return;
+    }
+
+
+    /* =====================================================
+       DICE
+    ====================================================== */
+
+    if (currentGame === "dice") {
+
+        machine.innerHTML = `
+            <div class="dice-game">
+
+                <div class="dice-side">
+                    <small>DU</small>
+                    <div id="yourDice">⚄</div>
+                </div>
+
+                <div class="dice-vs">
+                    VS
+                </div>
+
+                <div class="dice-side">
+                    <small>CASINO</small>
+                    <div id="casinoDice">⚂</div>
+                </div>
+
+            </div>
+        `;
+
+        playButton.textContent = "🎲 WÜRFELN";
+
+        return;
+    }
+
+
+    /* =====================================================
+       BLACKJACK
+    ====================================================== */
+
+    if (currentGame === "blackjack") {
+
+        machine.innerHTML = `
+            <div class="blackjack-preview">
+
+                <div>
+                    <small>DEALER</small>
+                    <strong>🂠 🂠</strong>
+                </div>
+
+                <div class="blackjack-line"></div>
+
+                <div>
+                    <small>DU</small>
+                    <strong>🂡 🂮</strong>
+                </div>
+
+            </div>
+        `;
+
+        result.textContent =
+            "Blackjack-Tisch wird als Nächstes vollständig ausgebaut.";
+
+        playButton.textContent =
+            "🃏 RUNDE STARTEN";
+
+        return;
+    }
+
+
+    /* =====================================================
+       MINES
+    ====================================================== */
+
+    if (currentGame === "mines") {
+
+        machine.innerHTML = `
+            <div class="mines-preview">
+
+                ${Array.from(
+                    { length: 16 },
+                    () => "<span>◆</span>"
+                ).join("")}
+
+            </div>
+        `;
+
+        playButton.textContent =
+            "💣 MINES STARTEN";
+
+        return;
+    }
+
+
+    /* =====================================================
+       CRASH
+    ====================================================== */
+
+    if (currentGame === "crash") {
+
+        machine.innerHTML = `
+            <div class="crash-preview">
+
+                <div id="crashMultiplier">
+                    1.00×
+                </div>
+
+                <div>
+                    🚀
+                </div>
+
+            </div>
+        `;
+
+        playButton.textContent =
+            "🚀 START";
+
+        return;
+    }
+
+
+    /* =====================================================
+       OTHER
+    ====================================================== */
+
+    machine.innerHTML = `
+        <div class="generic-game">
+            ${getGame(currentGame)?.icon || "🎰"}
+        </div>
+    `;
+}
+
+
+/* =========================================================
+   ROULETTE CHOICE
+========================================================= */
+
+let rouletteChoice = "red";
+
+function setupRouletteChoices() {
+
+    rouletteChoice = "red";
+
+    document
+        .querySelectorAll(".roulette-choice")
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    if (isPlaying) return;
+
+                    document
+                        .querySelectorAll(".roulette-choice")
+                        .forEach(item => {
+                            item.classList.remove("active");
+                        });
+
+                    button.classList.add("active");
+
+                    rouletteChoice =
+                        button.dataset.choice;
+                }
+            );
+        });
+}
+
+
+/* =========================================================
+   COIN CHOICE
+========================================================= */
+
+let coinChoice = "Kopf";
+
+function setupCoinChoices() {
+
+    coinChoice = "Kopf";
+
+    document
+        .querySelectorAll(".coin-choice")
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    if (isPlaying) return;
+
+                    document
+                        .querySelectorAll(".coin-choice")
+                        .forEach(item => {
+                            item.classList.remove("active");
+                        });
+
+                    button.classList.add("active");
+
+                    coinChoice =
+                        button.dataset.choice;
+                }
+            );
+        });
+}
+
+
+/* =========================================================
+   API PLAY
+========================================================= */
+
+async function requestPlay(extra = {}) {
+
+    const response = await fetch(
+        "/api/play",
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
+
+            body: JSON.stringify({
+                user_id: USER_ID,
+                game: currentGame,
+                bet: selectedBet,
+                ...extra
+            })
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+
+        throw new Error(
+            data.error ||
+            "Spiel konnte nicht gestartet werden."
+        );
+    }
+
+    return data;
 }
 
 
@@ -368,80 +691,73 @@ function updateGameBetText() {
    SLOT ANIMATION
 ========================================================= */
 
-async function animateSlots() {
+const slotSymbols = [
+    "🍒",
+    "🍋",
+    "🔔",
+    "👑",
+    "💎",
+    "7️⃣"
+];
 
-    const machine =
-        document.getElementById("machine");
 
-    const symbols = [
-        "🍒",
-        "🔔",
-        "👑",
-        "💎",
-        "7️⃣"
+async function animateSlots(finalReels) {
+
+    const reels = [
+        document.getElementById("reel1"),
+        document.getElementById("reel2"),
+        document.getElementById("reel3")
     ];
 
-    for (
-        let frame = 0;
-        frame < 18;
-        frame++
-    ) {
+    const timers = [];
 
-        const reels = [];
+    reels.forEach(reel => {
 
-        for (
-            let reel = 0;
-            reel < 3;
-            reel++
-        ) {
+        if (!reel) return;
 
-            reels.push(
-                symbols[
-                    Math.floor(
-                        Math.random() *
-                        symbols.length
-                    )
-                ]
-            );
-        }
+        reel.classList.add("spinning");
 
-        machine.textContent =
-            reels.join("　");
+        const timer = setInterval(
+            () => {
 
-        await sleep(
-            45 + frame * 7
+                reel.textContent =
+                    slotSymbols[
+                        Math.floor(
+                            Math.random()
+                            * slotSymbols.length
+                        )
+                    ];
+
+            },
+            70
         );
-    }
-}
+
+        timers.push(timer);
+    });
 
 
-/* =========================================================
-   ROULETTE ANIMATION
-========================================================= */
+    await sleep(850);
 
-async function animateRoulette() {
+    clearInterval(timers[0]);
 
-    const machine =
-        document.getElementById("machine");
+    reels[0].classList.remove("spinning");
+    reels[0].textContent = finalReels[0];
 
-    for (
-        let i = 0;
-        i < 20;
-        i++
-    ) {
 
-        const number =
-            Math.floor(
-                Math.random() * 37
-            );
+    await sleep(300);
 
-        machine.textContent =
-            `🎡 ${number}`;
+    clearInterval(timers[1]);
 
-        await sleep(
-            40 + i * 8
-        );
-    }
+    reels[1].classList.remove("spinning");
+    reels[1].textContent = finalReels[1];
+
+
+    await sleep(350);
+
+    clearInterval(timers[2]);
+
+    reels[2].classList.remove("spinning");
+    reels[2].textContent = finalReels[2];
 }
 
 
@@ -449,46 +765,57 @@ async function animateRoulette() {
    DICE ANIMATION
 ========================================================= */
 
-async function animateDice() {
+const diceFaces = [
+    "⚀",
+    "⚁",
+    "⚂",
+    "⚃",
+    "⚄",
+    "⚅"
+];
 
-    const machine =
-        document.getElementById("machine");
 
-    const dice = [
-        "⚀",
-        "⚁",
-        "⚂",
-        "⚃",
-        "⚄",
-        "⚅"
-    ];
+async function animateDice(you, casino) {
 
-    for (
-        let i = 0;
-        i < 12;
-        i++
-    ) {
+    const yourDice =
+        document.getElementById("yourDice");
 
-        const left =
-            dice[
-                Math.floor(
-                    Math.random() * 6
-                )
-            ];
+    const casinoDice =
+        document.getElementById("casinoDice");
 
-        const right =
-            dice[
-                Math.floor(
-                    Math.random() * 6
-                )
-            ];
 
-        machine.textContent =
-            `${left}　VS　${right}`;
+    for (let i = 0; i < 12; i++) {
 
-        await sleep(
-            70 + i * 5
-        );
+        if (yourDice) {
+            yourDice.textContent =
+                diceFaces[
+                    Math.floor(
+                        Math.random() * 6
+                    )
+                ];
+        }
+
+        if (casinoDice) {
+            casinoDice.textContent =
+                diceFaces[
+                    Math.floor(
+                        Math.random() * 6
+                    )
+                ];
+        }
+
+        await sleep(70);
+    }
+
+
+    if (yourDice) {
+        yourDice.textContent =
+            diceFaces[you - 1];
+    }
+
+    if (casinoDice) {
+        casinoDice.textContent =
+            diceFaces[casino - 1];
     }
 }
 
@@ -497,304 +824,296 @@ async function animateDice() {
    COIN ANIMATION
 ========================================================= */
 
-async function animateCoinflip() {
+async function animateCoin(result) {
 
-    const machine =
-        document.getElementById("machine");
+    const coin =
+        document.getElementById("casinoCoin");
 
-    for (
-        let i = 0;
-        i < 12;
-        i++
-    ) {
+    if (!coin) return;
 
-        machine.textContent =
-            i % 2 === 0
-                ? "🪙 KOPF"
-                : "🪙 ZAHL";
+    coin.classList.add("flipping");
 
-        await sleep(
-            80
-        );
-    }
+    await sleep(1100);
+
+    coin.classList.remove("flipping");
+
+    coin.textContent =
+        result === "Kopf"
+            ? "👑"
+            : "🪙";
 }
 
 
 /* =========================================================
-   GENERIC ANIMATION
+   ROULETTE ANIMATION
 ========================================================= */
 
-async function animateGeneric() {
+async function animateRoulette(number) {
 
-    const machine =
-        document.getElementById("machine");
+    const wheel =
+        document.querySelector(
+            ".roulette-game-wheel"
+        );
 
-    const frames = [
-        "◇",
-        "◆",
-        "◇",
-        "◆"
-    ];
+    if (!wheel) return;
 
-    for (
-        let i = 0;
-        i < 10;
-        i++
-    ) {
+    wheel.classList.add("roulette-spinning");
 
-        machine.textContent =
-            `${frames[i % frames.length]}  PLAYING  ${frames[i % frames.length]}`;
+    await sleep(1500);
 
-        await sleep(90);
+    wheel.classList.remove(
+        "roulette-spinning"
+    );
+
+    wheel.textContent =
+        number;
+}
+
+
+/* =========================================================
+   RESULT
+========================================================= */
+
+function showResult(data) {
+
+    const result =
+        document.getElementById("result");
+
+    if (!result) return;
+
+
+    if (data.profit > 0) {
+
+        result.innerHTML =
+            `🔥 GEWONNEN: <strong>+${formatCoins(
+                data.profit
+            )} Coins</strong>`;
+
+        result.className =
+            "result-win";
+
+    } else if (data.profit < 0) {
+
+        result.innerHTML =
+            `Verloren: <strong>${formatCoins(
+                data.profit
+            )} Coins</strong>`;
+
+        result.className =
+            "result-loss";
+
+    } else {
+
+        result.textContent =
+            "Unentschieden.";
+
+        result.className =
+            "result-draw";
     }
 }
 
 
 /* =========================================================
-   PLAY
+   PLAY CURRENT GAME
 ========================================================= */
 
 async function playCurrentGame() {
 
-    if (!currentGame) {
+    if (
+        isPlaying ||
+        !currentGame
+    ) {
         return;
     }
 
-    const button =
+
+    isPlaying = true;
+
+
+    const playButton =
         document.getElementById("playBtn");
 
     const result =
         document.getElementById("result");
 
-    const machine =
-        document.getElementById("machine");
+
+    if (playButton) {
+
+        playButton.disabled = true;
+
+        playButton.textContent =
+            "LÄUFT...";
+    }
 
 
-    button.disabled = true;
+    if (result) {
 
-    result.textContent =
-        "Spiel läuft …";
+        result.className = "";
+
+        result.textContent =
+            "Casino entscheidet...";
+    }
 
 
     try {
 
-        if (currentGame === "slots") {
+        let extra = {};
 
-            await animateSlots();
 
-        } else if (
-            currentGame === "roulette"
-        ) {
+        if (currentGame === "roulette") {
 
-            await animateRoulette();
-
-        } else if (
-            currentGame === "dice"
-        ) {
-
-            await animateDice();
-
-        } else if (
-            currentGame === "coinflip"
-        ) {
-
-            await animateCoinflip();
-
-        } else {
-
-            await animateGeneric();
+            extra.choice =
+                rouletteChoice;
         }
 
 
-        const payload = {
-            user_id: USER_ID,
-            game: currentGame,
-            bet: selectedBet
-        };
+        if (currentGame === "coinflip") {
 
-
-        /*
-         * Vorläufige Standardauswahl.
-         * Später bekommt jedes Spiel seine
-         * vollständige eigene Oberfläche.
-         */
-
-        if (
-            currentGame === "coinflip"
-        ) {
-
-            payload.choice =
-                "Kopf";
+            extra.choice =
+                coinChoice;
         }
-
-
-        if (
-            currentGame === "roulette"
-        ) {
-
-            payload.choice =
-                "red";
-        }
-
-
-        const response =
-            await fetch(
-                "/api/play",
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify(
-                            payload
-                        )
-                }
-            );
 
 
         const data =
-            await response.json();
-
-
-        if (!response.ok || !data.ok) {
-
-            result.textContent =
-                data.error ||
-                "Das Spiel konnte nicht gestartet werden.";
-
-            return;
-        }
+            await requestPlay(extra);
 
 
         /* =============================================
-           FINAL VISUAL RESULT
+           SLOT
         ============================================== */
 
         if (
             currentGame === "slots" &&
-            data.detail &&
-            Array.isArray(
+            data.detail?.reels
+        ) {
+
+            await animateSlots(
                 data.detail.reels
-            )
-        ) {
-
-            machine.textContent =
-                data.detail.reels.join(
-                    "　"
-                );
-
+            );
         }
 
+
+        /* =============================================
+           DICE
+        ============================================== */
 
         else if (
-            currentGame === "roulette" &&
-            data.detail
+            currentGame === "dice"
         ) {
 
-            const number =
-                data.detail.number;
-
-            const color =
-                String(
-                    data.detail.color ||
-                    ""
-                ).toUpperCase();
-
-            machine.textContent =
-                `🎡 ${number}  ${color}`;
+            await animateDice(
+                data.detail.you,
+                data.detail.casino
+            );
         }
 
+
+        /* =============================================
+           COINFLIP
+        ============================================== */
 
         else if (
-            currentGame === "dice" &&
-            data.detail
+            currentGame === "coinflip"
         ) {
 
-            machine.textContent =
-                `🎲 ${data.detail.you}  :  ${data.detail.casino} 🎲`;
+            await animateCoin(
+                data.detail.result
+            );
         }
 
+
+        /* =============================================
+           ROULETTE
+        ============================================== */
 
         else if (
-            currentGame === "coinflip" &&
-            data.detail
+            currentGame === "roulette"
         ) {
 
-            machine.textContent =
-                `🪙 ${data.detail.result}`;
+            await animateRoulette(
+                data.detail.number
+            );
         }
 
+
+        /* =============================================
+           GENERIC
+        ============================================== */
 
         else {
 
-            if (
-                Number(data.profit) >= 0
-            ) {
-
-                machine.textContent =
-                    "✨  WIN  ✨";
-
-            } else {
-
-                machine.textContent =
-                    "◆  HOUSE WINS  ◆";
-            }
+            await sleep(900);
         }
 
-
-        /* =============================================
-           RESULT TEXT
-        ============================================== */
-
-        const profit =
-            Number(
-                data.profit || 0
-            );
-
-
-        if (profit > 0) {
-
-            result.textContent =
-                `+${formatCoins(profit)} EHRP Coins`;
-
-        } else if (profit < 0) {
-
-            result.textContent =
-                `${formatCoins(profit)} EHRP Coins`;
-
-        } else {
-
-            result.textContent =
-                "Unentschieden";
-        }
-
-
-        /* =============================================
-           UPDATE PLAYER
-        ============================================== */
 
         updatePlayerUI(
             data.player
         );
 
 
+        showResult(data);
+
+
     } catch (error) {
 
-        console.error(
-            "Casino Fehler:",
-            error
-        );
+        if (result) {
 
-        result.textContent =
-            "Verbindungsfehler – bitte erneut versuchen.";
+            result.className =
+                "result-loss";
+
+            result.textContent =
+                error.message;
+        }
 
     } finally {
 
-        button.disabled = false;
+        isPlaying = false;
+
+
+        if (playButton) {
+
+            playButton.disabled =
+                false;
+
+
+            if (
+                currentGame ===
+                "slots"
+            ) {
+
+                playButton.textContent =
+                    "🎰 NOCHMAL SPINNEN";
+
+            } else if (
+                currentGame ===
+                "roulette"
+            ) {
+
+                playButton.textContent =
+                    "🎡 NOCHMAL DREHEN";
+
+            } else if (
+                currentGame ===
+                "coinflip"
+            ) {
+
+                playButton.textContent =
+                    "🪙 NOCHMAL";
+
+            } else if (
+                currentGame ===
+                "dice"
+            ) {
+
+                playButton.textContent =
+                    "🎲 NOCHMAL WÜRFELN";
+
+            } else {
+
+                playButton.textContent =
+                    "NOCHMAL SPIELEN";
+            }
+        }
     }
 }
 
@@ -803,46 +1122,37 @@ async function playCurrentGame() {
    EVENTS
 ========================================================= */
 
-document
-    .getElementById("playBtn")
-    ?.addEventListener(
+const playButton =
+    document.getElementById("playBtn");
+
+if (playButton) {
+
+    playButton.addEventListener(
         "click",
         playCurrentGame
     );
+}
 
 
-document
-    .getElementById("modal")
-    ?.addEventListener(
+const modal =
+    document.getElementById("modal");
+
+if (modal) {
+
+    modal.addEventListener(
         "click",
         event => {
 
             if (
-                event.target.id ===
-                "modal"
+                event.target === modal &&
+                !isPlaying
             ) {
 
                 closeGame();
             }
-
         }
     );
-
-
-document.addEventListener(
-    "keydown",
-    event => {
-
-        if (
-            event.key ===
-            "Escape"
-        ) {
-
-            closeGame();
-        }
-
-    }
-);
+}
 
 
 /* =========================================================
@@ -850,7 +1160,5 @@ document.addEventListener(
 ========================================================= */
 
 renderBets();
-
 renderGames();
-
 loadPlayer();
