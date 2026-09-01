@@ -6,77 +6,74 @@
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+        content="width=device-width, initial-scale=1, viewport-fit=cover"
     >
 
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#050505">
 
     <title>EHRP/VC Casino</title>
 
-    <!-- CACHE BUSTER -->
     <link
         rel="stylesheet"
-        href="/static/casino.css?v=20260831-01"
+        href="/static/casino.css?v=20260901-1"
     >
 </head>
 
 
-<body class="entrance-active">
-
+<body>
 
     <!-- =====================================================
-         CASINO ENTRANCE
+         ENTRANCE
     ====================================================== -->
 
     <section
         id="casinoEntrance"
-        class="original-casino-entrance"
+        class="casino-entrance"
     >
 
-        <img
-            src="/assets/casino_entrance.png.PNG?v=20260831-01"
-            alt="EHRP/VC Casino"
-            class="original-entrance-image"
-            draggable="false"
-        >
+        <div class="entrance-image-wrap">
 
+            <img
+                src="/assets/casino_entrance.png.PNG"
+                class="entrance-image"
+                alt="EHRP/VC Casino"
+                draggable="false"
+            >
 
-        <div class="original-particles">
+            <!--
+                Große Klickfläche über dem unteren
+                CASINO-BETRETEN-Bereich des Originalbildes.
+            -->
 
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
+            <button
+                id="enterCasino"
+                class="entrance-click"
+                type="button"
+                aria-label="Casino betreten"
+            ></button>
 
         </div>
 
 
-        <button
-            id="enterCasinoButton"
-            class="original-enter-button"
-            type="button"
-            aria-label="Casino betreten"
-        ></button>
-
-
         <div
-            id="casinoTransition"
-            class="original-transition"
+            id="entranceFade"
+            class="entrance-fade"
         >
 
-            <div class="transition-logo">
-                ♛
-            </div>
+            <div class="entrance-loader">
 
-            <div class="transition-name">
-                EHRP/VC
+                <div class="loader-crown">
+                    ♛
+                </div>
+
+                <strong>
+                    EHRP/VC
+                </strong>
+
+                <small>
+                    CASINO
+                </small>
+
             </div>
 
         </div>
@@ -86,32 +83,30 @@
 
 
     <!-- =====================================================
-         CASINO APP
+         CASINO
     ====================================================== -->
 
     <div
         id="casinoApp"
-        class="casino-app casino-app-hidden"
+        class="casino-app"
+        hidden
     >
-
-        <div class="glow"></div>
-
 
         <!-- HEADER -->
 
-        <header>
+        <header class="casino-header">
 
-            <div class="brand">
+            <div class="casino-brand">
 
-                <span>
+                <div class="brand-crown">
                     ♛
-                </span>
+                </div>
 
                 <div>
 
-                    <b>
+                    <strong>
                         EHRP/VC
-                    </b>
+                    </strong>
 
                     <small>
                         PREMIUM CASINO
@@ -122,17 +117,23 @@
             </div>
 
 
-            <div class="wallet">
+            <div class="casino-wallet">
 
-                💰
-
-                <span id="balance">
-                    1.000
+                <span>
+                    💰
                 </span>
 
-                <small>
-                    EHRP COINS
-                </small>
+                <div>
+
+                    <strong id="balance">
+                        1.000
+                    </strong>
+
+                    <small>
+                        EHRP COINS
+                    </small>
+
+                </div>
 
             </div>
 
@@ -140,122 +141,130 @@
 
 
 
-        <!-- =================================================
-             MAIN
-        ================================================== -->
+        <!-- MAIN -->
 
-        <main>
+        <main class="casino-main">
 
 
             <!-- HERO -->
 
-            <section class="hero">
+            <section class="casino-hero">
 
-                <div class="eyebrow">
-                    WILLKOMMEN IM EHRP/VC CASINO
+                <div class="hero-label">
+                    EHRP/VC PREMIUM CASINO
                 </div>
 
-
                 <h1>
-
                     EHRP
-
-                    <em>
+                    <span>
                         CASINO
-                    </em>
-
+                    </span>
                 </h1>
 
-
                 <p>
-                    Dein persönlicher Casino-Floor.
-                    Wähle deinen Einsatz und starte direkt.
+                    Wähle deinen Einsatz und starte dein Spiel.
                 </p>
 
 
                 <div
-                    class="bets"
                     id="bets"
+                    class="bet-grid"
                 ></div>
 
             </section>
 
 
 
-            <!-- =================================================
-                 STATS
-            ================================================== -->
+            <!-- STATS -->
 
-            <section class="stats">
+            <section class="casino-stats">
 
-                <div>
+                <article>
 
                     <small>
                         SPIELE
                     </small>
 
-                    <b id="games">
+                    <strong id="games">
                         0
-                    </b>
+                    </strong>
 
-                </div>
+                </article>
 
 
-                <div>
+                <article>
 
                     <small>
                         SIEGE
                     </small>
 
-                    <b id="wins">
+                    <strong id="wins">
                         0
-                    </b>
+                    </strong>
 
-                </div>
+                </article>
 
 
-                <div>
+                <article>
 
                     <small>
                         GRÖSSTER GEWINN
                     </small>
 
-                    <b id="biggest">
+                    <strong id="biggest">
                         0
-                    </b>
+                    </strong>
 
-                </div>
+                </article>
 
 
-                <div>
+                <article>
 
                     <small>
                         WINRATE
                     </small>
 
-                    <b id="rate">
+                    <strong id="rate">
                         0%
-                    </b>
+                    </strong>
 
-                </div>
+                </article>
 
             </section>
 
 
 
-            <!-- =================================================
-                 FLOOR
-            ================================================== -->
+            <!-- FLOOR -->
 
-            <h2>
-                CASINO FLOOR
-            </h2>
+            <section class="casino-floor">
+
+                <div class="floor-heading">
+
+                    <div>
+
+                        <small>
+                            EHRP/VC
+                        </small>
+
+                        <h2>
+                            CASINO FLOOR
+                        </h2>
+
+                    </div>
+
+                    <span>
+                        9 SPIELE
+                    </span>
+
+                </div>
 
 
-            <section
-                class="grid"
-                id="gamesGrid"
-            ></section>
+                <div
+                    id="gamesGrid"
+                    class="games-grid"
+                ></div>
+
+            </section>
 
 
         </main>
@@ -269,59 +278,72 @@
     ====================================================== -->
 
     <div
-        class="modal hidden"
         id="modal"
+        class="game-modal hidden"
     >
 
-        <div class="table">
-
+        <section class="game-window">
 
             <button
-                class="close"
+                id="closeGameButton"
+                class="game-close"
                 type="button"
-                onclick="closeGame()"
-                aria-label="Schließen"
+                aria-label="Spiel schließen"
             >
                 ×
             </button>
 
 
-            <div
-                id="gameIcon"
-                class="gameIcon"
-            >
-                🎰
+            <div class="game-heading">
+
+                <div
+                    id="gameIcon"
+                    class="game-icon"
+                >
+                    🎰
+                </div>
+
+                <div>
+
+                    <small>
+                        EHRP/VC CASINO
+                    </small>
+
+                    <h2 id="gameTitle">
+                        SLOTS
+                    </h2>
+
+                </div>
+
             </div>
 
-
-            <h2 id="gameTitle">
-                SLOTS
-            </h2>
 
 
             <div
                 id="machine"
-                class="machine"
+                class="game-machine"
+            ></div>
+
+
+
+            <p
+                id="result"
+                class="game-result"
             >
-                ❔　❔　❔
-            </div>
-
-
-            <p id="result">
                 Einsatz wählen und spielen.
             </p>
 
 
+
             <button
-                class="play"
                 id="playBtn"
+                class="game-play"
                 type="button"
             >
                 JETZT SPIELEN
             </button>
 
-
-        </div>
+        </section>
 
     </div>
 
@@ -344,64 +366,81 @@
 
 
     <!-- =====================================================
-         ENTRANCE ENGINE
+         ENTRANCE
     ====================================================== -->
 
     <script>
 
-        const entrance =
-            document.getElementById(
-                "casinoEntrance"
-            );
+        (() => {
 
-        const enterButton =
-            document.getElementById(
-                "enterCasinoButton"
-            );
+            const entrance =
+                document.getElementById(
+                    "casinoEntrance"
+                );
 
-        const transition =
-            document.getElementById(
-                "casinoTransition"
-            );
+            const button =
+                document.getElementById(
+                    "enterCasino"
+                );
 
-        const casinoApp =
-            document.getElementById(
-                "casinoApp"
-            );
+            const fade =
+                document.getElementById(
+                    "entranceFade"
+                );
+
+            const app =
+                document.getElementById(
+                    "casinoApp"
+                );
 
 
-        let casinoOpening = false;
+            let opening = false;
 
 
-        enterButton.addEventListener(
-            "click",
-            function () {
+            function openCasino() {
 
-                if (casinoOpening) {
+                if (opening) {
                     return;
                 }
 
 
-                casinoOpening = true;
+                opening = true;
 
 
                 if (navigator.vibrate) {
 
-                    navigator.vibrate(35);
+                    navigator.vibrate(30);
 
                 }
 
 
+                button.disabled = true;
+
                 entrance.classList.add(
-                    "original-opening"
+                    "entrance-opening"
                 );
 
 
-                setTimeout(
-                    function () {
+                window.setTimeout(
+                    () => {
 
-                        transition.classList.add(
-                            "original-transition-visible"
+                        fade.classList.add(
+                            "entrance-fade-visible"
+                        );
+
+                    },
+                    300
+                );
+
+
+                window.setTimeout(
+                    () => {
+
+                        app.hidden = false;
+
+                        window.scrollTo(
+                            0,
+                            0
                         );
 
                     },
@@ -409,55 +448,57 @@
                 );
 
 
-                setTimeout(
-                    function () {
+                window.setTimeout(
+                    () => {
 
-                        casinoApp.classList.remove(
-                            "casino-app-hidden"
-                        );
-
-                        casinoApp.classList.add(
-                            "casino-app-visible"
-                        );
-
-                    },
-                    1600
-                );
-
-
-                setTimeout(
-                    function () {
-
-                        entrance.style.display =
-                            "none";
-
-                        document.body.classList.remove(
-                            "entrance-active"
-                        );
+                        entrance.remove();
 
                         document.body.classList.add(
                             "casino-open"
                         );
 
                     },
-                    2100
+                    1150
                 );
 
             }
-        );
+
+
+            button.addEventListener(
+                "click",
+                openCasino
+            );
+
+
+            /*
+                FALLBACK:
+                Auch ein Tipp auf das Originalbild öffnet
+                das Casino. Der User kann den Button dadurch
+                auf Mobile nicht mehr "verfehlen".
+            */
+
+            document
+                .querySelector(
+                    ".entrance-image"
+                )
+                .addEventListener(
+                    "click",
+                    openCasino
+                );
+
+        })();
 
     </script>
 
 
 
     <!-- =====================================================
-         CASINO ENGINE — CACHE BUSTER
+         CASINO ENGINE
     ====================================================== -->
 
     <script
-        src="/static/casino.js?v=20260831-01"
+        src="/static/casino.js?v=20260901-1"
     ></script>
-
 
 </body>
 
