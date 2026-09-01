@@ -1,213 +1,1707 @@
 /* =========================================================
-   PREMIUM BLACKJACK CARDS
+   EHRP/VC CASINO — COMPLETE FRONTEND
+   MOBILE FIRST
 ========================================================= */
 
-.blackjack-table {
+
+/* =========================================================
+   RESET
+========================================================= */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
     width: 100%;
-    min-height: 430px;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
+    overflow-x: hidden;
 
-    gap: 18px;
+    background: #050505;
 
-    padding: 22px 12px;
+    -webkit-text-size-adjust: 100%;
+}
 
-    border-radius: 18px;
+body {
+    width: 100%;
+    min-height: 100vh;
+
+    margin: 0;
+    padding: 0;
+
+    overflow-x: hidden;
 
     background:
         radial-gradient(
-            ellipse at center,
-            #163d2b 0%,
-            #0b291c 45%,
-            #06140e 100%
-        );
+            circle at 50% -10%,
+            rgba(174, 121, 26, 0.18),
+            transparent 35%
+        ),
+        #050505;
 
-    border:
-        2px solid
-        rgba(213, 170, 73, 0.45);
+    color: #f5f0e5;
 
-    box-shadow:
-        inset 0 0 60px rgba(0, 0, 0, 0.65),
-        0 0 30px rgba(0, 0, 0, 0.5);
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+}
+
+button {
+    font: inherit;
+    -webkit-tap-highlight-color: transparent;
+}
+
+button,
+img {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+.hidden {
+    display: none !important;
 }
 
 
 /* =========================================================
-   DEALER / PLAYER AREA
+   ENTRANCE
 ========================================================= */
+
+.casino-entrance {
+    position: fixed;
+    inset: 0;
+
+    z-index: 10000;
+
+    width: 100%;
+    height: 100dvh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    background: #000;
+}
+
+
+/*
+   WICHTIG:
+   Das Originalbild wird NICHT gestreckt.
+*/
+
+.entrance-image-wrap {
+    position: relative;
+
+    width: 100%;
+    max-width: 1536px;
+
+    margin: auto;
+}
+
+.entrance-image {
+    display: block;
+
+    width: 100%;
+    height: auto;
+
+    margin: 0;
+
+    object-fit: contain;
+
+    cursor: pointer;
+
+    -webkit-user-drag: none;
+
+    transition:
+        transform 0.9s
+        cubic-bezier(
+            0.65,
+            0,
+            0.35,
+            1
+        ),
+        opacity 0.7s ease,
+        filter 0.7s ease;
+}
+
+
+/* =========================================================
+   CLICK AREA
+========================================================= */
+
+/*
+   Der Button im Originalbild liegt ungefähr
+   im unteren mittleren Bereich.
+
+   Zusätzlich ist das GANZE Bild per JS klickbar.
+*/
+
+.entrance-click {
+    position: absolute;
+
+    z-index: 20;
+
+    left: 18%;
+    right: 18%;
+
+    top: 68%;
+    bottom: 8%;
+
+    border: 0;
+    outline: 0;
+
+    background: transparent;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   ENTRANCE OPEN
+========================================================= */
+
+.entrance-opening
+.entrance-image {
+    transform: scale(1.18);
+
+    opacity: 0.25;
+
+    filter:
+        brightness(0.4)
+        blur(2px);
+}
+
+
+/* =========================================================
+   ENTRANCE FADE
+========================================================= */
+
+.entrance-fade {
+    position: absolute;
+    inset: 0;
+
+    z-index: 50;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        radial-gradient(
+            circle,
+            #261b08 0%,
+            #090704 40%,
+            #000 80%
+        );
+
+    opacity: 0;
+    visibility: hidden;
+
+    transition:
+        opacity 0.4s ease,
+        visibility 0.4s ease;
+}
+
+.entrance-fade-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.entrance-loader {
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 5px;
+}
+
+.loader-crown {
+    width: 76px;
+    height: 76px;
+
+    display: grid;
+    place-items: center;
+
+    margin-bottom: 10px;
+
+    border:
+        1px solid #d6a943;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            #34250b,
+            #080604
+        );
+
+    color: #e9bd55;
+
+    font-size: 34px;
+
+    box-shadow:
+        0 0 40px
+        rgba(218, 167, 61, 0.2);
+
+    animation:
+        loaderPulse
+        0.8s
+        ease-in-out
+        infinite
+        alternate;
+}
+
+.entrance-loader strong {
+    color: #e8bd59;
+
+    font-family:
+        Georgia,
+        serif;
+
+    font-size: 19px;
+
+    letter-spacing: 4px;
+}
+
+.entrance-loader small {
+    color: #776641;
+
+    font-size: 8px;
+
+    font-weight: 900;
+
+    letter-spacing: 4px;
+}
+
+@keyframes loaderPulse {
+
+    from {
+        transform: scale(0.95);
+    }
+
+    to {
+        transform: scale(1.05);
+    }
+}
+
+
+/* =========================================================
+   CASINO APP
+========================================================= */
+
+.casino-app {
+    width: 100%;
+    min-height: 100vh;
+
+    overflow-x: hidden;
+
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(183, 128, 27, 0.17),
+            transparent 30%
+        ),
+        linear-gradient(
+            180deg,
+            #0b0906 0%,
+            #050505 35%,
+            #030303 100%
+        );
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.casino-header {
+    position: sticky;
+
+    top: 0;
+
+    z-index: 500;
+
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    padding:
+        max(
+            11px,
+            env(safe-area-inset-top)
+        )
+        14px
+        11px;
+
+    border-bottom:
+        1px solid
+        rgba(217, 169, 68, 0.18);
+
+    background:
+        rgba(5, 5, 5, 0.93);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.casino-brand {
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+}
+
+.brand-crown {
+    flex: 0 0 auto;
+
+    color: #d9a943;
+
+    font-size: 25px;
+}
+
+.casino-brand > div:last-child {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.casino-brand strong {
+    color: #edc76a;
+
+    font-family:
+        Georgia,
+        serif;
+
+    font-size: 14px;
+
+    letter-spacing: 1px;
+}
+
+.casino-brand small {
+    margin-top: 2px;
+
+    color: #746546;
+
+    font-size: 6px;
+
+    font-weight: 900;
+
+    letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   WALLET
+========================================================= */
+
+.casino-wallet {
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+
+    padding:
+        7px
+        9px;
+
+    border:
+        1px solid
+        rgba(215, 168, 65, 0.28);
+
+    border-radius: 9px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #1d1609,
+            #0d0b07
+        );
+}
+
+.casino-wallet > span {
+    font-size: 17px;
+}
+
+.casino-wallet > div {
+    display: flex;
+    flex-direction: column;
+}
+
+.casino-wallet strong {
+    color: #efc862;
+
+    font-size: 12px;
+}
+
+.casino-wallet small {
+    margin-top: 1px;
+
+    color: #756543;
+
+    font-size: 5px;
+
+    font-weight: 900;
+
+    letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.casino-main {
+    width: 100%;
+    max-width: 1150px;
+
+    margin: 0 auto;
+
+    padding:
+        35px
+        13px
+        80px;
+}
+
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.casino-hero {
+    width: 100%;
+
+    padding:
+        10px
+        0
+        31px;
+
+    text-align: center;
+}
+
+.hero-label {
+    color: #a08245;
+
+    font-size: 8px;
+
+    font-weight: 900;
+
+    letter-spacing: 2px;
+}
+
+.casino-hero h1 {
+    margin:
+        10px
+        0
+        12px;
+
+    color: #f0e6cf;
+
+    font-family:
+        Georgia,
+        serif;
+
+    font-size:
+        clamp(
+            40px,
+            13vw,
+            78px
+        );
+
+    line-height: 0.95;
+
+    letter-spacing: -2px;
+}
+
+.casino-hero h1 span {
+    color: #d5a540;
+}
+
+.casino-hero p {
+    width: 100%;
+    max-width: 520px;
+
+    margin:
+        0
+        auto
+        23px;
+
+    color: #837d70;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   BET GRID
+========================================================= */
+
+.bet-grid {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0, 1fr)
+        );
+
+    gap: 6px;
+}
+
+.bet-grid button {
+    min-width: 0;
+
+    padding:
+        10px
+        4px;
+
+    border:
+        1px solid
+        rgba(203, 156, 61, 0.23);
+
+    border-radius: 7px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #11100d,
+            #090806
+        );
+
+    color: #a88d57;
+
+    font-size: 10px;
+
+    font-weight: 900;
+
+    cursor: pointer;
+}
+
+.bet-grid button.active {
+    border-color: #e4b74f;
+
+    background:
+        linear-gradient(
+            180deg,
+            #49340f,
+            #1b1306
+        );
+
+    color: #f0cb68;
+
+    box-shadow:
+        inset 0 0 12px
+        rgba(227, 179, 73, 0.1);
+}
+
+
+/* =========================================================
+   STATS
+========================================================= */
+
+.casino-stats {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+
+    gap: 7px;
+
+    margin:
+        0
+        0
+        38px;
+}
+
+.casino-stats article {
+    min-width: 0;
+
+    padding:
+        14px
+        7px;
+
+    text-align: center;
+
+    border:
+        1px solid
+        rgba(203, 156, 61, 0.15);
+
+    border-radius: 10px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #100e0a,
+            #080706
+        );
+}
+
+.casino-stats small {
+    display: block;
+
+    min-height: 17px;
+
+    color: #75684d;
+
+    font-size: 6px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.8px;
+}
+
+.casino-stats strong {
+    display: block;
+
+    margin-top: 4px;
+
+    color: #e1b44f;
+
+    font-size: 18px;
+}
+
+
+/* =========================================================
+   FLOOR
+========================================================= */
+
+.casino-floor {
+    width: 100%;
+}
+
+.floor-heading {
+    width: 100%;
+
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-bottom: 14px;
+}
+
+.floor-heading small {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #766443;
+
+    font-size: 7px;
+
+    font-weight: 900;
+
+    letter-spacing: 2px;
+}
+
+.floor-heading h2 {
+    margin: 0;
+
+    color: #dbaf4b;
+
+    font-family:
+        Georgia,
+        serif;
+
+    font-size: 18px;
+
+    letter-spacing: 1px;
+}
+
+.floor-heading > span {
+    flex: 0 0 auto;
+
+    padding:
+        5px
+        7px;
+
+    border:
+        1px solid
+        rgba(202, 154, 57, 0.2);
+
+    border-radius: 5px;
+
+    color: #776743;
+
+    font-size: 6px;
+
+    font-weight: 900;
+
+    letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   GAME GRID
+========================================================= */
+
+.games-grid {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        1fr;
+
+    gap: 9px;
+}
+
+.card {
+    position: relative;
+
+    width: 100%;
+    min-width: 0;
+
+    min-height: 122px;
+
+    padding: 16px;
+
+    overflow: hidden;
+
+    border:
+        1px solid
+        rgba(203, 156, 61, 0.18);
+
+    border-radius: 12px;
+
+    background:
+        radial-gradient(
+            circle at 100% 0%,
+            rgba(177, 124, 23, 0.12),
+            transparent 35%
+        ),
+        linear-gradient(
+            145deg,
+            #15120c,
+            #090806
+        );
+
+    box-shadow:
+        0 8px 25px
+        rgba(0, 0, 0, 0.22);
+
+    cursor: pointer;
+
+    transition:
+        transform 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.card:active {
+    transform: scale(0.98);
+
+    border-color:
+        rgba(225, 179, 79, 0.55);
+}
+
+.card .icon {
+    margin-bottom: 12px;
+
+    font-size: 31px;
+}
+
+.card h3 {
+    margin:
+        0
+        0
+        5px;
+
+    color: #e2bb62;
+
+    font-size: 13px;
+
+    letter-spacing: 0.8px;
+}
+
+.card p {
+    margin: 0;
+
+    color: #777064;
+
+    font-size: 10px;
+
+    line-height: 1.45;
+}
+
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.game-modal {
+    position: fixed;
+    inset: 0;
+
+    z-index: 20000;
+
+    width: 100%;
+    height: 100dvh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding:
+        max(
+            12px,
+            env(safe-area-inset-top)
+        )
+        10px
+        max(
+            12px,
+            env(safe-area-inset-bottom)
+        );
+
+    overflow-y: auto;
+
+    background:
+        rgba(0, 0, 0, 0.9);
+
+    backdrop-filter: blur(13px);
+    -webkit-backdrop-filter: blur(13px);
+}
+
+.game-window {
+    position: relative;
+
+    width: 100%;
+    max-width: 520px;
+
+    max-height:
+        calc(
+            100dvh - 24px
+        );
+
+    margin: auto;
+
+    padding:
+        18px
+        12px
+        15px;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    border:
+        1px solid
+        rgba(220, 172, 70, 0.35);
+
+    border-radius: 16px;
+
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            #251b09,
+            #0d0b08 35%,
+            #060606 100%
+        );
+
+    box-shadow:
+        0 25px 80px
+        rgba(0, 0, 0, 0.75);
+}
+
+
+/* =========================================================
+   CLOSE
+========================================================= */
+
+.game-close {
+    position: absolute;
+
+    right: 7px;
+    top: 5px;
+
+    z-index: 20;
+
+    width: 38px;
+    height: 38px;
+
+    display: grid;
+    place-items: center;
+
+    padding: 0;
+
+    border: 0;
+
+    background: transparent;
+
+    color: #8f7a50;
+
+    font-size: 26px;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   GAME HEADING
+========================================================= */
+
+.game-heading {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    padding:
+        4px
+        38px
+        13px
+        2px;
+
+    border-bottom:
+        1px solid
+        rgba(210, 162, 61, 0.13);
+}
+
+.game-icon {
+    flex: 0 0 auto;
+
+    width: 45px;
+    height: 45px;
+
+    display: grid;
+    place-items: center;
+
+    border:
+        1px solid
+        rgba(219, 171, 70, 0.25);
+
+    border-radius: 10px;
+
+    background:
+        #151006;
+
+    font-size: 26px;
+}
+
+.game-heading small {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #77633f;
+
+    font-size: 6px;
+
+    font-weight: 900;
+
+    letter-spacing: 1.5px;
+}
+
+.game-heading h2 {
+    margin: 0;
+
+    color: #e3b955;
+
+    font-family:
+        Georgia,
+        serif;
+
+    font-size: 18px;
+
+    letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   MACHINE
+========================================================= */
+
+.game-machine {
+    width: 100%;
+
+    min-height: 160px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-top: 13px;
+
+    padding: 10px;
+
+    overflow: hidden;
+
+    border:
+        1px solid
+        rgba(206, 157, 59, 0.16);
+
+    border-radius: 12px;
+
+    background:
+        #050504;
+}
+
+
+/* =========================================================
+   RESULT
+========================================================= */
+
+.game-result {
+    width: 100%;
+
+    min-height: 38px;
+
+    margin:
+        13px
+        0;
+
+    color: #9b927f;
+
+    text-align: center;
+
+    font-size: 11px;
+
+    line-height: 1.45;
+}
+
+.result-win {
+    color:
+        #e8c15c !important;
+}
+
+.result-loss {
+    color:
+        #d26057 !important;
+}
+
+.result-draw {
+    color:
+        #aaa18d !important;
+}
+
+
+/* =========================================================
+   MAIN PLAY BUTTON
+========================================================= */
+
+.game-play {
+    width: 100%;
+
+    min-height: 46px;
+
+    padding:
+        12px
+        8px;
+
+    border:
+        1px solid #edcb73;
+
+    border-radius: 8px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #e7c15e,
+            #a8761c
+        );
+
+    color: #120d04;
+
+    font-size: 11px;
+
+    font-weight: 1000;
+
+    letter-spacing: 1px;
+
+    cursor: pointer;
+}
+
+.game-play:disabled {
+    opacity: 0.55;
+}
+
+
+/* =========================================================
+   SLOTS
+========================================================= */
+
+.slot-machine {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0, 1fr)
+        );
+
+    gap: 6px;
+
+    padding: 7px;
+
+    border:
+        2px solid #a77a25;
+
+    border-radius: 11px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #251a08,
+            #090704
+        );
+}
+
+.slot-reel {
+    min-width: 0;
+
+    height: 78px;
+
+    display: grid;
+    place-items: center;
+
+    overflow: hidden;
+
+    border:
+        2px solid #c79738;
+
+    border-radius: 7px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #fff9e8,
+            #d4c69e
+        );
+
+    color: #111;
+
+    font-size:
+        clamp(
+            30px,
+            10vw,
+            50px
+        );
+}
+
+
+/* =========================================================
+   ROULETTE
+========================================================= */
+
+.roulette-game {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 17px;
+}
+
+.roulette-game-wheel {
+    width: 115px;
+    height: 115px;
+
+    display: grid;
+    place-items: center;
+
+    flex: 0 0 auto;
+
+    border:
+        5px solid #c49434;
+
+    border-radius: 50%;
+
+    background:
+        repeating-conic-gradient(
+            #8e2119 0deg 10deg,
+            #101010 10deg 20deg
+        );
+
+    color: #f1ca62;
+
+    font-size: 31px;
+
+    font-weight: 1000;
+
+    box-shadow:
+        inset 0 0 20px #000,
+        0 0 25px
+        rgba(214, 163, 53, 0.2);
+}
+
+.roulette-spinning {
+    animation:
+        rouletteSpin
+        0.18s
+        linear
+        infinite;
+}
+
+@keyframes rouletteSpin {
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.roulette-choices {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0, 1fr)
+        );
+
+    gap: 6px;
+}
+
+.roulette-choice {
+    min-width: 0;
+
+    padding:
+        10px
+        3px;
+
+    border:
+        2px solid transparent;
+
+    border-radius: 7px;
+
+    background: #17130d;
+
+    color: #e6d8b6;
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    cursor: pointer;
+
+    opacity: 0.65;
+}
+
+.roulette-choice.active {
+    opacity: 1;
+
+    border-color:
+        #e3b94f;
+}
+
+.roulette-red {
+    background: #7d1c16;
+}
+
+.roulette-black {
+    background: #111;
+}
+
+.roulette-green {
+    background: #12643a;
+}
+
+
+/* =========================================================
+   COINFLIP
+========================================================= */
+
+.coinflip-game {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 18px;
+}
+
+.casino-coin {
+    width: 92px;
+    height: 92px;
+
+    display: grid;
+    place-items: center;
+
+    border:
+        4px solid #e1b650;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle at 35% 30%,
+            #fff0a0,
+            #d5a230 40%,
+            #76500c
+        );
+
+    font-size: 39px;
+
+    box-shadow:
+        0 0 25px
+        rgba(217, 167, 52, 0.25);
+}
+
+.casino-coin.flipping {
+    animation:
+        coinFlip
+        0.25s
+        linear
+        infinite;
+}
+
+@keyframes coinFlip {
+
+    to {
+        transform:
+            rotateY(360deg);
+    }
+}
+
+.coin-choices {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+
+    gap: 6px;
+}
+
+.coin-choice {
+    min-width: 0;
+
+    padding: 10px;
+
+    border:
+        1px solid
+        rgba(211, 162, 60, 0.25);
+
+    border-radius: 7px;
+
+    background: #0e0c08;
+
+    color: #9c8655;
+
+    font-size: 9px;
+
+    font-weight: 900;
+}
+
+.coin-choice.active {
+    border-color: #dfb450;
+
+    background: #2b1e09;
+
+    color: #efc965;
+}
+
+
+/* =========================================================
+   DICE
+========================================================= */
+
+.dice-game {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto
+        minmax(0, 1fr);
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+.dice-side {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 5px;
+}
+
+.dice-side small {
+    color: #806d48;
+
+    font-size: 7px;
+
+    font-weight: 900;
+}
+
+#yourDice,
+#casinoDice {
+    color: #eac45d;
+
+    font-size:
+        clamp(
+            52px,
+            18vw,
+            78px
+        );
+
+    line-height: 1;
+}
+
+.dice-vs {
+    color: #645638;
+
+    font-size: 9px;
+
+    font-weight: 900;
+}
+
+
+/* =========================================================
+   BLACKJACK
+========================================================= */
+
+.blackjack-lobby {
+    width: 100%;
+
+    min-height: 170px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    border-radius: 10px;
+
+    background:
+        radial-gradient(
+            circle,
+            #17412c,
+            #071c12
+        );
+}
+
+.blackjack-lobby-logo {
+    color: #e1b652;
+
+    font-size: 55px;
+}
+
+.blackjack-lobby strong {
+    color: #e2bd62;
+
+    font-family:
+        Georgia,
+        serif;
+
+    font-size: 14px;
+
+    letter-spacing: 1px;
+}
+
+.blackjack-lobby small {
+    color: #7e704f;
+
+    font-size: 6px;
+
+    font-weight: 900;
+
+    letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   BLACKJACK TABLE
+========================================================= */
+
+.blackjack-table {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 15px;
+
+    padding:
+        14px
+        7px;
+
+    border:
+        1px solid
+        rgba(215, 168, 66, 0.28);
+
+    border-radius: 11px;
+
+    background:
+        radial-gradient(
+            ellipse,
+            #16432d,
+            #0a291b 50%,
+            #06150e
+        );
+
+    box-shadow:
+        inset 0 0 45px
+        rgba(0, 0, 0, 0.5);
+}
 
 .bj-area {
     width: 100%;
 
     display: flex;
     flex-direction: column;
+
     align-items: center;
 
-    gap: 10px;
+    gap: 7px;
 }
 
 .bj-label {
     display: flex;
     align-items: center;
-    justify-content: center;
 
-    gap: 8px;
+    gap: 6px;
 
-    color: #d4ad57;
+    color: #d1aa52;
 
-    font-size: 10px;
+    font-size: 7px;
+
     font-weight: 900;
 
-    letter-spacing: 2px;
+    letter-spacing: 1px;
 }
 
 .bj-label span {
-    min-width: 28px;
+    padding:
+        3px
+        5px;
 
-    padding: 4px 7px;
+    border:
+        1px solid
+        rgba(217, 170, 67, 0.3);
 
-    border: 1px solid
-        rgba(218, 176, 78, 0.45);
+    border-radius: 4px;
 
-    border-radius: 6px;
+    background:
+        rgba(0, 0, 0, 0.3);
 
-    background: rgba(0, 0, 0, 0.35);
-
-    color: #f2ce74;
-
-    font-size: 12px;
-
-    letter-spacing: 0;
+    color: #ebc76c;
 }
-
-
-/* =========================================================
-   CARD HAND
-========================================================= */
 
 .bj-hand {
     width: 100%;
+
+    min-height: 84px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    min-height: 105px;
-
-    padding-left: 15px;
+    padding-left: 12px;
 }
 
 
 /* =========================================================
-   REAL PLAYING CARD
+   PLAYING CARDS
 ========================================================= */
 
 .bj-card {
     position: relative;
 
-    flex: 0 0 auto;
+    flex:
+        0
+        0
+        58px;
 
-    width: 72px;
-    height: 100px;
+    width: 58px;
+    height: 81px;
 
-    margin-left: -15px;
+    margin-left: -12px;
 
     overflow: hidden;
 
-    border-radius: 9px;
+    border:
+        1px solid #d5d0c4;
 
-    border: 1px solid #d7d2c5;
+    border-radius: 6px;
 
     background:
         linear-gradient(
             145deg,
-            #ffffff,
-            #f5f1e7
+            #fff,
+            #f1ecdf
         );
 
-    color: #171717;
+    color: #161616;
 
     box-shadow:
-        0 5px 12px
-        rgba(0, 0, 0, 0.5);
-
-    transform:
-        translateY(0)
-        rotate(-1deg);
-
-    transition:
-        transform 0.25s ease,
-        box-shadow 0.25s ease;
-
-    animation:
-        blackjackCardDeal
-        0.35s
-        ease-out;
+        0 4px 10px
+        rgba(0, 0, 0, 0.4);
 }
 
-.bj-card:nth-child(even) {
-    transform:
-        translateY(2px)
-        rotate(1deg);
+.bj-red {
+    color: #b51f27;
 }
-
-
-/* =========================================================
-   CARD DEAL ANIMATION
-========================================================= */
-
-@keyframes blackjackCardDeal {
-
-    from {
-        opacity: 0;
-
-        transform:
-            translateY(-55px)
-            translateX(35px)
-            rotate(15deg)
-            scale(0.7);
-    }
-
-    to {
-        opacity: 1;
-
-        transform:
-            translateY(0)
-            translateX(0)
-            rotate(0deg)
-            scale(1);
-    }
-}
-
-
-/* =========================================================
-   CARD RANK
-========================================================= */
 
 .bj-rank {
     position: absolute;
 
-    left: 7px;
-    top: 5px;
+    left: 5px;
+    top: 4px;
 
     font-family:
         Georgia,
-        "Times New Roman",
         serif;
 
-    font-size: 20px;
+    font-size: 15px;
+
     font-weight: 900;
 
     line-height: 1;
 }
-
-
-/* =========================================================
-   BIG SUIT
-========================================================= */
 
 .bj-suit {
     position: absolute;
@@ -218,125 +1712,75 @@
     transform:
         translate(-50%, -50%);
 
-    font-size: 38px;
-
-    line-height: 1;
+    font-size: 29px;
 }
-
-
-/* =========================================================
-   BOTTOM RANK
-========================================================= */
 
 .bj-bottom {
     left: auto;
     top: auto;
 
-    right: 7px;
-    bottom: 5px;
+    right: 5px;
+    bottom: 4px;
 
     transform:
         rotate(180deg);
 }
 
-
-/* =========================================================
-   RED CARDS
-========================================================= */
-
-.bj-red {
-    color: #b51d24;
-}
-
-
-/* =========================================================
-   HIDDEN DEALER CARD
-========================================================= */
-
 .bj-card-back {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
 
     border:
-        3px solid #e0b85a;
+        2px solid #d3a846;
 
     background:
         repeating-linear-gradient(
             45deg,
-            #0a0a0a 0px,
-            #0a0a0a 5px,
-            #241b09 5px,
-            #241b09 10px
+            #080808 0px,
+            #080808 5px,
+            #2a1e08 5px,
+            #2a1e08 10px
         );
-
-    box-shadow:
-        inset 0 0 0 3px #090909,
-        inset 0 0 0 5px #a57a28,
-        0 5px 12px rgba(0, 0, 0, 0.6);
 }
 
 .bj-card-pattern {
-    width: 42px;
-    height: 42px;
+    width: 30px;
+    height: 30px;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
 
     border:
-        1px solid #d4a743;
+        1px solid #c99c39;
 
-    transform:
-        rotate(45deg);
+    transform: rotate(45deg);
 
-    color: #e5bd5c;
-
-    font-size: 21px;
-
-    background:
-        rgba(0, 0, 0, 0.55);
+    color: #e0b44e;
 }
-
-.bj-card-pattern::first-letter {
-    transform:
-        rotate(-45deg);
-}
-
-
-/* =========================================================
-   TABLE CENTER LOGO
-========================================================= */
 
 .bj-table-logo {
     display: flex;
     flex-direction: column;
+
     align-items: center;
 
-    margin: -5px 0;
+    color:
+        rgba(225, 180, 73, 0.55);
 
-    color: rgba(222, 180, 79, 0.7);
-
-    font-size: 25px;
-
-    line-height: 1;
+    font-size: 19px;
 }
 
 .bj-table-logo small {
-    margin-top: 5px;
+    margin-top: 3px;
 
-    color:
-        rgba(222, 180, 79, 0.55);
+    font-size: 5px;
 
-    font-size: 7px;
-    font-weight: 900;
-
-    letter-spacing: 3px;
+    letter-spacing: 2px;
 }
 
 
 /* =========================================================
-   HIT / STAND
+   BLACKJACK ACTIONS
 ========================================================= */
 
 .bj-actions {
@@ -345,194 +1789,257 @@
     display: grid;
 
     grid-template-columns:
-        repeat(2, minmax(0, 1fr));
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
 
-    gap: 8px;
-
-    margin-top: 3px;
+    gap: 6px;
 }
 
 .bj-actions button {
     min-width: 0;
 
-    padding: 13px 8px;
+    padding:
+        11px
+        5px;
 
-    border-radius: 8px;
+    border-radius: 7px;
 
-    font-size: 12px;
+    font-size: 9px;
+
     font-weight: 1000;
 
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
 
     cursor: pointer;
 }
 
 .bj-hit {
     border:
-        1px solid #e6c15e;
+        1px solid #e6bf59;
 
     background:
         linear-gradient(
             180deg,
-            #e4bd57,
-            #a6741d
+            #e1b951,
+            #9c6c19
         );
 
-    color: #120d04;
+    color: #100c04;
 }
 
 .bj-stand {
     border:
         1px solid
-        rgba(222, 178, 74, 0.55);
+        rgba(221, 176, 70, 0.45);
 
-    background:
-        #100d08;
+    background: #100d08;
 
-    color: #ddb654;
+    color: #d8ae4d;
 }
 
 
 /* =========================================================
-   BLACKJACK START SCREEN
+   MINES
 ========================================================= */
 
-.blackjack-lobby {
+.mines-preview {
+    width: 100%;
+    max-width: 270px;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            4,
+            minmax(0, 1fr)
+        );
+
+    gap: 6px;
+}
+
+.mines-preview span {
+    min-width: 0;
+
+    aspect-ratio: 1;
+
+    display: grid;
+    place-items: center;
+
+    border:
+        1px solid
+        rgba(211, 162, 61, 0.22);
+
+    border-radius: 7px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #1a1408,
+            #0c0a06
+        );
+
+    color: #c49639;
+
+    font-size: 17px;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   CRASH
+========================================================= */
+
+.crash-preview {
     width: 100%;
 
-    min-height: 180px;
+    min-height: 160px;
 
     display: flex;
     flex-direction: column;
+
     align-items: center;
     justify-content: center;
 
     gap: 9px;
 
-    border-radius: 12px;
-
     background:
         radial-gradient(
             circle,
-            #163b29,
-            #071b12
+            rgba(194, 137, 29, 0.09),
+            transparent 60%
         );
 }
 
-.blackjack-lobby-logo {
-    color: #e4bd5c;
+#crashMultiplier {
+    color: #edc45c;
 
-    font-size: 65px;
+    font-size:
+        clamp(
+            42px,
+            16vw,
+            65px
+        );
 
-    text-shadow:
-        0 0 25px
-        rgba(228, 189, 92, 0.25);
+    font-weight: 1000;
 }
 
-.blackjack-lobby strong {
-    color: #e6c56f;
-
-    font-family:
-        Georgia,
-        serif;
-
-    font-size: 17px;
-
-    letter-spacing: 2px;
-}
-
-.blackjack-lobby small {
-    color: #817354;
-
-    font-size: 8px;
-
-    font-weight: 900;
-
-    letter-spacing: 2px;
+#crashRocket {
+    font-size: 32px;
 }
 
 
 /* =========================================================
-   MOBILE BLACKJACK
+   TABLET
 ========================================================= */
 
-@media (max-width: 520px) {
+@media (min-width: 600px) {
 
-    .blackjack-table {
-        min-height: 400px;
-
+    .casino-main {
         padding:
-            17px
-            7px;
+            45px
+            24px
+            90px;
+    }
+
+    .bet-grid {
+        grid-template-columns:
+            repeat(
+                5,
+                minmax(0, 1fr)
+            );
+    }
+
+    .casino-stats {
+        grid-template-columns:
+            repeat(
+                4,
+                minmax(0, 1fr)
+            );
+    }
+
+    .games-grid {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+
+    .card {
+        min-height: 150px;
+    }
+}
+
+
+/* =========================================================
+   DESKTOP
+========================================================= */
+
+@media (min-width: 950px) {
+
+    .casino-main {
+        padding-top: 60px;
+    }
+
+    .games-grid {
+        grid-template-columns:
+            repeat(
+                3,
+                minmax(0, 1fr)
+            );
 
         gap: 13px;
     }
 
-    .bj-hand {
-        min-height: 90px;
+    .card {
+        min-height: 170px;
 
-        padding-left: 12px;
+        padding: 20px;
     }
 
-    .bj-card {
-        width: 62px;
-        height: 87px;
-
-        margin-left: -12px;
-
-        border-radius: 7px;
+    .card .icon {
+        font-size: 38px;
     }
 
-    .bj-rank {
-        left: 6px;
-        top: 5px;
-
-        font-size: 17px;
+    .card h3 {
+        font-size: 15px;
     }
 
-    .bj-bottom {
-        left: auto;
-        top: auto;
-
-        right: 6px;
-        bottom: 5px;
-    }
-
-    .bj-suit {
-        font-size: 32px;
-    }
-
-    .bj-card-pattern {
-        width: 35px;
-        height: 35px;
-
-        font-size: 18px;
-    }
-
-    .bj-actions button {
-        padding:
-            12px
-            5px;
-
+    .card p {
         font-size: 11px;
+    }
+
+    .game-window {
+        padding:
+            22px
+            18px
+            18px;
+    }
+
+    .game-machine {
+        min-height: 200px;
     }
 }
 
 
 /* =========================================================
-   MANY CARDS — KEEP INSIDE SCREEN
+   SHORT / LANDSCAPE SCREENS
 ========================================================= */
 
-@media (max-width: 390px) {
+@media (max-height: 600px) {
 
-    .bj-card {
-        width: 57px;
-        height: 81px;
-
-        margin-left: -15px;
+    .casino-entrance {
+        overflow-y: auto;
     }
 
-    .bj-suit {
-        font-size: 29px;
+    .entrance-image-wrap {
+        margin: 0 auto;
+    }
+
+    .game-modal {
+        align-items: flex-start;
     }
 }
