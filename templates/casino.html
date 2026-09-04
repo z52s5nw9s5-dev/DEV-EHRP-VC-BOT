@@ -15,7 +15,7 @@
 
     <link
         rel="stylesheet"
-        href="/static/casino.css?v=20260901-1"
+        href="/static/casino.css?v=20260904-1"
     >
 </head>
 
@@ -39,11 +39,6 @@
                 alt="EHRP/VC Casino"
                 draggable="false"
             >
-
-            <!--
-                Große Klickfläche über dem unteren
-                CASINO-BETRETEN-Bereich des Originalbildes.
-            -->
 
             <button
                 id="enterCasino"
@@ -70,7 +65,7 @@
                     EHRP/VC
                 </strong>
 
-                <small>
+                <small id="loaderText">
                     CASINO
                 </small>
 
@@ -91,8 +86,6 @@
         class="casino-app"
         hidden
     >
-
-        <!-- HEADER -->
 
         <header class="casino-header">
 
@@ -117,6 +110,39 @@
             </div>
 
 
+            <div
+                id="discordProfile"
+                class="casino-wallet"
+            >
+
+                <img
+                    id="discordAvatar"
+                    src=""
+                    alt=""
+                    style="
+                        width: 34px;
+                        height: 34px;
+                        border-radius: 50%;
+                        object-fit: cover;
+                        display: none;
+                    "
+                >
+
+                <div>
+
+                    <strong id="discordName">
+                        Discord
+                    </strong>
+
+                    <small>
+                        SPIELER
+                    </small>
+
+                </div>
+
+            </div>
+
+
             <div class="casino-wallet">
 
                 <span>
@@ -126,7 +152,7 @@
                 <div>
 
                     <strong id="balance">
-                        1.000
+                        0
                     </strong>
 
                     <small>
@@ -141,12 +167,8 @@
 
 
 
-        <!-- MAIN -->
-
         <main class="casino-main">
 
-
-            <!-- HERO -->
 
             <section class="casino-hero">
 
@@ -174,8 +196,6 @@
             </section>
 
 
-
-            <!-- STATS -->
 
             <section class="casino-stats">
 
@@ -233,8 +253,6 @@
             </section>
 
 
-
-            <!-- FLOOR -->
 
             <section class="casino-floor">
 
@@ -350,23 +368,7 @@
 
 
     <!-- =====================================================
-         USER
-    ====================================================== -->
-
-    <script>
-
-        window.USER_ID =
-            new URLSearchParams(
-                window.location.search
-            ).get("uid")
-            || "demo";
-
-    </script>
-
-
-
-    <!-- =====================================================
-         ENTRANCE
+         AUTH + ENTRANCE
     ====================================================== -->
 
     <script>
@@ -383,6 +385,11 @@
                     "enterCasino"
                 );
 
+            const image =
+                document.querySelector(
+                    ".entrance-image"
+                );
+
             const fade =
                 document.getElementById(
                     "entranceFade"
@@ -393,24 +400,99 @@
                     "casinoApp"
                 );
 
+            const loaderText =
+                document.getElementById(
+                    "loaderText"
+                );
+
 
             let opening = false;
 
 
-            function openCasino() {
+            async function getDiscordUser() {
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "/api/me",
+                            {
+                                credentials:
+                                    "same-origin"
+                            }
+                        );
+
+                    const data =
+                        await response.json();
+
+                    return data;
+
+                } catch (error) {
+
+                    console.error(
+                        "Discord Status konnte nicht geladen werden:",
+                        error
+                    );
+
+                    return {
+                        ok: false,
+                        logged_in: false
+                    };
+                }
+            }
+
+
+            function renderDiscordUser(user) {
+
+                if (!user) {
+                    return;
+                }
+
+
+                const name =
+                    document.getElementById(
+                        "discordName"
+                    );
+
+                const avatar =
+                    document.getElementById(
+                        "discordAvatar"
+                    );
+
+
+                if (name) {
+
+                    name.textContent =
+                        user.username ||
+                        "Discord Spieler";
+                }
+
+
+                if (
+                    avatar &&
+                    user.avatar_url
+                ) {
+
+                    avatar.src =
+                        user.avatar_url;
+
+                    avatar.style.display =
+                        "block";
+                }
+            }
+
+
+            async function openCasino() {
 
                 if (opening) {
                     return;
                 }
 
-
                 opening = true;
 
 
                 if (navigator.vibrate) {
-
                     navigator.vibrate(30);
-
                 }
 
 
@@ -429,8 +511,39 @@
                         );
 
                     },
-                    300
+                    250
                 );
+
+
+                loaderText.textContent =
+                    "DISCORD LOGIN";
+
+
+                const auth =
+                    await getDiscordUser();
+
+
+                if (!auth.logged_in) {
+
+                    sessionStorage.setItem(
+                        "ehrp_open_after_login",
+                        "1"
+                    );
+
+                    window.location.href =
+                        "/auth/discord/login";
+
+                    return;
+                }
+
+
+                renderDiscordUser(
+                    auth.user
+                );
+
+
+                loaderText.textContent =
+                    "CASINO WIRD GELADEN";
 
 
                 window.setTimeout(
@@ -444,7 +557,7 @@
                         );
 
                     },
-                    850
+                    350
                 );
 
 
@@ -458,9 +571,8 @@
                         );
 
                     },
-                    1150
+                    700
                 );
-
             }
 
 
@@ -470,21 +582,49 @@
             );
 
 
-            /*
-                FALLBACK:
-                Auch ein Tipp auf das Originalbild öffnet
-                das Casino. Der User kann den Button dadurch
-                auf Mobile nicht mehr "verfehlen".
-            */
+            image.addEventListener(
+                "click",
+                openCasino
+            );
 
-            document
-                .querySelector(
-                    ".entrance-image"
-                )
-                .addEventListener(
-                    "click",
-                    openCasino
+
+            async function restoreAfterLogin() {
+
+                const shouldOpen =
+                    sessionStorage.getItem(
+                        "ehrp_open_after_login"
+                    );
+
+
+                if (shouldOpen !== "1") {
+                    return;
+                }
+
+
+                const auth =
+                    await getDiscordUser();
+
+
+                if (!auth.logged_in) {
+                    return;
+                }
+
+
+                sessionStorage.removeItem(
+                    "ehrp_open_after_login"
                 );
+
+
+                renderDiscordUser(
+                    auth.user
+                );
+
+
+                openCasino();
+            }
+
+
+            restoreAfterLogin();
 
         })();
 
@@ -497,7 +637,7 @@
     ====================================================== -->
 
     <script
-        src="/static/casino.js?v=20260901-1"
+        src="/static/casino.js?v=20260904-1"
     ></script>
 
 </body>
