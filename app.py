@@ -1,29 +1,107 @@
-from flask import Flask, render_template, jsonify, request, send_from_directory
-from pathlib import Path
 import json
 import os
 import random
+import secrets
 import threading
-import tempfile
+from pathlib import Path
+
+import requests
+from flask import (
+    Flask,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    session,
+    url_for,
+)
 
 
-app = Flask(__name__)
+# =========================================================
+# APP
+# =========================================================
+
+app = Flask(
+    __name__,
+    static_folder="static",
+    template_folder="templates",
+)
+
+app.secret_key = os.getenv(
+    "FLASK_SECRET_KEY",
+    secrets.token_hex(32),
+)
+
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+)
+
+
+# =========================================================
+# PATHS / DATA
+# =========================================================
 
 BASE_DIR = Path(__file__).resolve().parent
+
 ASSETS_DIR = BASE_DIR / "assets"
 
 DATA_DIR = Path(
     os.getenv(
         "CASINO_DATA_DIR",
-        str(BASE_DIR / "data")
+        str(BASE_DIR / "data"),
     )
+)
+
+DATA_DIR.mkdir(
+    parents=True,
+    exist_ok=True,
 )
 
 DATA_FILE = DATA_DIR / "casino_data.json"
 
 START_BALANCE = 1000
 
-lock = threading.RLock()
+data_lock = threading.RLock()
+
+
+# =========================================================
+# DISCORD OAUTH
+# =========================================================
+
+DISCORD_CLIENT_ID = os.getenv(
+    "DISCORD_CLIENT_ID"
+)
+
+DISCORD_CLIENT_SECRET = os.getenv(
+    "DISCORD_CLIENT_SECRET"
+)
+
+DISCORD_REDIRECT_URI = (
+    "https://dev-ehrp-vc-bot.onrender.com/"
+    "auth/discord/callback"
+)
+
+DISCORD_API = "https://discord.com/api/v10"
+
+DISCORD_AUTHORIZE_URL = (
+    "https://discord.com/oauth2/authorize"
+)
+
+DISCORD_TOKEN_URL = (
+    f"{DISCORD_API}/oauth2/token"
+)
+
+DISCORD_USER_URL = (
+    f"{DISCORD_API}/users/@me"
+)
+
+
+# =========================================================
+# SESSION GAME DATA
+# =========================================================
 
 blackjack_sessions = {}
 highlow_sessions = {}
@@ -32,123 +110,516 @@ crash_sessions = {}
 
 
 # =========================================================
-# DATA
+# DATA HELPERS
 # =========================================================
 
-def load():
+def load_data():
+    with data_lock:
 
-    DATA_DIR.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+        if not DATA_FILE.exists():
+            return {}
 
-    if not DATA_FILE.exists():
+        try:
+            with DATA_FILE.open(
+                "r",
+                encoding="utf-8",
+            ) as file:
+                data = json.load(file)
 
-        DATA_FILE.write_text(
-            "{}",
-            encoding="utf-8"
+                if isinstance(data, dict):
+                    return data
+
+        except Exception as error:
+            print(
+                "Casino-Daten konnten "
+                f"nicht geladen werden: {error}"
+            )
+
+        return {}
+
+
+def save_data(data):
+    with data_lock:
+
+        temp_file = DATA_FILE.with_suffix(
+            ".tmp"
         )
 
-    try:
+        with temp_file.open(
+            "w",
+            encoding="utf-8",
+        ) as file:
 
-        data = json.loads(
-            DATA_FILE.read_text(
-                encoding="utf-8"
-            ) or "{}"
-        )
-
-        if isinstance(data, dict):
-            return data
-
-    except Exception:
-        pass
-
-    return {}
-
-
-def save(data):
-
-    DATA_DIR.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    fd, temp_name = tempfile.mkstemp(
-        dir=DATA_DIR,
-        suffix=".tmp"
-    )
-
-    os.close(fd)
-
-    temp_path = Path(temp_name)
-
-    try:
-
-        temp_path.write_text(
-            json.dumps(
+            json.dump(
                 data,
+                file,
                 ensure_ascii=False,
-                indent=2
-            ),
-            encoding="utf-8"
-        )
+                indent=2,
+            )
 
         os.replace(
-            temp_path,
-            DATA_FILE
+            temp_file,
+            DATA_FILE,
         )
 
-    finally:
 
-        if temp_path.exists():
+def ensure_player(
+    data,
+    user_id,
+):
+    user_id = str(user_id)
 
-            try:
-                temp_path.unlink()
+    if user_id not in data:
+        data[user_id] = {}
 
-            except Exception:
-                pass
-
-
-def player(data, uid):
-
-    p = data.setdefault(
-        str(uid),
-        {}
-    )
+    player = data[user_id]
 
     defaults = {
         "balance": START_BALANCE,
         "games": 0,
         "wins": 0,
         "losses": 0,
-        "draws": 0,
+        "biggest_win": 0,
         "total_won": 0,
         "total_lost": 0,
-        "biggest_win": 0
+        "daily_last": None,
+        "history": [],
+        "discord_username": None,
+        "discord_avatar": None,
     }
+
+    changed = False
 
     for key, value in defaults.items():
 
-        p.setdefault(
-            key,
-            value
+        if key not in player:
+
+            player[key] = value
+            changed = True
+
+    return player, changed
+
+
+def get_player(
+    user_id,
+):
+    data = load_data()
+
+    player, changed = ensure_player(
+        data,
+        user_id,
+    )
+
+    if changed:
+        save_data(data)
+
+    return player
+
+
+def save_player_identity(
+    user_id,
+    username,
+    avatar_url,
+):
+    data = load_data()
+
+    player, _ = ensure_player(
+        data,
+        user_id,
+    )
+
+    player["discord_username"] = username
+    player["discord_avatar"] = avatar_url
+
+    save_data(data)
+
+
+# =========================================================
+# AUTH HELPERS
+# =========================================================
+
+def get_logged_in_user_id():
+
+    user = session.get(
+        "discord_user"
+    )
+
+    if not user:
+        return None
+
+    return str(
+        user.get("id")
+    )
+
+
+def require_logged_in_user():
+
+    user_id = get_logged_in_user_id()
+
+    if not user_id:
+        return None
+
+    return user_id
+
+
+def discord_avatar_url(
+    user,
+):
+    avatar = user.get("avatar")
+    user_id = user.get("id")
+
+    if not avatar:
+        return (
+            "https://cdn.discordapp.com/"
+            "embed/avatars/0.png"
         )
 
-    return p
+    extension = (
+        "gif"
+        if str(avatar).startswith("a_")
+        else "png"
+    )
+
+    return (
+        "https://cdn.discordapp.com/"
+        f"avatars/{user_id}/{avatar}.{extension}"
+        "?size=256"
+    )
 
 
-def parse_bet(raw_bet, balance):
+# =========================================================
+# HOME
+# =========================================================
+
+@app.route("/")
+def index():
+
+    logged_in = bool(
+        session.get(
+            "discord_user"
+        )
+    )
+
+    return render_template(
+        "casino.html",
+        logged_in=logged_in,
+    )
+
+
+# =========================================================
+# ASSETS
+# =========================================================
+
+@app.route(
+    "/assets/<path:filename>"
+)
+def assets(filename):
+
+    return send_from_directory(
+        ASSETS_DIR,
+        filename,
+    )
+
+
+# =========================================================
+# DISCORD LOGIN
+# =========================================================
+
+@app.route(
+    "/auth/discord/login"
+)
+def discord_login():
+
+    if (
+        not DISCORD_CLIENT_ID
+        or not DISCORD_CLIENT_SECRET
+    ):
+        return (
+            "Discord OAuth ist "
+            "nicht konfiguriert.",
+            500,
+        )
+
+    state = secrets.token_urlsafe(32)
+
+    session[
+        "discord_oauth_state"
+    ] = state
+
+    params = {
+        "client_id":
+            DISCORD_CLIENT_ID,
+
+        "redirect_uri":
+            DISCORD_REDIRECT_URI,
+
+        "response_type":
+            "code",
+
+        "scope":
+            "identify",
+
+        "state":
+            state,
+
+        "prompt":
+            "none",
+    }
+
+    from urllib.parse import urlencode
+
+    return redirect(
+        DISCORD_AUTHORIZE_URL
+        + "?"
+        + urlencode(params)
+    )
+
+
+@app.route(
+    "/auth/discord/callback"
+)
+def discord_callback():
+
+    error = request.args.get(
+        "error"
+    )
+
+    if error:
+        return redirect(
+            url_for("index")
+        )
+
+    code = request.args.get(
+        "code"
+    )
+
+    state = request.args.get(
+        "state"
+    )
+
+    expected_state = session.pop(
+        "discord_oauth_state",
+        None,
+    )
+
+    if (
+        not code
+        or not state
+        or not expected_state
+        or not secrets.compare_digest(
+            state,
+            expected_state,
+        )
+    ):
+        return (
+            "Ungültiger OAuth-Status.",
+            400,
+        )
+
+    token_response = requests.post(
+        DISCORD_TOKEN_URL,
+        data={
+            "client_id":
+                DISCORD_CLIENT_ID,
+
+            "client_secret":
+                DISCORD_CLIENT_SECRET,
+
+            "grant_type":
+                "authorization_code",
+
+            "code":
+                code,
+
+            "redirect_uri":
+                DISCORD_REDIRECT_URI,
+        },
+        headers={
+            "Content-Type":
+                "application/x-www-form-urlencoded"
+        },
+        timeout=15,
+    )
+
+    if not token_response.ok:
+        print(
+            "Discord Token Fehler:",
+            token_response.text,
+        )
+
+        return (
+            "Discord Login "
+            "fehlgeschlagen.",
+            400,
+        )
+
+    token_data = (
+        token_response.json()
+    )
+
+    access_token = (
+        token_data.get(
+            "access_token"
+        )
+    )
+
+    if not access_token:
+        return (
+            "Kein Discord "
+            "Access Token erhalten.",
+            400,
+        )
+
+    user_response = requests.get(
+        DISCORD_USER_URL,
+        headers={
+            "Authorization":
+                f"Bearer {access_token}"
+        },
+        timeout=15,
+    )
+
+    if not user_response.ok:
+        return (
+            "Discord Benutzer konnte "
+            "nicht geladen werden.",
+            400,
+        )
+
+    discord_user = (
+        user_response.json()
+    )
+
+    user_id = str(
+        discord_user["id"]
+    )
+
+    username = (
+        discord_user.get(
+            "global_name"
+        )
+        or discord_user.get(
+            "username"
+        )
+        or "Discord User"
+    )
+
+    avatar_url = discord_avatar_url(
+        discord_user
+    )
+
+    session["discord_user"] = {
+        "id": user_id,
+        "username": username,
+        "avatar_url": avatar_url,
+    }
+
+    save_player_identity(
+        user_id,
+        username,
+        avatar_url,
+    )
+
+    return redirect(
+        url_for("index")
+    )
+
+
+@app.route(
+    "/auth/discord/logout"
+)
+def discord_logout():
+
+    session.clear()
+
+    return redirect(
+        url_for("index")
+    )
+
+
+# =========================================================
+# AUTH STATUS
+# =========================================================
+
+@app.route(
+    "/api/me"
+)
+def api_me():
+
+    user = session.get(
+        "discord_user"
+    )
+
+    if not user:
+        return jsonify({
+            "ok": False,
+            "logged_in": False,
+        })
+
+    return jsonify({
+        "ok": True,
+        "logged_in": True,
+        "user": user,
+    })
+
+
+# =========================================================
+# PLAYER
+# =========================================================
+
+@app.route(
+    "/api/player"
+)
+def api_player():
+
+    user_id = require_logged_in_user()
+
+    if not user_id:
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Nicht eingeloggt.",
+        }), 401
+
+    player = get_player(
+        user_id
+    )
+
+    return jsonify({
+        "ok": True,
+        **player,
+    })
+
+
+# =========================================================
+# BET
+# =========================================================
+
+def parse_bet(
+    player,
+    raw_bet,
+):
+
+    balance = int(
+        player.get(
+            "balance",
+            0,
+        )
+    )
 
     if raw_bet == "all":
-        return int(balance)
+        bet = balance
 
-    try:
-        bet = int(raw_bet)
-
-    except Exception:
-        raise ValueError(
-            "Ungültiger Einsatz."
-        )
+    else:
+        try:
+            bet = int(
+                raw_bet
+            )
+        except Exception:
+            raise ValueError(
+                "Ungültiger Einsatz."
+            )
 
     if bet <= 0:
         raise ValueError(
@@ -163,97 +634,125 @@ def parse_bet(raw_bet, balance):
     return bet
 
 
+# =========================================================
+# FINISH GAME
+# =========================================================
+
 def finish_game(
-    p,
+    user_id,
+    bet,
     profit,
-    win=False,
-    draw=False
+    game,
+    result,
+    detail=None,
 ):
 
-    p["balance"] += int(profit)
-    p["games"] += 1
+    data = load_data()
 
-    if draw:
+    player, _ = ensure_player(
+        data,
+        user_id,
+    )
 
-        p["draws"] += 1
-
-    elif win:
-
-        p["wins"] += 1
-
-        p["total_won"] += max(
+    player["balance"] = int(
+        player.get(
+            "balance",
             0,
-            int(profit)
         )
+    ) + int(profit)
 
-        p["biggest_win"] = max(
-            p["biggest_win"],
-            int(profit)
+    player["games"] = int(
+        player.get(
+            "games",
+            0,
         )
+    ) + 1
 
-    else:
+    if profit > 0:
 
-        p["losses"] += 1
-
-        p["total_lost"] += abs(
-            min(
+        player["wins"] = int(
+            player.get(
+                "wins",
                 0,
-                int(profit)
             )
+        ) + 1
+
+        player["total_won"] = int(
+            player.get(
+                "total_won",
+                0,
+            )
+        ) + int(profit)
+
+        player["biggest_win"] = max(
+            int(
+                player.get(
+                    "biggest_win",
+                    0,
+                )
+            ),
+            int(profit),
         )
 
+    elif profit < 0:
 
-# =========================================================
-# ROUTES
-# =========================================================
+        player["losses"] = int(
+            player.get(
+                "losses",
+                0,
+            )
+        ) + 1
 
-@app.get("/")
-def home():
-
-    return render_template(
-        "casino.html"
-    )
-
-
-@app.get("/assets/<path:filename>")
-def assets(filename):
-
-    return send_from_directory(
-        ASSETS_DIR,
-        filename
-    )
-
-
-@app.get("/api/player/<uid>")
-def get_player(uid):
-
-    with lock:
-
-        data = load()
-
-        p = player(
-            data,
-            uid
+        player["total_lost"] = int(
+            player.get(
+                "total_lost",
+                0,
+            )
+        ) + abs(
+            int(profit)
         )
 
-        save(data)
+    history = player.get(
+        "history",
+        []
+    )
 
-        return jsonify(p)
+    if not isinstance(
+        history,
+        list,
+    ):
+        history = []
+
+    history.insert(
+        0,
+        {
+            "game": game,
+            "bet": bet,
+            "profit": profit,
+            "result": result,
+            "detail": detail or {},
+        },
+    )
+
+    player["history"] = history[:50]
+
+    save_data(data)
+
+    return player
 
 
 # =========================================================
-# CARDS
+# CARD HELPERS
 # =========================================================
 
 SUITS = [
     "♠",
     "♥",
     "♦",
-    "♣"
+    "♣",
 ]
 
 RANKS = [
-    "A",
     "2",
     "3",
     "4",
@@ -265,24 +764,25 @@ RANKS = [
     "10",
     "J",
     "Q",
-    "K"
+    "K",
+    "A",
 ]
 
 
-def create_deck():
+def make_deck():
 
-    deck = []
+    deck = [
+        {
+            "rank": rank,
+            "suit": suit,
+        }
+        for suit in SUITS
+        for rank in RANKS
+    ]
 
-    for suit in SUITS:
-
-        for rank in RANKS:
-
-            deck.append({
-                "rank": rank,
-                "suit": suit
-            })
-
-    random.shuffle(deck)
+    random.shuffle(
+        deck
+    )
 
     return deck
 
@@ -291,11 +791,11 @@ def card_value(card):
 
     rank = card["rank"]
 
-    if rank in (
+    if rank in {
         "J",
         "Q",
-        "K"
-    ):
+        "K",
+    }:
         return 10
 
     if rank == "A":
@@ -306,7 +806,7 @@ def card_value(card):
 
 def hand_value(hand):
 
-    total = sum(
+    value = sum(
         card_value(card)
         for card in hand
     )
@@ -317,263 +817,201 @@ def hand_value(hand):
         if card["rank"] == "A"
     )
 
-    while total > 21 and aces:
-
-        total -= 10
+    while (
+        value > 21
+        and aces > 0
+    ):
+        value -= 10
         aces -= 1
 
-    return total
-
-
-def is_blackjack(hand):
-
-    return (
-        len(hand) == 2
-        and hand_value(hand) == 21
-    )
-
-
-def highlow_value(card):
-
-    values = {
-        "A": 1,
-        "J": 11,
-        "Q": 12,
-        "K": 13
-    }
-
-    rank = card["rank"]
-
-    if rank in values:
-        return values[rank]
-
-    return int(rank)
+    return value
 
 
 # =========================================================
 # BLACKJACK START
 # =========================================================
 
-@app.post("/api/blackjack/start")
+@app.post(
+    "/api/blackjack/start"
+)
 def blackjack_start():
+
+    user_id = require_logged_in_user()
+
+    if not user_id:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Bitte zuerst mit "
+                "Discord einloggen.",
+        }), 401
 
     body = request.get_json(
         silent=True
     ) or {}
 
-    uid = str(
-        body.get(
-            "user_id",
-            "demo"
-        )
+    player = get_player(
+        user_id
     )
 
-    with lock:
-
-        data = load()
-        p = player(data, uid)
-
-        try:
-
-            bet = parse_bet(
-                body.get("bet", 100),
-                p["balance"]
-            )
-
-        except ValueError as error:
-
-            return jsonify({
-                "ok": False,
-                "error": str(error),
-                "player": p
-            }), 400
-
-        deck = create_deck()
-
-        player_hand = [
-            deck.pop(),
-            deck.pop()
-        ]
-
-        dealer_hand = [
-            deck.pop(),
-            deck.pop()
-        ]
-
-        blackjack_sessions[uid] = {
-            "deck": deck,
-            "player_hand": player_hand,
-            "dealer_hand": dealer_hand,
-            "bet": bet
-        }
-
-        player_bj = is_blackjack(
-            player_hand
+    try:
+        bet = parse_bet(
+            player,
+            body.get("bet"),
         )
 
-        dealer_bj = is_blackjack(
-            dealer_hand
-        )
+    except ValueError as error:
+        return jsonify({
+            "ok": False,
+            "error": str(error),
+        }), 400
 
-        if player_bj or dealer_bj:
+    deck = make_deck()
 
-            blackjack_sessions.pop(
-                uid,
-                None
+    player_hand = [
+        deck.pop(),
+        deck.pop(),
+    ]
+
+    dealer_hand = [
+        deck.pop(),
+        deck.pop(),
+    ]
+
+    player_value = hand_value(
+        player_hand
+    )
+
+    dealer_value = hand_value(
+        dealer_hand
+    )
+
+    if player_value == 21:
+
+        if dealer_value == 21:
+
+            profit = 0
+            result = "push"
+
+        else:
+
+            profit = int(
+                bet * 1.5
             )
 
-            if player_bj and dealer_bj:
+            result = "blackjack"
 
-                profit = 0
-                result = "push"
-
-                finish_game(
-                    p,
-                    0,
-                    draw=True
-                )
-
-            elif player_bj:
-
-                profit = int(
-                    bet * 1.5
-                )
-
-                result = "blackjack"
-
-                finish_game(
-                    p,
-                    profit,
-                    win=True
-                )
-
-            else:
-
-                profit = -bet
-                result = "dealer_blackjack"
-
-                finish_game(
-                    p,
-                    profit
-                )
-
-            save(data)
-
-            return jsonify({
-                "ok": True,
-                "finished": True,
-                "result": result,
-                "profit": profit,
-                "player_hand": player_hand,
-                "dealer_hand": dealer_hand,
-                "player_value": hand_value(
-                    player_hand
-                ),
-                "dealer_value": hand_value(
-                    dealer_hand
-                ),
-                "player": p
-            })
-
-        save(data)
+        final_player = finish_game(
+            user_id,
+            bet,
+            profit,
+            "blackjack",
+            result,
+        )
 
         return jsonify({
             "ok": True,
-            "finished": False,
-            "player_hand": player_hand,
-            "dealer_hand": [
-                dealer_hand[0],
-                {
-                    "rank": "?",
-                    "suit": "?"
-                }
-            ],
-            "player_value": hand_value(
-                player_hand
-            ),
-            "dealer_value": card_value(
-                dealer_hand[0]
-            ),
-            "player": p
+            "finished": True,
+            "result": result,
+            "profit": profit,
+            "player_hand":
+                player_hand,
+            "dealer_hand":
+                dealer_hand,
+            "player_value":
+                player_value,
+            "dealer_value":
+                dealer_value,
+            "player":
+                final_player,
         })
+
+    blackjack_sessions[
+        user_id
+    ] = {
+        "deck": deck,
+        "player_hand":
+            player_hand,
+        "dealer_hand":
+            dealer_hand,
+        "bet": bet,
+    }
+
+    return jsonify({
+        "ok": True,
+        "finished": False,
+        "player_hand":
+            player_hand,
+        "dealer_hand": [
+            dealer_hand[0],
+            {
+                "rank": "?",
+                "suit": "?",
+            },
+        ],
+        "player_value":
+            player_value,
+        "dealer_value": "?",
+    })
 
 
 # =========================================================
 # BLACKJACK HIT
 # =========================================================
 
-@app.post("/api/blackjack/hit")
+@app.post(
+    "/api/blackjack/hit"
+)
 def blackjack_hit():
 
-    body = request.get_json(
-        silent=True
-    ) or {}
+    user_id = require_logged_in_user()
 
-    uid = str(
-        body.get(
-            "user_id",
-            "demo"
-        )
+    if not user_id:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Nicht eingeloggt.",
+        }), 401
+
+    game = blackjack_sessions.get(
+        user_id
     )
 
-    with lock:
+    if not game:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Keine aktive Runde.",
+        }), 400
 
-        session = blackjack_sessions.get(
-            uid
-        )
+    game[
+        "player_hand"
+    ].append(
+        game["deck"].pop()
+    )
 
-        if not session:
+    value = hand_value(
+        game["player_hand"]
+    )
 
-            return jsonify({
-                "ok": False,
-                "error": "Keine aktive Blackjack-Runde."
-            }), 400
+    if value > 21:
 
-        session["player_hand"].append(
-            session["deck"].pop()
-        )
+        bet = game["bet"]
 
-        value = hand_value(
-            session["player_hand"]
-        )
+        profit = -bet
 
-        if value <= 21:
-
-            return jsonify({
-                "ok": True,
-                "finished": False,
-                "player_hand":
-                    session["player_hand"],
-                "dealer_hand": [
-                    session["dealer_hand"][0],
-                    {
-                        "rank": "?",
-                        "suit": "?"
-                    }
-                ],
-                "player_value": value,
-                "dealer_value":
-                    card_value(
-                        session["dealer_hand"][0]
-                    )
-            })
-
-        data = load()
-        p = player(data, uid)
-
-        profit = -session["bet"]
-
-        finish_game(
-            p,
-            profit
+        player = finish_game(
+            user_id,
+            bet,
+            profit,
+            "blackjack",
+            "bust",
         )
 
         blackjack_sessions.pop(
-            uid,
-            None
+            user_id,
+            None,
         )
-
-        save(data)
 
         return jsonify({
             "ok": True,
@@ -581,1314 +1019,1232 @@ def blackjack_hit():
             "result": "bust",
             "profit": profit,
             "player_hand":
-                session["player_hand"],
+                game["player_hand"],
             "dealer_hand":
-                session["dealer_hand"],
-            "player_value": value,
+                game["dealer_hand"],
+            "player_value":
+                value,
             "dealer_value":
                 hand_value(
-                    session["dealer_hand"]
+                    game[
+                        "dealer_hand"
+                    ]
                 ),
-            "player": p
+            "player":
+                player,
         })
+
+    return jsonify({
+        "ok": True,
+        "finished": False,
+        "player_hand":
+            game["player_hand"],
+        "dealer_hand": [
+            game[
+                "dealer_hand"
+            ][0],
+            {
+                "rank": "?",
+                "suit": "?",
+            },
+        ],
+        "player_value":
+            value,
+        "dealer_value": "?",
+    })
 
 
 # =========================================================
 # BLACKJACK STAND
 # =========================================================
 
-@app.post("/api/blackjack/stand")
+@app.post(
+    "/api/blackjack/stand"
+)
 def blackjack_stand():
 
-    body = request.get_json(
-        silent=True
-    ) or {}
+    user_id = require_logged_in_user()
 
-    uid = str(
-        body.get(
-            "user_id",
-            "demo"
-        )
+    if not user_id:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Nicht eingeloggt.",
+        }), 401
+
+    game = blackjack_sessions.get(
+        user_id
     )
 
-    with lock:
+    if not game:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Keine aktive Runde.",
+        }), 400
 
-        session = blackjack_sessions.get(
-            uid
+    dealer_hand = game[
+        "dealer_hand"
+    ]
+
+    while hand_value(
+        dealer_hand
+    ) < 17:
+        dealer_hand.append(
+            game[
+                "deck"
+            ].pop()
         )
 
-        if not session:
-
-            return jsonify({
-                "ok": False,
-                "error": "Keine aktive Blackjack-Runde."
-            }), 400
-
-        player_hand = session[
+    player_value = hand_value(
+        game[
             "player_hand"
         ]
+    )
 
-        dealer_hand = session[
-            "dealer_hand"
-        ]
+    dealer_value = hand_value(
+        dealer_hand
+    )
 
-        while (
-            hand_value(dealer_hand) < 17
-        ):
+    bet = game["bet"]
 
-            dealer_hand.append(
-                session["deck"].pop()
-            )
+    if dealer_value > 21:
 
-        player_total = hand_value(
-            player_hand
-        )
+        profit = bet
+        result = "dealer_bust"
 
-        dealer_total = hand_value(
-            dealer_hand
-        )
+    elif player_value > dealer_value:
 
-        data = load()
-        p = player(data, uid)
+        profit = bet
+        result = "win"
 
-        bet = session["bet"]
+    elif player_value < dealer_value:
 
-        if dealer_total > 21:
+        profit = -bet
+        result = "lose"
 
-            profit = bet
-            result = "dealer_bust"
-            win = True
-            draw = False
+    else:
 
-        elif player_total > dealer_total:
+        profit = 0
+        result = "push"
 
-            profit = bet
-            result = "win"
-            win = True
-            draw = False
+    player = finish_game(
+        user_id,
+        bet,
+        profit,
+        "blackjack",
+        result,
+    )
 
-        elif player_total < dealer_total:
+    blackjack_sessions.pop(
+        user_id,
+        None,
+    )
 
-            profit = -bet
-            result = "lose"
-            win = False
-            draw = False
-
-        else:
-
-            profit = 0
-            result = "push"
-            win = False
-            draw = True
-
-        finish_game(
-            p,
-            profit,
-            win=win,
-            draw=draw
-        )
-
-        blackjack_sessions.pop(
-            uid,
-            None
-        )
-
-        save(data)
-
-        return jsonify({
-            "ok": True,
-            "finished": True,
-            "result": result,
-            "profit": profit,
-            "player_hand": player_hand,
-            "dealer_hand": dealer_hand,
-            "player_value": player_total,
-            "dealer_value": dealer_total,
-            "player": p
-        })
+    return jsonify({
+        "ok": True,
+        "finished": True,
+        "result": result,
+        "profit": profit,
+        "player_hand":
+            game["player_hand"],
+        "dealer_hand":
+            dealer_hand,
+        "player_value":
+            player_value,
+        "dealer_value":
+            dealer_value,
+        "player":
+            player,
+    })
 
 
 # =========================================================
-# HIGH / LOW
+# HIGH / LOW START
 # =========================================================
 
-@app.post("/api/highlow/start")
+@app.post(
+    "/api/highlow/start"
+)
 def highlow_start():
 
+    user_id = require_logged_in_user()
+
+    if not user_id:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Nicht eingeloggt.",
+        }), 401
+
     body = request.get_json(
         silent=True
     ) or {}
 
-    uid = str(
-        body.get(
-            "user_id",
-            "demo"
-        )
+    player = get_player(
+        user_id
     )
 
-    with lock:
+    try:
+        bet = parse_bet(
+            player,
+            body.get("bet"),
+        )
 
-        data = load()
-        p = player(data, uid)
-
-        try:
-
-            bet = parse_bet(
-                body.get("bet", 100),
-                p["balance"]
-            )
-
-        except ValueError as error:
-
-            return jsonify({
-                "ok": False,
-                "error": str(error)
-            }), 400
-
-        deck = create_deck()
-
-        first_card = deck.pop()
-
-        highlow_sessions[uid] = {
-            "deck": deck,
-            "card": first_card,
-            "bet": bet
-        }
-
+    except ValueError as error:
         return jsonify({
-            "ok": True,
-            "card": first_card,
-            "value": highlow_value(
-                first_card
-            )
-        })
+            "ok": False,
+            "error": str(error),
+        }), 400
+
+    deck = make_deck()
+
+    card = deck.pop()
+
+    highlow_sessions[
+        user_id
+    ] = {
+        "deck": deck,
+        "card": card,
+        "bet": bet,
+    }
+
+    return jsonify({
+        "ok": True,
+        "card": card,
+        "value":
+            card_value(card),
+    })
 
 
-@app.post("/api/highlow/guess")
+# =========================================================
+# HIGH / LOW GUESS
+# =========================================================
+
+@app.post(
+    "/api/highlow/guess"
+)
 def highlow_guess():
 
+    user_id = require_logged_in_user()
+
+    if not user_id:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Nicht eingeloggt.",
+        }), 401
+
+    game = highlow_sessions.get(
+        user_id
+    )
+
+    if not game:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Keine aktive Runde.",
+        }), 400
+
     body = request.get_json(
         silent=True
     ) or {}
 
-    uid = str(
-        body.get(
-            "user_id",
-            "demo"
-        )
+    guess = body.get(
+        "guess"
     )
 
-    guess = str(
-        body.get(
-            "guess",
-            "higher"
-        )
+    if guess not in {
+        "higher",
+        "lower",
+    }:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Ungültige Auswahl.",
+        }), 400
+
+    old_card = game["card"]
+
+    new_card = game[
+        "deck"
+    ].pop()
+
+    old_value = card_value(
+        old_card
     )
 
-    with lock:
+    new_value = card_value(
+        new_card
+    )
 
-        session = highlow_sessions.get(
-            uid
+    bet = game["bet"]
+
+    if new_value == old_value:
+
+        profit = 0
+        result = "draw"
+
+    else:
+
+        correct = (
+            guess == "higher"
+            and new_value > old_value
+        ) or (
+            guess == "lower"
+            and new_value < old_value
         )
 
-        if not session:
-
-            return jsonify({
-                "ok": False,
-                "error": "Keine aktive High/Low-Runde."
-            }), 400
-
-        old_card = session["card"]
-        new_card = session["deck"].pop()
-
-        old_value = highlow_value(
-            old_card
-        )
-
-        new_value = highlow_value(
-            new_card
-        )
-
-        data = load()
-        p = player(data, uid)
-
-        bet = session["bet"]
-
-        if old_value == new_value:
-
-            profit = 0
-            result = "draw"
-
-            finish_game(
-                p,
-                0,
-                draw=True
-            )
+        if correct:
+            profit = bet
+            result = "win"
 
         else:
+            profit = -bet
+            result = "lose"
 
-            correct = (
-                (
-                    guess == "higher"
-                    and new_value > old_value
-                )
-                or
-                (
-                    guess == "lower"
-                    and new_value < old_value
-                )
-            )
+    player = finish_game(
+        user_id,
+        bet,
+        profit,
+        "highlow",
+        result,
+    )
 
-            if correct:
+    highlow_sessions.pop(
+        user_id,
+        None,
+    )
 
-                profit = bet
-                result = "win"
-
-                finish_game(
-                    p,
-                    profit,
-                    win=True
-                )
-
-            else:
-
-                profit = -bet
-                result = "lose"
-
-                finish_game(
-                    p,
-                    profit
-                )
-
-        highlow_sessions.pop(
-            uid,
-            None
-        )
-
-        save(data)
-
-        return jsonify({
-            "ok": True,
-            "result": result,
-            "profit": profit,
-            "old_card": old_card,
-            "new_card": new_card,
-            "old_value": old_value,
-            "new_value": new_value,
-            "player": p
-        })
+    return jsonify({
+        "ok": True,
+        "old_card":
+            old_card,
+        "new_card":
+            new_card,
+        "profit":
+            profit,
+        "result":
+            result,
+        "player":
+            player,
+    })
 
 
 # =========================================================
 # BACCARAT
 # =========================================================
 
-def baccarat_card_value(card):
+def baccarat_value(
+    hand
+):
+    total = 0
 
-    rank = card["rank"]
+    for card in hand:
 
-    if rank in (
-        "10",
-        "J",
-        "Q",
-        "K"
-    ):
-        return 0
+        rank = card["rank"]
 
-    if rank == "A":
-        return 1
+        if rank in {
+            "10",
+            "J",
+            "Q",
+            "K",
+        }:
+            value = 0
 
-    return int(rank)
+        elif rank == "A":
+            value = 1
+
+        else:
+            value = int(rank)
+
+        total += value
+
+    return total % 10
 
 
-def baccarat_total(hand):
-
-    return sum(
-        baccarat_card_value(card)
-        for card in hand
-    ) % 10
-
-
-@app.post("/api/baccarat/play")
+@app.post(
+    "/api/baccarat/play"
+)
 def baccarat_play():
+
+    user_id = require_logged_in_user()
+
+    if not user_id:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Nicht eingeloggt.",
+        }), 401
 
     body = request.get_json(
         silent=True
     ) or {}
 
-    uid = str(
-        body.get(
-            "user_id",
-            "demo"
-        )
+    choice = body.get(
+        "choice"
     )
 
-    choice = str(
-        body.get(
-            "choice",
-            "player"
-        )
-    )
-
-    if choice not in (
+    if choice not in {
         "player",
         "banker",
-        "tie"
-    ):
+        "tie",
+    }:
 
         return jsonify({
             "ok": False,
-            "error": "Ungültige Auswahl."
+            "error":
+                "Ungültige Auswahl.",
         }), 400
 
-    with lock:
+    player_data = get_player(
+        user_id
+    )
 
-        data = load()
-        p = player(data, uid)
+    try:
+        bet = parse_bet(
+            player_data,
+            body.get("bet"),
+        )
 
-        try:
+    except ValueError as error:
+        return jsonify({
+            "ok": False,
+            "error": str(error),
+        }), 400
 
-            bet = parse_bet(
-                body.get("bet", 100),
-                p["balance"]
-            )
+    deck = make_deck()
 
-        except ValueError as error:
+    player_hand = [
+        deck.pop(),
+        deck.pop(),
+    ]
 
-            return jsonify({
-                "ok": False,
-                "error": str(error)
-            }), 400
+    banker_hand = [
+        deck.pop(),
+        deck.pop(),
+    ]
 
-        deck = create_deck()
+    player_total = baccarat_value(
+        player_hand
+    )
 
-        player_hand = [
-            deck.pop(),
+    banker_total = baccarat_value(
+        banker_hand
+    )
+
+    if player_total < 6:
+        player_hand.append(
             deck.pop()
-        ]
+        )
 
-        banker_hand = [
-            deck.pop(),
-            deck.pop()
-        ]
-
-        player_total = baccarat_total(
+        player_total = baccarat_value(
             player_hand
         )
 
-        banker_total = baccarat_total(
+    if banker_total < 6:
+        banker_hand.append(
+            deck.pop()
+        )
+
+        banker_total = baccarat_value(
             banker_hand
         )
 
-        if (
-            player_total not in (8, 9)
-            and banker_total not in (8, 9)
-        ):
+    if player_total > banker_total:
+        winner = "player"
 
-            player_third = None
+    elif banker_total > player_total:
+        winner = "banker"
 
-            if player_total <= 5:
+    else:
+        winner = "tie"
 
-                player_third = deck.pop()
+    if choice == winner:
 
-                player_hand.append(
-                    player_third
-                )
-
-            player_total = baccarat_total(
-                player_hand
-            )
-
-            if player_third is None:
-
-                if banker_total <= 5:
-
-                    banker_hand.append(
-                        deck.pop()
-                    )
-
-            else:
-
-                third = baccarat_card_value(
-                    player_third
-                )
-
-                draw_banker = (
-                    banker_total <= 2
-                    or
-                    (
-                        banker_total == 3
-                        and third != 8
-                    )
-                    or
-                    (
-                        banker_total == 4
-                        and third in (
-                            2, 3, 4, 5, 6, 7
-                        )
-                    )
-                    or
-                    (
-                        banker_total == 5
-                        and third in (
-                            4, 5, 6, 7
-                        )
-                    )
-                    or
-                    (
-                        banker_total == 6
-                        and third in (
-                            6, 7
-                        )
-                    )
-                )
-
-                if draw_banker:
-
-                    banker_hand.append(
-                        deck.pop()
-                    )
-
-            banker_total = baccarat_total(
-                banker_hand
-            )
-
-        if player_total > banker_total:
-
-            winner = "player"
-
-        elif banker_total > player_total:
-
-            winner = "banker"
+        if winner == "tie":
+            profit = bet * 8
 
         else:
+            profit = bet
 
-            winner = "tie"
+        result = "win"
 
-        if choice == winner:
+    else:
 
-            if winner == "tie":
+        profit = -bet
+        result = "lose"
 
-                profit = bet * 8
+    player = finish_game(
+        user_id,
+        bet,
+        profit,
+        "baccarat",
+        result,
+    )
 
-            elif winner == "banker":
-
-                profit = int(
-                    bet * 0.95
-                )
-
-            else:
-
-                profit = bet
-
-            finish_game(
-                p,
-                profit,
-                win=True
-            )
-
-        else:
-
-            # Player/Banker bets push when hand is a tie.
-            if (
-                winner == "tie"
-                and choice in (
-                    "player",
-                    "banker"
-                )
-            ):
-
-                profit = 0
-
-                finish_game(
-                    p,
-                    0,
-                    draw=True
-                )
-
-            else:
-
-                profit = -bet
-
-                finish_game(
-                    p,
-                    profit
-                )
-
-        save(data)
-
-        return jsonify({
-            "ok": True,
-            "winner": winner,
-            "profit": profit,
-            "player_hand": player_hand,
-            "banker_hand": banker_hand,
-            "player_total": player_total,
-            "banker_total": banker_total,
-            "player": p
-        })
+    return jsonify({
+        "ok": True,
+        "winner": winner,
+        "profit": profit,
+        "player_hand":
+            player_hand,
+        "banker_hand":
+            banker_hand,
+        "player_total":
+            player_total,
+        "banker_total":
+            banker_total,
+        "player":
+            player,
+    })
 
 
 # =========================================================
 # MINES
 # =========================================================
 
-@app.post("/api/mines/start")
+@app.post(
+    "/api/mines/start"
+)
 def mines_start():
 
-    body = request.get_json(
-        silent=True
-    ) or {}
+    user_id = require_logged_in_user()
 
-    uid = str(
-        body.get(
-            "user_id",
-            "demo"
-        )
-    )
-
-    with lock:
-
-        data = load()
-        p = player(data, uid)
-
-        try:
-
-            bet = parse_bet(
-                body.get("bet", 100),
-                p["balance"]
-            )
-
-        except ValueError as error:
-
-            return jsonify({
-                "ok": False,
-                "error": str(error)
-            }), 400
-
-        mine_count = 4
-
-        mines = set(
-            random.sample(
-                range(16),
-                mine_count
-            )
-        )
-
-        mines_sessions[uid] = {
-            "bet": bet,
-            "mines": mines,
-            "opened": set(),
-            "mine_count": mine_count
-        }
-
+    if not user_id:
         return jsonify({
-            "ok": True,
-            "size": 16,
-            "mine_count": mine_count,
-            "opened": [],
-            "multiplier": 1.0
-        })
-
-
-@app.post("/api/mines/open")
-def mines_open():
+            "ok": False,
+            "error":
+                "Nicht eingeloggt.",
+        }), 401
 
     body = request.get_json(
         silent=True
     ) or {}
 
-    uid = str(
-        body.get(
-            "user_id",
-            "demo"
-        )
+    player = get_player(
+        user_id
     )
 
     try:
+        bet = parse_bet(
+            player,
+            body.get("bet"),
+        )
 
+    except ValueError as error:
+        return jsonify({
+            "ok": False,
+            "error": str(error),
+        }), 400
+
+    mine_count = 4
+
+    mines = random.sample(
+        range(16),
+        mine_count,
+    )
+
+    mines_sessions[
+        user_id
+    ] = {
+        "bet": bet,
+        "mines": mines,
+        "opened": [],
+    }
+
+    return jsonify({
+        "ok": True,
+        "mine_count":
+            mine_count,
+    })
+
+
+@app.post(
+    "/api/mines/open"
+)
+def mines_open():
+
+    user_id = require_logged_in_user()
+
+    if not user_id:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Nicht eingeloggt.",
+        }), 401
+
+    game = mines_sessions.get(
+        user_id
+    )
+
+    if not game:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Keine aktive Runde.",
+        }), 400
+
+    body = request.get_json(
+        silent=True
+    ) or {}
+
+    try:
         cell = int(
             body.get("cell")
         )
 
     except Exception:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Ungültiges Feld.",
+        }), 400
+
+    if cell < 0 or cell > 15:
 
         return jsonify({
             "ok": False,
-            "error": "Ungültiges Feld."
+            "error":
+                "Ungültiges Feld.",
         }), 400
 
-    with lock:
+    if cell in game["opened"]:
 
-        session = mines_sessions.get(
-            uid
+        return jsonify({
+            "ok": False,
+            "error":
+                "Feld bereits geöffnet.",
+        }), 400
+
+    if cell in game["mines"]:
+
+        bet = game["bet"]
+
+        profit = -bet
+
+        player = finish_game(
+            user_id,
+            bet,
+            profit,
+            "mines",
+            "mine",
         )
 
-        if not session:
+        mines = game["mines"]
 
-            return jsonify({
-                "ok": False,
-                "error": "Keine aktive Mines-Runde."
-            }), 400
-
-        if cell < 0 or cell >= 16:
-
-            return jsonify({
-                "ok": False,
-                "error": "Ungültiges Feld."
-            }), 400
-
-        if cell in session["opened"]:
-
-            return jsonify({
-                "ok": False,
-                "error": "Feld wurde bereits geöffnet."
-            }), 400
-
-        if cell in session["mines"]:
-
-            data = load()
-            p = player(data, uid)
-
-            profit = -session["bet"]
-
-            finish_game(
-                p,
-                profit
-            )
-
-            mines = sorted(
-                session["mines"]
-            )
-
-            mines_sessions.pop(
-                uid,
-                None
-            )
-
-            save(data)
-
-            return jsonify({
-                "ok": True,
-                "finished": True,
-                "hit_mine": True,
-                "profit": profit,
-                "mines": mines,
-                "player": p
-            })
-
-        session["opened"].add(
-            cell
-        )
-
-        safe_total = (
-            16 -
-            session["mine_count"]
-        )
-
-        opened_count = len(
-            session["opened"]
-        )
-
-        multiplier = round(
-            1 + (
-                opened_count
-                * 0.22
-            ),
-            2
+        mines_sessions.pop(
+            user_id,
+            None,
         )
 
         return jsonify({
             "ok": True,
-            "finished": False,
-            "hit_mine": False,
-            "opened": sorted(
-                session["opened"]
-            ),
-            "safe_total": safe_total,
-            "multiplier": multiplier
+            "hit_mine": True,
+            "profit": profit,
+            "mines": mines,
+            "player": player,
         })
 
+    game["opened"].append(
+        cell
+    )
 
-@app.post("/api/mines/cashout")
+    opened_count = len(
+        game["opened"]
+    )
+
+    multiplier = round(
+        1
+        + opened_count * 0.24,
+        2,
+    )
+
+    return jsonify({
+        "ok": True,
+        "hit_mine": False,
+        "multiplier":
+            multiplier,
+    })
+
+
+@app.post(
+    "/api/mines/cashout"
+)
 def mines_cashout():
 
-    body = request.get_json(
-        silent=True
-    ) or {}
+    user_id = require_logged_in_user()
 
-    uid = str(
-        body.get(
-            "user_id",
-            "demo"
+    if not user_id:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Nicht eingeloggt.",
+        }), 401
+
+    game = mines_sessions.get(
+        user_id
+    )
+
+    if not game:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Keine aktive Runde.",
+        }), 400
+
+    opened_count = len(
+        game["opened"]
+    )
+
+    if opened_count == 0:
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Öffne zuerst "
+                "mindestens ein Feld.",
+        }), 400
+
+    multiplier = round(
+        1
+        + opened_count * 0.24,
+        2,
+    )
+
+    bet = game["bet"]
+
+    profit = int(
+        bet * (
+            multiplier - 1
         )
     )
 
-    with lock:
+    player = finish_game(
+        user_id,
+        bet,
+        profit,
+        "mines",
+        "cashout",
+    )
 
-        session = mines_sessions.get(
-            uid
-        )
+    mines = game["mines"]
 
-        if not session:
+    mines_sessions.pop(
+        user_id,
+        None,
+    )
 
-            return jsonify({
-                "ok": False,
-                "error": "Keine aktive Mines-Runde."
-            }), 400
-
-        opened_count = len(
-            session["opened"]
-        )
-
-        if opened_count == 0:
-
-            return jsonify({
-                "ok": False,
-                "error": "Öffne zuerst mindestens ein Feld."
-            }), 400
-
-        multiplier = round(
-            1 + (
-                opened_count
-                * 0.22
-            ),
-            2
-        )
-
-        profit = int(
-            session["bet"]
-            * (
-                multiplier - 1
-            )
-        )
-
-        data = load()
-        p = player(data, uid)
-
-        finish_game(
-            p,
-            profit,
-            win=True
-        )
-
-        mines = sorted(
-            session["mines"]
-        )
-
-        mines_sessions.pop(
-            uid,
-            None
-        )
-
-        save(data)
-
-        return jsonify({
-            "ok": True,
-            "finished": True,
-            "profit": profit,
-            "multiplier": multiplier,
-            "mines": mines,
-            "player": p
-        })
+    return jsonify({
+        "ok": True,
+        "profit": profit,
+        "multiplier":
+            multiplier,
+        "mines": mines,
+        "player": player,
+    })
 
 
 # =========================================================
 # CRASH
 # =========================================================
 
-@app.post("/api/crash/start")
+@app.post(
+    "/api/crash/start"
+)
 def crash_start():
 
-    body = request.get_json(
-        silent=True
-    ) or {}
+    user_id = require_logged_in_user()
 
-    uid = str(
-        body.get(
-            "user_id",
-            "demo"
-        )
-    )
-
-    with lock:
-
-        data = load()
-        p = player(data, uid)
-
-        try:
-
-            bet = parse_bet(
-                body.get("bet", 100),
-                p["balance"]
-            )
-
-        except ValueError as error:
-
-            return jsonify({
-                "ok": False,
-                "error": str(error)
-            }), 400
-
-        # Server decides the crash point before the round.
-        # Virtual/fun currency only.
-        roll = random.random()
-
-        crash_point = round(
-            max(
-                1.01,
-                min(
-                    20.0,
-                    0.97 / max(
-                        0.05,
-                        1.0 - roll
-                    )
-                )
-            ),
-            2
-        )
-
-        crash_sessions[uid] = {
-            "bet": bet,
-            "crash_point": crash_point,
-            "current": 1.0
-        }
-
+    if not user_id:
         return jsonify({
-            "ok": True,
-            "started": True,
-            "multiplier": 1.0
-        })
-
-
-@app.post("/api/crash/tick")
-def crash_tick():
+            "ok": False,
+            "error":
+                "Nicht eingeloggt.",
+        }), 401
 
     body = request.get_json(
         silent=True
     ) or {}
 
-    uid = str(
-        body.get(
-            "user_id",
-            "demo"
-        )
+    player = get_player(
+        user_id
     )
 
-    with lock:
-
-        session = crash_sessions.get(
-            uid
+    try:
+        bet = parse_bet(
+            player,
+            body.get("bet"),
         )
 
-        if not session:
-
-            return jsonify({
-                "ok": False,
-                "error": "Keine aktive Crash-Runde."
-            }), 400
-
-        session["current"] = round(
-            session["current"] + 0.08,
-            2
-        )
-
-        if (
-            session["current"]
-            >= session["crash_point"]
-        ):
-
-            data = load()
-            p = player(data, uid)
-
-            profit = -session["bet"]
-
-            finish_game(
-                p,
-                profit
-            )
-
-            crash_sessions.pop(
-                uid,
-                None
-            )
-
-            save(data)
-
-            return jsonify({
-                "ok": True,
-                "crashed": True,
-                "multiplier":
-                    session["crash_point"],
-                "profit": profit,
-                "player": p
-            })
-
+    except ValueError as error:
         return jsonify({
-            "ok": True,
-            "crashed": False,
-            "multiplier":
-                session["current"]
-        })
+            "ok": False,
+            "error": str(error),
+        }), 400
 
-
-@app.post("/api/crash/cashout")
-def crash_cashout():
-
-    body = request.get_json(
-        silent=True
-    ) or {}
-
-    uid = str(
-        body.get(
-            "user_id",
-            "demo"
-        )
+    crash_point = round(
+        random.uniform(
+            1.05,
+            8.0,
+        ),
+        2,
     )
 
-    with lock:
-
-        session = crash_sessions.get(
-            uid
-        )
-
-        if not session:
-
-            return jsonify({
-                "ok": False,
-                "error": "Keine aktive Crash-Runde."
-            }), 400
-
-        multiplier = session[
-            "current"
-        ]
-
-        profit = int(
-            session["bet"]
-            * (
-                multiplier - 1
-            )
-        )
-
-        data = load()
-        p = player(data, uid)
-
-        finish_game(
-            p,
-            profit,
-            win=True
-        )
-
-        crash_sessions.pop(
-            uid,
-            None
-        )
-
-        save(data)
-
-        return jsonify({
-            "ok": True,
-            "cashed_out": True,
-            "multiplier": multiplier,
-            "profit": profit,
-            "player": p
-        })
-
-
-# =========================================================
-# ORIGINAL QUICK GAMES
-# =========================================================
-
-@app.post("/api/play")
-def play():
-
-    body = request.get_json(
-        silent=True
-    ) or {}
-
-    uid = str(
-        body.get(
-            "user_id",
-            "demo"
-        )
-    )
-
-    game = str(
-        body.get(
-            "game",
-            "slots"
-        )
-    )
-
-    allowed_games = {
-        "slots",
-        "dice",
-        "coinflip",
-        "roulette"
+    crash_sessions[
+        user_id
+    ] = {
+        "bet": bet,
+        "multiplier": 1.0,
+        "crash_point":
+            crash_point,
     }
 
-    if game not in allowed_games:
+    return jsonify({
+        "ok": True,
+    })
+
+
+@app.post(
+    "/api/crash/tick"
+)
+def crash_tick():
+
+    user_id = require_logged_in_user()
+
+    if not user_id:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Nicht eingeloggt.",
+        }), 401
+
+    game = crash_sessions.get(
+        user_id
+    )
+
+    if not game:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Keine aktive Runde.",
+        }), 400
+
+    game["multiplier"] = round(
+        game["multiplier"]
+        + random.uniform(
+            0.03,
+            0.12,
+        ),
+        2,
+    )
+
+    if (
+        game["multiplier"]
+        >= game["crash_point"]
+    ):
+
+        bet = game["bet"]
+
+        profit = -bet
+
+        player = finish_game(
+            user_id,
+            bet,
+            profit,
+            "crash",
+            "crashed",
+        )
+
+        multiplier = game[
+            "multiplier"
+        ]
+
+        crash_sessions.pop(
+            user_id,
+            None,
+        )
+
+        return jsonify({
+            "ok": True,
+            "crashed": True,
+            "multiplier":
+                multiplier,
+            "profit": profit,
+            "player": player,
+        })
+
+    return jsonify({
+        "ok": True,
+        "crashed": False,
+        "multiplier":
+            game[
+                "multiplier"
+            ],
+    })
+
+
+@app.post(
+    "/api/crash/cashout"
+)
+def crash_cashout():
+
+    user_id = require_logged_in_user()
+
+    if not user_id:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Nicht eingeloggt.",
+        }), 401
+
+    game = crash_sessions.get(
+        user_id
+    )
+
+    if not game:
+        return jsonify({
+            "ok": False,
+            "error":
+                "Keine aktive Runde.",
+        }), 400
+
+    multiplier = game[
+        "multiplier"
+    ]
+
+    bet = game["bet"]
+
+    profit = int(
+        bet * (
+            multiplier - 1
+        )
+    )
+
+    player = finish_game(
+        user_id,
+        bet,
+        profit,
+        "crash",
+        "cashout",
+    )
+
+    crash_sessions.pop(
+        user_id,
+        None,
+    )
+
+    return jsonify({
+        "ok": True,
+        "multiplier":
+            multiplier,
+        "profit":
+            profit,
+        "player":
+            player,
+    })
+
+
+# =========================================================
+# QUICK GAMES
+# =========================================================
+
+@app.post(
+    "/api/play"
+)
+def play():
+
+    user_id = require_logged_in_user()
+
+    if not user_id:
 
         return jsonify({
             "ok": False,
             "error":
-                "Dieses Spiel benutzt eine eigene Game-Engine."
+                "Bitte zuerst mit "
+                "Discord einloggen.",
+        }), 401
+
+    body = request.get_json(
+        silent=True
+    ) or {}
+
+    game = body.get(
+        "game"
+    )
+
+    player_data = get_player(
+        user_id
+    )
+
+    try:
+        bet = parse_bet(
+            player_data,
+            body.get("bet"),
+        )
+
+    except ValueError as error:
+
+        return jsonify({
+            "ok": False,
+            "error":
+                str(error),
         }), 400
 
-    with lock:
 
-        data = load()
-        p = player(data, uid)
+    # -----------------------------------------------------
+    # SLOTS
+    # -----------------------------------------------------
 
-        try:
+    if game == "slots":
 
-            bet = parse_bet(
-                body.get("bet", 100),
-                p["balance"]
-            )
+        symbols = [
+            "🍒",
+            "🍋",
+            "🔔",
+            "👑",
+            "💎",
+            "7️⃣",
+        ]
 
-        except ValueError as error:
+        reels = [
+            random.choice(symbols)
+            for _ in range(3)
+        ]
+
+        if (
+            reels[0]
+            == reels[1]
+            == reels[2]
+        ):
+
+            profit = bet * 5
+            result = "jackpot"
+
+        elif len(
+            set(reels)
+        ) == 2:
+
+            profit = bet
+            result = "win"
+
+        else:
+
+            profit = -bet
+            result = "lose"
+
+        detail = {
+            "reels": reels
+        }
+
+
+    # -----------------------------------------------------
+    # DICE
+    # -----------------------------------------------------
+
+    elif game == "dice":
+
+        you = random.randint(
+            1,
+            6,
+        )
+
+        casino = random.randint(
+            1,
+            6,
+        )
+
+        if you > casino:
+
+            profit = bet
+            result = "win"
+
+        elif you < casino:
+
+            profit = -bet
+            result = "lose"
+
+        else:
+
+            profit = 0
+            result = "draw"
+
+        detail = {
+            "you": you,
+            "casino": casino,
+        }
+
+
+    # -----------------------------------------------------
+    # COINFLIP
+    # -----------------------------------------------------
+
+    elif game == "coinflip":
+
+        choice = body.get(
+            "choice"
+        )
+
+        if choice not in {
+            "Kopf",
+            "Zahl",
+        }:
 
             return jsonify({
                 "ok": False,
-                "error": str(error),
-                "player": p
+                "error":
+                    "Ungültige Auswahl.",
             }), 400
 
-        win = False
-        draw = False
-        profit = 0
-        detail = {}
-
-
-        # =================================================
-        # SLOTS
-        # =================================================
-
-        if game == "slots":
-
-            symbols = [
-                "🍒",
-                "🍋",
-                "🔔",
-                "👑",
-                "💎",
-                "7️⃣"
-            ]
-
-            reels = [
-                random.choice(symbols)
-                for _ in range(3)
-            ]
-
-            detail = {
-                "reels": reels
-            }
-
-            if len(set(reels)) == 1:
-
-                multiplier = {
-                    "7️⃣": 10,
-                    "💎": 8,
-                    "👑": 6,
-                    "🔔": 4,
-                    "🍒": 3,
-                    "🍋": 3
-                }[reels[0]]
-
-                profit = (
-                    bet *
-                    (multiplier - 1)
-                )
-
-                win = True
-
-            elif len(set(reels)) == 2:
-
-                profit = bet // 2
-                win = True
-
-            else:
-
-                profit = -bet
-
-
-        # =================================================
-        # DICE
-        # =================================================
-
-        elif game == "dice":
-
-            you = random.randint(
-                1,
-                6
-            )
-
-            casino = random.randint(
-                1,
-                6
-            )
-
-            detail = {
-                "you": you,
-                "casino": casino
-            }
-
-            if you > casino:
-
-                profit = bet
-                win = True
-
-            elif you == casino:
-
-                profit = 0
-                draw = True
-
-            else:
-
-                profit = -bet
-
-
-        # =================================================
-        # COINFLIP
-        # =================================================
-
-        elif game == "coinflip":
-
-            choice = body.get(
-                "choice",
-                "Kopf"
-            )
-
-            if choice not in (
+        coin_result = random.choice(
+            [
                 "Kopf",
-                "Zahl"
-            ):
-
-                return jsonify({
-                    "ok": False,
-                    "error": "Ungültige Auswahl."
-                }), 400
-
-            result = random.choice([
-                "Kopf",
-                "Zahl"
-            ])
-
-            detail = {
-                "choice": choice,
-                "result": result
-            }
-
-            if choice == result:
-
-                profit = bet
-                win = True
-
-            else:
-
-                profit = -bet
-
-
-        # =================================================
-        # ROULETTE
-        # =================================================
-
-        elif game == "roulette":
-
-            choice = body.get(
-                "choice",
-                "red"
-            )
-
-            if choice not in (
-                "red",
-                "black",
-                "green"
-            ):
-
-                return jsonify({
-                    "ok": False,
-                    "error": "Ungültige Auswahl."
-                }), 400
-
-            number = random.randint(
-                0,
-                36
-            )
-
-            reds = {
-                1, 3, 5, 7, 9,
-                12, 14, 16, 18,
-                19, 21, 23, 25,
-                27, 30, 32, 34, 36
-            }
-
-            if number == 0:
-
-                color = "green"
-
-            elif number in reds:
-
-                color = "red"
-
-            else:
-
-                color = "black"
-
-            detail = {
-                "number": number,
-                "color": color
-            }
-
-            if choice == color:
-
-                win = True
-
-                if choice == "green":
-
-                    profit = bet * 35
-
-                else:
-
-                    profit = bet
-
-            else:
-
-                profit = -bet
-
-
-        finish_game(
-            p,
-            profit,
-            win=win,
-            draw=draw
+                "Zahl",
+            ]
         )
 
-        save(data)
+        if choice == coin_result:
+
+            profit = bet
+            result = "win"
+
+        else:
+
+            profit = -bet
+            result = "lose"
+
+        detail = {
+            "result":
+                coin_result
+        }
+
+
+    # -----------------------------------------------------
+    # ROULETTE
+    # -----------------------------------------------------
+
+    elif game == "roulette":
+
+        choice = body.get(
+            "choice"
+        )
+
+        if choice not in {
+            "red",
+            "black",
+            "green",
+        }:
+
+            return jsonify({
+                "ok": False,
+                "error":
+                    "Ungültige Auswahl.",
+            }), 400
+
+        number = random.randint(
+            0,
+            36,
+        )
+
+        red_numbers = {
+            1,
+            3,
+            5,
+            7,
+            9,
+            12,
+            14,
+            16,
+            18,
+            19,
+            21,
+            23,
+            25,
+            27,
+            30,
+            32,
+            34,
+            36,
+        }
+
+        if number == 0:
+            roulette_result = "green"
+
+        elif number in red_numbers:
+            roulette_result = "red"
+
+        else:
+            roulette_result = "black"
+
+        if choice == roulette_result:
+
+            if choice == "green":
+                profit = bet * 14
+
+            else:
+                profit = bet
+
+            result = "win"
+
+        else:
+
+            profit = -bet
+            result = "lose"
+
+        detail = {
+            "number": number,
+            "result":
+                roulette_result,
+        }
+
+
+    else:
 
         return jsonify({
-            "ok": True,
-            "profit": profit,
-            "detail": detail,
-            "player": p
-        })
+            "ok": False,
+            "error":
+                "Unbekanntes Spiel.",
+        }), 400
+
+
+    player = finish_game(
+        user_id,
+        bet,
+        profit,
+        game,
+        result,
+        detail,
+    )
+
+
+    return jsonify({
+        "ok": True,
+        "profit":
+            profit,
+        "result":
+            result,
+        "detail":
+            detail,
+        "player":
+            player,
+    })
 
 
 # =========================================================
-# START
+# LOCAL START
 # =========================================================
 
 if __name__ == "__main__":
 
+    port = int(
+        os.getenv(
+            "PORT",
+            "10000",
+        )
+    )
+
     app.run(
         host="0.0.0.0",
-        port=int(
-            os.getenv(
-                "PORT",
-                "10000"
-            )
-        ),
+        port=port,
         debug=False,
-        use_reloader=False
     )
