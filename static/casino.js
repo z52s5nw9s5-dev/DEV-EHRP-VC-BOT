@@ -1,8 +1,6 @@
 /* =========================================================
-   EHRP/VC CASINO — COMPLETE FRONTEND ENGINE
+   EHRP/VC CASINO — DISCORD AUTH FRONTEND
 ========================================================= */
-
-const USER_ID = window.USER_ID || "demo";
 
 let selectedBet = 100;
 let currentGame = null;
@@ -90,16 +88,13 @@ function formatCoins(value) {
     return Number(value || 0).toLocaleString("de-DE");
 }
 
-
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-
 function getGame(id) {
     return casinoGames.find(game => game.id === id);
 }
-
 
 function anyGameActive() {
     return (
@@ -111,19 +106,15 @@ function anyGameActive() {
     );
 }
 
-
 async function postJSON(url, body = {}) {
-
     const response = await fetch(url, {
         method: "POST",
-
+        credentials: "same-origin",
         headers: {
             "Content-Type": "application/json"
         },
-
         body: JSON.stringify(body)
     });
-
 
     let data;
 
@@ -133,42 +124,26 @@ async function postJSON(url, body = {}) {
         throw new Error("Serverantwort konnte nicht gelesen werden.");
     }
 
-
     if (!response.ok || !data.ok) {
-        throw new Error(
-            data.error ||
-            "Casino-Fehler."
-        );
+        throw new Error(data.error || "Casino-Fehler.");
     }
 
     return data;
 }
 
-
 function setResult(text, type = "") {
+    const result = document.getElementById("result");
 
-    const result =
-        document.getElementById("result");
+    if (!result) return;
 
-    if (!result) {
-        return;
-    }
-
-    result.className =
-        `game-result ${type}`.trim();
-
+    result.className = `game-result ${type}`.trim();
     result.textContent = text;
 }
 
-
 function setPlayButton(text, disabled = false) {
+    const button = document.getElementById("playBtn");
 
-    const button =
-        document.getElementById("playBtn");
-
-    if (!button) {
-        return;
-    }
+    if (!button) return;
 
     button.style.display = "";
     button.disabled = disabled;
@@ -181,16 +156,11 @@ function setPlayButton(text, disabled = false) {
 ========================================================= */
 
 function renderBets() {
+    const container = document.getElementById("bets");
 
-    const container =
-        document.getElementById("bets");
-
-    if (!container) {
-        return;
-    }
+    if (!container) return;
 
     container.innerHTML = "";
-
 
     const bets = [
         50,
@@ -204,43 +174,27 @@ function renderBets() {
         "all"
     ];
 
-
     bets.forEach(bet => {
-
-        const button =
-            document.createElement("button");
+        const button = document.createElement("button");
 
         button.type = "button";
-
         button.textContent =
-            bet === "all"
-                ? "ALL IN"
-                : formatCoins(bet);
-
+            bet === "all" ? "ALL IN" : formatCoins(bet);
 
         if (bet === selectedBet) {
             button.classList.add("active");
         }
 
+        button.addEventListener("click", () => {
+            if (anyGameActive()) return;
 
-        button.addEventListener(
-            "click",
-            () => {
+            selectedBet = bet;
+            renderBets();
 
-                if (anyGameActive()) {
-                    return;
-                }
-
-                selectedBet = bet;
-
-                renderBets();
-
-                if (currentGame) {
-                    updateGameBetText();
-                }
+            if (currentGame) {
+                updateGameBetText();
             }
-        );
-
+        });
 
         container.appendChild(button);
     });
@@ -252,44 +206,24 @@ function renderBets() {
 ========================================================= */
 
 function renderGames() {
+    const grid = document.getElementById("gamesGrid");
 
-    const grid =
-        document.getElementById("gamesGrid");
-
-    if (!grid) {
-        return;
-    }
+    if (!grid) return;
 
     grid.innerHTML = "";
 
-
     casinoGames.forEach(game => {
-
-        const card =
-            document.createElement("article");
+        const card = document.createElement("article");
 
         card.className = "card";
 
         card.innerHTML = `
-            <div class="icon">
-                ${game.icon}
-            </div>
-
-            <h3>
-                ${game.name}
-            </h3>
-
-            <p>
-                ${game.description}
-            </p>
+            <div class="icon">${game.icon}</div>
+            <h3>${game.name}</h3>
+            <p>${game.description}</p>
         `;
 
-
-        card.addEventListener(
-            "click",
-            () => openGame(game.id)
-        );
-
+        card.addEventListener("click", () => openGame(game.id));
 
         grid.appendChild(card);
     });
@@ -297,24 +231,27 @@ function renderGames() {
 
 
 /* =========================================================
-   PLAYER
+   PLAYER / AUTH
 ========================================================= */
 
 async function loadPlayer() {
-
     try {
+        const response = await fetch("/api/player", {
+            credentials: "same-origin"
+        });
 
-        const response = await fetch(
-            `/api/player/${encodeURIComponent(USER_ID)}`
-        );
+        const data = await response.json();
 
-        const player =
-            await response.json();
+        if (!response.ok || !data.ok) {
+            throw new Error(
+                data.error ||
+                "Spieler konnte nicht geladen werden."
+            );
+        }
 
-        updatePlayerUI(player);
+        updatePlayerUI(data);
 
     } catch (error) {
-
         console.error(
             "Player konnte nicht geladen werden:",
             error
@@ -322,64 +259,40 @@ async function loadPlayer() {
     }
 }
 
-
 function updatePlayerUI(player) {
+    if (!player) return;
 
-    if (!player) {
-        return;
-    }
-
-
-    const balance =
-        document.getElementById("balance");
-
-    const games =
-        document.getElementById("games");
-
-    const wins =
-        document.getElementById("wins");
-
-    const biggest =
-        document.getElementById("biggest");
-
-    const rate =
-        document.getElementById("rate");
-
+    const balance = document.getElementById("balance");
+    const games = document.getElementById("games");
+    const wins = document.getElementById("wins");
+    const biggest = document.getElementById("biggest");
+    const rate = document.getElementById("rate");
 
     if (balance) {
-        balance.textContent =
-            formatCoins(player.balance);
+        balance.textContent = formatCoins(player.balance);
     }
 
     if (games) {
-        games.textContent =
-            formatCoins(player.games);
+        games.textContent = formatCoins(player.games);
     }
 
     if (wins) {
-        wins.textContent =
-            formatCoins(player.wins);
+        wins.textContent = formatCoins(player.wins);
     }
 
     if (biggest) {
-        biggest.textContent =
-            formatCoins(player.biggest_win);
+        biggest.textContent = formatCoins(player.biggest_win);
     }
 
     if (rate) {
-
         const winrate =
             Number(player.games) > 0
                 ? Math.round(
-                    (
-                        Number(player.wins) /
-                        Number(player.games)
-                    ) * 100
+                    (Number(player.wins) / Number(player.games)) * 100
                 )
                 : 0;
 
-        rate.textContent =
-            `${winrate}%`;
+        rate.textContent = `${winrate}%`;
     }
 }
 
@@ -389,66 +302,36 @@ function updatePlayerUI(player) {
 ========================================================= */
 
 function openGame(gameId) {
+    if (anyGameActive()) return;
 
-    if (anyGameActive()) {
-        return;
-    }
+    const game = getGame(gameId);
 
-
-    const game =
-        getGame(gameId);
-
-    if (!game) {
-        return;
-    }
-
+    if (!game) return;
 
     currentGame = gameId;
 
+    const modal = document.getElementById("modal");
+    const icon = document.getElementById("gameIcon");
+    const title = document.getElementById("gameTitle");
 
-    const modal =
-        document.getElementById("modal");
-
-    const icon =
-        document.getElementById("gameIcon");
-
-    const title =
-        document.getElementById("gameTitle");
-
-
-    if (icon) {
-        icon.textContent = game.icon;
-    }
-
-    if (title) {
-        title.textContent = game.name;
-    }
-
+    if (icon) icon.textContent = game.icon;
+    if (title) title.textContent = game.name;
 
     renderGameInterface();
 
     modal.classList.remove("hidden");
 }
 
-
 function closeGame() {
+    if (anyGameActive()) return;
 
-    if (anyGameActive()) {
-        return;
-    }
-
-
-    const modal =
-        document.getElementById("modal");
+    const modal = document.getElementById("modal");
 
     modal.classList.add("hidden");
-
     currentGame = null;
 }
 
-
 function updateGameBetText() {
-
     setResult(
         selectedBet === "all"
             ? "Einsatz: ALL IN"
@@ -461,83 +344,45 @@ function updateGameBetText() {
    CHOICE BUTTONS
 ========================================================= */
 
-function setupChoiceButtons(
-    selector,
-    callback
-) {
+function setupChoiceButtons(selector, callback) {
+    document.querySelectorAll(selector).forEach(button => {
+        button.addEventListener("click", () => {
+            if (isPlaying) return;
 
-    document
-        .querySelectorAll(selector)
-        .forEach(button => {
+            document.querySelectorAll(selector).forEach(item => {
+                item.classList.remove("active");
+            });
 
-            button.addEventListener(
-                "click",
-                () => {
+            button.classList.add("active");
 
-                    if (isPlaying) {
-                        return;
-                    }
-
-
-                    document
-                        .querySelectorAll(selector)
-                        .forEach(item => {
-                            item.classList.remove("active");
-                        });
-
-
-                    button.classList.add("active");
-
-                    callback(
-                        button.dataset.choice
-                    );
-                }
-            );
+            callback(button.dataset.choice);
         });
+    });
 }
 
 
 /* =========================================================
-   PLAYING CARDS
+   CARDS
 ========================================================= */
 
 function cardHTML(card) {
-
-    if (
-        !card ||
-        card.rank === "?"
-    ) {
-
+    if (!card || card.rank === "?") {
         return `
             <div class="bj-card bj-card-back">
-                <div class="bj-card-pattern">
-                    ♛
-                </div>
+                <div class="bj-card-pattern">♛</div>
             </div>
         `;
     }
-
 
     const red =
         card.suit === "♥" ||
         card.suit === "♦";
 
-
     return `
         <div class="bj-card ${red ? "bj-red" : ""}">
-
-            <div class="bj-rank">
-                ${card.rank}
-            </div>
-
-            <div class="bj-suit">
-                ${card.suit}
-            </div>
-
-            <div class="bj-rank bj-bottom">
-                ${card.rank}
-            </div>
-
+            <div class="bj-rank">${card.rank}</div>
+            <div class="bj-suit">${card.suit}</div>
+            <div class="bj-rank bj-bottom">${card.rank}</div>
         </div>
     `;
 }
@@ -548,91 +393,37 @@ function cardHTML(card) {
 ========================================================= */
 
 function renderGameInterface() {
-
-    const machine =
-        document.getElementById("machine");
-
+    const machine = document.getElementById("machine");
 
     updateGameBetText();
 
-
-    /* -------------------------
-       SLOTS
-    ------------------------- */
-
     if (currentGame === "slots") {
-
         machine.innerHTML = `
             <div class="slot-machine">
-
-                <div
-                    class="slot-reel"
-                    id="reel1"
-                >
-                    7️⃣
-                </div>
-
-                <div
-                    class="slot-reel"
-                    id="reel2"
-                >
-                    💎
-                </div>
-
-                <div
-                    class="slot-reel"
-                    id="reel3"
-                >
-                    👑
-                </div>
-
+                <div class="slot-reel" id="reel1">7️⃣</div>
+                <div class="slot-reel" id="reel2">💎</div>
+                <div class="slot-reel" id="reel3">👑</div>
             </div>
         `;
 
         setPlayButton("🎰 SPIN");
-
         return;
     }
 
-
-    /* -------------------------
-       BLACKJACK
-    ------------------------- */
-
     if (currentGame === "blackjack") {
-
         machine.innerHTML = `
             <div class="blackjack-lobby">
-
-                <div class="blackjack-lobby-logo">
-                    ♠
-                </div>
-
-                <strong>
-                    EHRP/VC BLACKJACK
-                </strong>
-
-                <small>
-                    DEALER STANDS ON 17
-                </small>
-
+                <div class="blackjack-lobby-logo">♠</div>
+                <strong>EHRP/VC BLACKJACK</strong>
+                <small>DEALER STANDS ON 17</small>
             </div>
         `;
 
-        setPlayButton(
-            "🃏 RUNDE STARTEN"
-        );
-
+        setPlayButton("🃏 RUNDE STARTEN");
         return;
     }
 
-
-    /* -------------------------
-       ROULETTE
-    ------------------------- */
-
     if (currentGame === "roulette") {
-
         rouletteChoice = "red";
 
         machine.innerHTML = `
@@ -673,7 +464,6 @@ function renderGameInterface() {
             </div>
         `;
 
-
         setupChoiceButtons(
             ".roulette-choice",
             value => {
@@ -681,21 +471,11 @@ function renderGameInterface() {
             }
         );
 
-
-        setPlayButton(
-            "🎡 DREHEN"
-        );
-
+        setPlayButton("🎡 DREHEN");
         return;
     }
 
-
-    /* -------------------------
-       COINFLIP
-    ------------------------- */
-
     if (currentGame === "coinflip") {
-
         coinChoice = "Kopf";
 
         machine.innerHTML = `
@@ -731,7 +511,6 @@ function renderGameInterface() {
             </div>
         `;
 
-
         setupChoiceButtons(
             ".coin-choice",
             value => {
@@ -739,72 +518,36 @@ function renderGameInterface() {
             }
         );
 
-
-        setPlayButton(
-            "🪙 WERFEN"
-        );
-
+        setPlayButton("🪙 WERFEN");
         return;
     }
 
-
-    /* -------------------------
-       DICE
-    ------------------------- */
-
     if (currentGame === "dice") {
-
         machine.innerHTML = `
             <div class="dice-game">
 
                 <div class="dice-side">
-
-                    <small>
-                        DU
-                    </small>
-
-                    <div id="yourDice">
-                        ⚄
-                    </div>
-
+                    <small>DU</small>
+                    <div id="yourDice">⚄</div>
                 </div>
-
 
                 <div class="dice-vs">
                     VS
                 </div>
 
-
                 <div class="dice-side">
-
-                    <small>
-                        CASINO
-                    </small>
-
-                    <div id="casinoDice">
-                        ⚂
-                    </div>
-
+                    <small>CASINO</small>
+                    <div id="casinoDice">⚂</div>
                 </div>
 
             </div>
         `;
 
-
-        setPlayButton(
-            "🎲 WÜRFELN"
-        );
-
+        setPlayButton("🎲 WÜRFELN");
         return;
     }
 
-
-    /* -------------------------
-       BACCARAT
-    ------------------------- */
-
     if (currentGame === "baccarat") {
-
         baccaratChoice = "player";
 
         machine.innerHTML = `
@@ -821,7 +564,6 @@ function renderGameInterface() {
                 <small>
                     WÄHLE DEINE SEITE
                 </small>
-
 
                 <div class="roulette-choices">
 
@@ -854,7 +596,6 @@ function renderGameInterface() {
             </div>
         `;
 
-
         setupChoiceButtons(
             ".roulette-choice",
             value => {
@@ -862,70 +603,30 @@ function renderGameInterface() {
             }
         );
 
-
-        setPlayButton(
-            "🃏 KARTEN GEBEN"
-        );
-
+        setPlayButton("🃏 KARTEN GEBEN");
         return;
     }
 
-
-    /* -------------------------
-       HIGH / LOW
-    ------------------------- */
-
     if (currentGame === "highlow") {
-
         machine.innerHTML = `
             <div class="blackjack-lobby">
-
-                <div class="blackjack-lobby-logo">
-                    ♦
-                </div>
-
-                <strong>
-                    HIGH / LOW
-                </strong>
-
-                <small>
-                    STARTE DIE RUNDE
-                </small>
-
+                <div class="blackjack-lobby-logo">♦</div>
+                <strong>HIGH / LOW</strong>
+                <small>STARTE DIE RUNDE</small>
             </div>
         `;
 
-
-        setPlayButton(
-            "♦️ RUNDE STARTEN"
-        );
-
+        setPlayButton("♦️ RUNDE STARTEN");
         return;
     }
-
-
-    /* -------------------------
-       MINES
-    ------------------------- */
 
     if (currentGame === "mines") {
-
         renderMinesBoard();
-
-        setPlayButton(
-            "💣 MINES STARTEN"
-        );
-
+        setPlayButton("💣 MINES STARTEN");
         return;
     }
 
-
-    /* -------------------------
-       CRASH
-    ------------------------- */
-
     if (currentGame === "crash") {
-
         machine.innerHTML = `
             <div class="crash-preview">
 
@@ -940,27 +641,20 @@ function renderGameInterface() {
             </div>
         `;
 
-
-        setPlayButton(
-            "🚀 START"
-        );
+        setPlayButton("🚀 START");
     }
 }
 
 
 /* =========================================================
-   BLACKJACK TABLE
+   BLACKJACK
 ========================================================= */
 
 function renderBlackjackTable(data) {
-
-    const machine =
-        document.getElementById("machine");
-
+    const machine = document.getElementById("machine");
 
     machine.innerHTML = `
         <div class="blackjack-table">
-
 
             <div class="bj-area">
 
@@ -972,28 +666,20 @@ function renderBlackjackTable(data) {
                     </span>
                 </div>
 
-
                 <div class="bj-hand">
-
                     ${
                         data.dealer_hand
                             .map(card => cardHTML(card))
                             .join("")
                     }
-
                 </div>
 
             </div>
 
-
             <div class="bj-table-logo">
                 ♛
-
-                <small>
-                    EHRP/VC
-                </small>
+                <small>EHRP/VC</small>
             </div>
-
 
             <div class="bj-area">
 
@@ -1005,19 +691,15 @@ function renderBlackjackTable(data) {
                     </span>
                 </div>
 
-
                 <div class="bj-hand">
-
                     ${
                         data.player_hand
                             .map(card => cardHTML(card))
                             .join("")
                     }
-
                 </div>
 
             </div>
-
 
             ${
                 data.finished
@@ -1049,17 +731,8 @@ function renderBlackjackTable(data) {
     `;
 }
 
-
-/* =========================================================
-   BLACKJACK START
-========================================================= */
-
 async function blackjackStart() {
-
-    if (anyGameActive()) {
-        return;
-    }
-
+    if (anyGameActive()) return;
 
     isPlaying = true;
 
@@ -1068,60 +741,40 @@ async function blackjackStart() {
         true
     );
 
-    setResult(
-        "Dealer mischt die Karten..."
-    );
-
+    setResult("Dealer mischt die Karten...");
 
     try {
-
-        const data =
-            await postJSON(
-                "/api/blackjack/start",
-                {
-                    user_id: USER_ID,
-                    bet: selectedBet
-                }
-            );
-
+        const data = await postJSON(
+            "/api/blackjack/start",
+            {
+                bet: selectedBet
+            }
+        );
 
         renderBlackjackTable(data);
-
 
         if (data.player) {
             updatePlayerUI(data.player);
         }
 
-
         if (data.finished) {
-
             blackjackActive = false;
 
             showBlackjackResult(data);
 
-            setPlayButton(
-                "🃏 NEUE RUNDE"
-            );
+            setPlayButton("🃏 NEUE RUNDE");
 
         } else {
-
             blackjackActive = true;
 
             setResult(
                 `Deine Hand: ${data.player_value} — HIT oder STAND?`
             );
 
-
-            const button =
-                document.getElementById(
-                    "playBtn"
-                );
-
-            button.style.display = "none";
+            document.getElementById("playBtn").style.display = "none";
         }
 
     } catch (error) {
-
         blackjackActive = false;
 
         setResult(
@@ -1129,50 +782,26 @@ async function blackjackStart() {
             "result-loss"
         );
 
-        setPlayButton(
-            "🃏 RUNDE STARTEN"
-        );
+        setPlayButton("🃏 RUNDE STARTEN");
 
     } finally {
-
         isPlaying = false;
     }
 }
 
-
-/* =========================================================
-   BLACKJACK HIT
-========================================================= */
-
 async function blackjackHit() {
-
-    if (
-        !blackjackActive ||
-        isPlaying
-    ) {
-        return;
-    }
-
+    if (!blackjackActive || isPlaying) return;
 
     isPlaying = true;
 
-
     try {
-
-        const data =
-            await postJSON(
-                "/api/blackjack/hit",
-                {
-                    user_id: USER_ID
-                }
-            );
-
+        const data = await postJSON(
+            "/api/blackjack/hit"
+        );
 
         renderBlackjackTable(data);
 
-
         if (data.finished) {
-
             blackjackActive = false;
 
             if (data.player) {
@@ -1181,62 +810,36 @@ async function blackjackHit() {
 
             showBlackjackResult(data);
 
-            setPlayButton(
-                "🃏 NEUE RUNDE"
-            );
+            setPlayButton("🃏 NEUE RUNDE");
 
         } else {
-
             setResult(
                 `Deine Hand: ${data.player_value} — HIT oder STAND?`
             );
         }
 
     } catch (error) {
-
         setResult(
             error.message,
             "result-loss"
         );
 
     } finally {
-
         isPlaying = false;
     }
 }
 
-
-/* =========================================================
-   BLACKJACK STAND
-========================================================= */
-
 async function blackjackStand() {
-
-    if (
-        !blackjackActive ||
-        isPlaying
-    ) {
-        return;
-    }
-
+    if (!blackjackActive || isPlaying) return;
 
     isPlaying = true;
 
-    setResult(
-        "Dealer zieht..."
-    );
-
+    setResult("Dealer zieht...");
 
     try {
-
-        const data =
-            await postJSON(
-                "/api/blackjack/stand",
-                {
-                    user_id: USER_ID
-                }
-            );
-
+        const data = await postJSON(
+            "/api/blackjack/stand"
+        );
 
         renderBlackjackTable(data);
 
@@ -1246,32 +849,21 @@ async function blackjackStand() {
 
         showBlackjackResult(data);
 
-        setPlayButton(
-            "🃏 NEUE RUNDE"
-        );
+        setPlayButton("🃏 NEUE RUNDE");
 
     } catch (error) {
-
         setResult(
             error.message,
             "result-loss"
         );
 
     } finally {
-
         isPlaying = false;
     }
 }
 
-
-/* =========================================================
-   BLACKJACK RESULT
-========================================================= */
-
 function showBlackjackResult(data) {
-
     const messages = {
-
         blackjack:
             `🃏 BLACKJACK! +${formatCoins(data.profit)} Coins`,
 
@@ -1294,11 +886,9 @@ function showBlackjackResult(data) {
             "🤝 PUSH — Unentschieden."
     };
 
-
     showProfitResult(
         data,
-        messages[data.result] ||
-        "Runde beendet."
+        messages[data.result] || "Runde beendet."
     );
 }
 
@@ -1308,11 +898,7 @@ function showBlackjackResult(data) {
 ========================================================= */
 
 async function highlowStart() {
-
-    if (anyGameActive()) {
-        return;
-    }
-
+    if (anyGameActive()) return;
 
     isPlaying = true;
 
@@ -1321,25 +907,17 @@ async function highlowStart() {
         true
     );
 
-
     try {
-
-        const data =
-            await postJSON(
-                "/api/highlow/start",
-                {
-                    user_id: USER_ID,
-                    bet: selectedBet
-                }
-            );
-
+        const data = await postJSON(
+            "/api/highlow/start",
+            {
+                bet: selectedBet
+            }
+        );
 
         highlowActive = true;
 
-
-        document.getElementById(
-            "machine"
-        ).innerHTML = `
+        document.getElementById("machine").innerHTML = `
             <div class="blackjack-table">
 
                 <div class="bj-label">
@@ -1373,18 +951,13 @@ async function highlowStart() {
             </div>
         `;
 
-
         setResult(
             `Kartenwert ${data.value} — höher oder tiefer?`
         );
 
-
-        document.getElementById(
-            "playBtn"
-        ).style.display = "none";
+        document.getElementById("playBtn").style.display = "none";
 
     } catch (error) {
-
         highlowActive = false;
 
         setResult(
@@ -1392,52 +965,29 @@ async function highlowStart() {
             "result-loss"
         );
 
-        setPlayButton(
-            "♦️ RUNDE STARTEN"
-        );
+        setPlayButton("♦️ RUNDE STARTEN");
 
     } finally {
-
         isPlaying = false;
     }
 }
 
-
-/* =========================================================
-   HIGH / LOW GUESS
-========================================================= */
-
 async function highlowGuess(guess) {
-
-    if (
-        !highlowActive ||
-        isPlaying
-    ) {
-        return;
-    }
-
+    if (!highlowActive || isPlaying) return;
 
     isPlaying = true;
 
-
     try {
-
-        const data =
-            await postJSON(
-                "/api/highlow/guess",
-                {
-                    user_id: USER_ID,
-                    guess: guess
-                }
-            );
-
+        const data = await postJSON(
+            "/api/highlow/guess",
+            {
+                guess: guess
+            }
+        );
 
         highlowActive = false;
 
-
-        document.getElementById(
-            "machine"
-        ).innerHTML = `
+        document.getElementById("machine").innerHTML = `
             <div class="blackjack-table">
 
                 <div class="bj-label">
@@ -1459,24 +1009,19 @@ async function highlowGuess(guess) {
             </div>
         `;
 
-
         updatePlayerUI(data.player);
 
         showProfitResult(data);
 
-        setPlayButton(
-            "♦️ NEUE RUNDE"
-        );
+        setPlayButton("♦️ NEUE RUNDE");
 
     } catch (error) {
-
         setResult(
             error.message,
             "result-loss"
         );
 
     } finally {
-
         isPlaying = false;
     }
 }
@@ -1487,11 +1032,7 @@ async function highlowGuess(guess) {
 ========================================================= */
 
 async function baccaratPlay() {
-
-    if (anyGameActive()) {
-        return;
-    }
-
+    if (anyGameActive()) return;
 
     isPlaying = true;
 
@@ -1500,25 +1041,17 @@ async function baccaratPlay() {
         true
     );
 
-
     try {
+        const data = await postJSON(
+            "/api/baccarat/play",
+            {
+                bet: selectedBet,
+                choice: baccaratChoice
+            }
+        );
 
-        const data =
-            await postJSON(
-                "/api/baccarat/play",
-                {
-                    user_id: USER_ID,
-                    bet: selectedBet,
-                    choice: baccaratChoice
-                }
-            );
-
-
-        document.getElementById(
-            "machine"
-        ).innerHTML = `
+        document.getElementById("machine").innerHTML = `
             <div class="blackjack-table">
-
 
                 <div class="bj-area">
 
@@ -1531,22 +1064,18 @@ async function baccaratPlay() {
                     </div>
 
                     <div class="bj-hand">
-
                         ${
                             data.player_hand
                                 .map(card => cardHTML(card))
                                 .join("")
                         }
-
                     </div>
 
                 </div>
 
-
                 <div class="bj-table-logo">
                     VS
                 </div>
-
 
                 <div class="bj-area">
 
@@ -1559,31 +1088,25 @@ async function baccaratPlay() {
                     </div>
 
                     <div class="bj-hand">
-
                         ${
                             data.banker_hand
                                 .map(card => cardHTML(card))
                                 .join("")
                         }
-
                     </div>
 
                 </div>
 
-
             </div>
         `;
 
-
         updatePlayerUI(data.player);
-
 
         const winnerNames = {
             player: "PLAYER",
             banker: "BANKER",
             tie: "TIE"
         };
-
 
         showProfitResult(
             data,
@@ -1592,45 +1115,34 @@ async function baccaratPlay() {
             }${formatCoins(data.profit)} Coins`
         );
 
-
-        setPlayButton(
-            "🃏 NOCHMAL"
-        );
+        setPlayButton("🃏 NOCHMAL");
 
     } catch (error) {
-
         setResult(
             error.message,
             "result-loss"
         );
 
-        setPlayButton(
-            "🃏 KARTEN GEBEN"
-        );
+        setPlayButton("🃏 KARTEN GEBEN");
 
     } finally {
-
         isPlaying = false;
     }
 }
 
 
 /* =========================================================
-   MINES BOARD
+   MINES
 ========================================================= */
 
 function renderMinesBoard() {
-
-    const machine =
-        document.getElementById("machine");
-
+    const machine = document.getElementById("machine");
 
     machine.innerHTML = `
         <div
             class="mines-preview"
             id="minesBoard"
         >
-
             ${
                 Array.from(
                     { length: 16 },
@@ -1644,140 +1156,84 @@ function renderMinesBoard() {
                     `
                 ).join("")
             }
-
         </div>
     `;
 }
 
-
-/* =========================================================
-   MINES START
-========================================================= */
-
 async function minesStart() {
-
-    if (anyGameActive()) {
-        return;
-    }
-
+    if (anyGameActive()) return;
 
     isPlaying = true;
 
-
     try {
-
-        const data =
-            await postJSON(
-                "/api/mines/start",
-                {
-                    user_id: USER_ID,
-                    bet: selectedBet
-                }
-            );
-
+        const data = await postJSON(
+            "/api/mines/start",
+            {
+                bet: selectedBet
+            }
+        );
 
         minesActive = true;
 
         renderMinesBoard();
 
-
         setResult(
             `${data.mine_count} Minen versteckt — wähle ein Feld.`
         );
 
-
-        setPlayButton(
-            "💰 CASHOUT"
-        );
+        setPlayButton("💰 CASHOUT");
 
     } catch (error) {
-
         setResult(
             error.message,
             "result-loss"
         );
 
     } finally {
-
         isPlaying = false;
     }
 }
 
-
-/* =========================================================
-   MINES OPEN
-========================================================= */
-
 async function minesOpen(cell) {
-
-    if (
-        !minesActive ||
-        isPlaying
-    ) {
-        return;
-    }
-
+    if (!minesActive || isPlaying) return;
 
     isPlaying = true;
 
-
     try {
+        const data = await postJSON(
+            "/api/mines/open",
+            {
+                cell: cell
+            }
+        );
 
-        const data =
-            await postJSON(
-                "/api/mines/open",
-                {
-                    user_id: USER_ID,
-                    cell: cell
-                }
-            );
-
-
-        const field =
-            document.querySelector(
-                `[data-cell="${cell}"]`
-            );
-
+        const field = document.querySelector(
+            `[data-cell="${cell}"]`
+        );
 
         if (data.hit_mine) {
-
             minesActive = false;
 
-            revealMines(
-                data.mines
-            );
-
+            revealMines(data.mines);
 
             if (field) {
                 field.textContent = "💣";
             }
 
-
-            updatePlayerUI(
-                data.player
-            );
-
+            updatePlayerUI(data.player);
 
             showProfitResult(
                 data,
                 `💥 BOOM! ${formatCoins(data.profit)} Coins`
             );
 
-
-            setPlayButton(
-                "💣 NEUE RUNDE"
-            );
+            setPlayButton("💣 NEUE RUNDE");
 
         } else {
-
             if (field) {
-
                 field.textContent = "💎";
-
-                field.style.pointerEvents =
-                    "none";
+                field.style.pointerEvents = "none";
             }
-
 
             setResult(
                 `💎 Sicher! Multiplikator: ${Number(
@@ -1787,32 +1243,21 @@ async function minesOpen(cell) {
         }
 
     } catch (error) {
-
         setResult(
             error.message,
             "result-loss"
         );
 
     } finally {
-
         isPlaying = false;
     }
 }
 
-
-/* =========================================================
-   MINES REVEAL
-========================================================= */
-
 function revealMines(mines = []) {
-
     mines.forEach(cell => {
-
-        const field =
-            document.querySelector(
-                `[data-cell="${cell}"]`
-            );
-
+        const field = document.querySelector(
+            `[data-cell="${cell}"]`
+        );
 
         if (field) {
             field.textContent = "💣";
@@ -1820,45 +1265,21 @@ function revealMines(mines = []) {
     });
 }
 
-
-/* =========================================================
-   MINES CASHOUT
-========================================================= */
-
 async function minesCashout() {
-
-    if (
-        !minesActive ||
-        isPlaying
-    ) {
-        return;
-    }
-
+    if (!minesActive || isPlaying) return;
 
     isPlaying = true;
 
-
     try {
-
-        const data =
-            await postJSON(
-                "/api/mines/cashout",
-                {
-                    user_id: USER_ID
-                }
-            );
-
+        const data = await postJSON(
+            "/api/mines/cashout"
+        );
 
         minesActive = false;
 
-        revealMines(
-            data.mines
-        );
+        revealMines(data.mines);
 
-        updatePlayerUI(
-            data.player
-        );
-
+        updatePlayerUI(data.player);
 
         setResult(
             `💰 CASHOUT ${Number(
@@ -1869,71 +1290,51 @@ async function minesCashout() {
             "result-win"
         );
 
-
-        setPlayButton(
-            "💣 NEUE RUNDE"
-        );
+        setPlayButton("💣 NEUE RUNDE");
 
     } catch (error) {
-
         setResult(
             error.message,
             "result-loss"
         );
 
     } finally {
-
         isPlaying = false;
     }
 }
 
 
 /* =========================================================
-   CRASH START
+   CRASH
 ========================================================= */
 
 async function crashStart() {
-
-    if (anyGameActive()) {
-        return;
-    }
-
+    if (anyGameActive()) return;
 
     isPlaying = true;
 
-
     try {
-
         await postJSON(
             "/api/crash/start",
             {
-                user_id: USER_ID,
                 bet: selectedBet
             }
         );
 
-
         crashActive = true;
         isPlaying = false;
 
-
-        setPlayButton(
-            "💰 CASHOUT"
-        );
-
+        setPlayButton("💰 CASHOUT");
 
         setResult(
             "🚀 Der Multiplikator steigt..."
         );
 
-
         crashLoop();
 
     } catch (error) {
-
         crashActive = false;
         isPlaying = false;
-
 
         setResult(
             error.message,
@@ -1942,53 +1343,29 @@ async function crashStart() {
     }
 }
 
-
-/* =========================================================
-   CRASH LOOP
-========================================================= */
-
 async function crashLoop() {
-
-    if (!crashActive) {
-        return;
-    }
-
+    if (!crashActive) return;
 
     try {
+        const data = await postJSON(
+            "/api/crash/tick"
+        );
 
-        const data =
-            await postJSON(
-                "/api/crash/tick",
-                {
-                    user_id: USER_ID
-                }
-            );
-
-
-        const multiplier =
-            document.getElementById(
-                "crashMultiplier"
-            );
-
+        const multiplier = document.getElementById(
+            "crashMultiplier"
+        );
 
         if (multiplier) {
-
             multiplier.textContent =
-                `${Number(
-                    data.multiplier
-                ).toFixed(2)}×`;
+                `${Number(data.multiplier).toFixed(2)}×`;
         }
 
-
         if (data.crashed) {
-
             crashActive = false;
-
 
             if (data.player) {
                 updatePlayerUI(data.player);
             }
-
 
             setResult(
                 `💥 CRASH bei ${Number(
@@ -1999,82 +1376,46 @@ async function crashLoop() {
                 "result-loss"
             );
 
-
-            setPlayButton(
-                "🚀 NEUE RUNDE"
-            );
+            setPlayButton("🚀 NEUE RUNDE");
 
             return;
         }
 
-
-        crashTimer =
-            window.setTimeout(
-                crashLoop,
-                180
-            );
+        crashTimer = window.setTimeout(
+            crashLoop,
+            180
+        );
 
     } catch (error) {
-
         crashActive = false;
-
 
         setResult(
             error.message,
             "result-loss"
         );
 
-
-        setPlayButton(
-            "🚀 NEUE RUNDE"
-        );
+        setPlayButton("🚀 NEUE RUNDE");
     }
 }
 
-
-/* =========================================================
-   CRASH CASHOUT
-========================================================= */
-
 async function crashCashout() {
-
-    if (
-        !crashActive ||
-        isPlaying
-    ) {
-        return;
-    }
-
+    if (!crashActive || isPlaying) return;
 
     isPlaying = true;
 
-
     if (crashTimer) {
-
         clearTimeout(crashTimer);
-
         crashTimer = null;
     }
 
-
     try {
-
-        const data =
-            await postJSON(
-                "/api/crash/cashout",
-                {
-                    user_id: USER_ID
-                }
-            );
-
+        const data = await postJSON(
+            "/api/crash/cashout"
+        );
 
         crashActive = false;
 
-
-        updatePlayerUI(
-            data.player
-        );
-
+        updatePlayerUI(data.player);
 
         setResult(
             `💰 CASHOUT bei ${Number(
@@ -2085,35 +1426,26 @@ async function crashCashout() {
             "result-win"
         );
 
-
-        setPlayButton(
-            "🚀 NEUE RUNDE"
-        );
+        setPlayButton("🚀 NEUE RUNDE");
 
     } catch (error) {
-
         crashActive = false;
-
 
         setResult(
             error.message,
             "result-loss"
         );
 
-
-        setPlayButton(
-            "🚀 NEUE RUNDE"
-        );
+        setPlayButton("🚀 NEUE RUNDE");
 
     } finally {
-
         isPlaying = false;
     }
 }
 
 
 /* =========================================================
-   QUICK GAME ANIMATIONS
+   ANIMATIONS
 ========================================================= */
 
 const slotSymbols = [
@@ -2125,7 +1457,6 @@ const slotSymbols = [
     "7️⃣"
 ];
 
-
 const diceFaces = [
     "⚀",
     "⚁",
@@ -2135,24 +1466,16 @@ const diceFaces = [
     "⚅"
 ];
 
-
 async function animateSlots(finalReels) {
-
     const reels = [
         document.getElementById("reel1"),
         document.getElementById("reel2"),
         document.getElementById("reel3")
     ];
 
-
     for (let spin = 0; spin < 13; spin++) {
-
         reels.forEach(reel => {
-
-            if (!reel) {
-                return;
-            }
-
+            if (!reel) return;
 
             reel.textContent =
                 slotSymbols[
@@ -2163,106 +1486,57 @@ async function animateSlots(finalReels) {
                 ];
         });
 
-
         await sleep(65);
     }
 
-
-    reels.forEach(
-        (reel, index) => {
-
-            if (reel) {
-                reel.textContent =
-                    finalReels[index];
-            }
+    reels.forEach((reel, index) => {
+        if (reel) {
+            reel.textContent = finalReels[index];
         }
-    );
+    });
 }
 
-
-async function animateDice(
-    you,
-    casino
-) {
-
-    const yourDice =
-        document.getElementById(
-            "yourDice"
-        );
-
-    const casinoDice =
-        document.getElementById(
-            "casinoDice"
-        );
-
+async function animateDice(you, casino) {
+    const yourDice = document.getElementById("yourDice");
+    const casinoDice = document.getElementById("casinoDice");
 
     for (let i = 0; i < 12; i++) {
-
         if (yourDice) {
-
             yourDice.textContent =
                 diceFaces[
-                    Math.floor(
-                        Math.random() * 6
-                    )
+                    Math.floor(Math.random() * 6)
                 ];
         }
-
 
         if (casinoDice) {
-
             casinoDice.textContent =
                 diceFaces[
-                    Math.floor(
-                        Math.random() * 6
-                    )
+                    Math.floor(Math.random() * 6)
                 ];
         }
-
 
         await sleep(60);
     }
 
-
     if (yourDice) {
-        yourDice.textContent =
-            diceFaces[you - 1];
+        yourDice.textContent = diceFaces[you - 1];
     }
 
     if (casinoDice) {
-        casinoDice.textContent =
-            diceFaces[casino - 1];
+        casinoDice.textContent = diceFaces[casino - 1];
     }
 }
 
+async function animateCoin(finalResult) {
+    const coin = document.getElementById("casinoCoin");
 
-async function animateCoin(
-    finalResult
-) {
+    if (!coin) return;
 
-    const coin =
-        document.getElementById(
-            "casinoCoin"
-        );
-
-
-    if (!coin) {
-        return;
-    }
-
-
-    coin.classList.add(
-        "flipping"
-    );
-
+    coin.classList.add("flipping");
 
     await sleep(900);
 
-
-    coin.classList.remove(
-        "flipping"
-    );
-
+    coin.classList.remove("flipping");
 
     coin.textContent =
         finalResult === "Kopf"
@@ -2270,37 +1544,20 @@ async function animateCoin(
             : "🪙";
 }
 
-
-async function animateRoulette(
-    number
-) {
-
-    const wheel =
-        document.querySelector(
-            ".roulette-game-wheel"
-        );
-
-
-    if (!wheel) {
-        return;
-    }
-
-
-    wheel.classList.add(
-        "roulette-spinning"
+async function animateRoulette(number) {
+    const wheel = document.querySelector(
+        ".roulette-game-wheel"
     );
 
+    if (!wheel) return;
+
+    wheel.classList.add("roulette-spinning");
 
     await sleep(1200);
 
+    wheel.classList.remove("roulette-spinning");
 
-    wheel.classList.remove(
-        "roulette-spinning"
-    );
-
-
-    wheel.textContent =
-        String(number);
+    wheel.textContent = String(number);
 }
 
 
@@ -2309,128 +1566,79 @@ async function animateRoulette(
 ========================================================= */
 
 async function quickGamePlay() {
-
-    if (isPlaying) {
-        return;
-    }
-
+    if (isPlaying) return;
 
     isPlaying = true;
-
 
     setPlayButton(
         "LÄUFT...",
         true
     );
 
-
-    setResult(
-        "Casino entscheidet..."
-    );
-
+    setResult("Casino entscheidet...");
 
     try {
-
         const extra = {};
 
-
-        if (
-            currentGame ===
-            "roulette"
-        ) {
-
-            extra.choice =
-                rouletteChoice;
+        if (currentGame === "roulette") {
+            extra.choice = rouletteChoice;
         }
 
-
-        if (
-            currentGame ===
-            "coinflip"
-        ) {
-
-            extra.choice =
-                coinChoice;
+        if (currentGame === "coinflip") {
+            extra.choice = coinChoice;
         }
 
-
-        const data =
-            await postJSON(
-                "/api/play",
-                {
-                    user_id: USER_ID,
-                    game: currentGame,
-                    bet: selectedBet,
-                    ...extra
-                }
-            );
-
+        const data = await postJSON(
+            "/api/play",
+            {
+                game: currentGame,
+                bet: selectedBet,
+                ...extra
+            }
+        );
 
         if (
             currentGame === "slots" &&
             data.detail?.reels
         ) {
-
             await animateSlots(
                 data.detail.reels
             );
         }
 
-
-        if (
-            currentGame === "dice"
-        ) {
-
+        if (currentGame === "dice") {
             await animateDice(
                 data.detail.you,
                 data.detail.casino
             );
         }
 
-
-        if (
-            currentGame === "coinflip"
-        ) {
-
+        if (currentGame === "coinflip") {
             await animateCoin(
                 data.detail.result
             );
         }
 
-
-        if (
-            currentGame === "roulette"
-        ) {
-
+        if (currentGame === "roulette") {
             await animateRoulette(
                 data.detail.number
             );
         }
 
+        updatePlayerUI(data.player);
 
-        updatePlayerUI(
-            data.player
-        );
-
-
-        showProfitResult(
-            data
-        );
+        showProfitResult(data);
 
     } catch (error) {
-
         setResult(
             error.message,
             "result-loss"
         );
 
     } finally {
-
         isPlaying = false;
 
-
         const names = {
-
             slots:
                 "🎰 NOCHMAL SPINNEN",
 
@@ -2444,7 +1652,6 @@ async function quickGamePlay() {
                 "🎲 NOCHMAL WÜRFELN"
         };
 
-
         setPlayButton(
             names[currentGame] ||
             "NOCHMAL SPIELEN"
@@ -2457,20 +1664,12 @@ async function quickGamePlay() {
    RESULTS
 ========================================================= */
 
-function showProfitResult(
-    data,
-    customMessage = null
-) {
-
-    const profit =
-        Number(data.profit || 0);
-
+function showProfitResult(data, customMessage = null) {
+    const profit = Number(data.profit || 0);
 
     if (customMessage) {
-
         setResult(
             customMessage,
-
             profit > 0
                 ? "result-win"
                 : profit < 0
@@ -2481,23 +1680,19 @@ function showProfitResult(
         return;
     }
 
-
     if (profit > 0) {
-
         setResult(
             `🔥 GEWONNEN: +${formatCoins(profit)} Coins`,
             "result-win"
         );
 
     } else if (profit < 0) {
-
         setResult(
             `VERLOREN: ${formatCoins(profit)} Coins`,
             "result-loss"
         );
 
     } else {
-
         setResult(
             "🤝 UNENTSCHIEDEN",
             "result-draw"
@@ -2507,87 +1702,46 @@ function showProfitResult(
 
 
 /* =========================================================
-   MAIN PLAY BUTTON
+   PLAY
 ========================================================= */
 
 async function playCurrentGame() {
+    if (!currentGame || isPlaying) return;
 
-    if (
-        !currentGame ||
-        isPlaying
-    ) {
-        return;
-    }
-
-
-    if (
-        currentGame ===
-        "blackjack"
-    ) {
-
+    if (currentGame === "blackjack") {
         await blackjackStart();
-
         return;
     }
 
-
-    if (
-        currentGame ===
-        "highlow"
-    ) {
-
+    if (currentGame === "highlow") {
         await highlowStart();
-
         return;
     }
 
-
-    if (
-        currentGame ===
-        "baccarat"
-    ) {
-
+    if (currentGame === "baccarat") {
         await baccaratPlay();
-
         return;
     }
 
-
-    if (
-        currentGame ===
-        "mines"
-    ) {
-
+    if (currentGame === "mines") {
         if (minesActive) {
-
             await minesCashout();
-
         } else {
-
             await minesStart();
         }
 
         return;
     }
 
-
-    if (
-        currentGame ===
-        "crash"
-    ) {
-
+    if (currentGame === "crash") {
         if (crashActive) {
-
             await crashCashout();
-
         } else {
-
             await crashStart();
         }
 
         return;
     }
-
 
     await quickGamePlay();
 }
@@ -2597,75 +1751,48 @@ async function playCurrentGame() {
    EVENTS
 ========================================================= */
 
-const playButton =
-    document.getElementById(
-        "playBtn"
-    );
-
+const playButton = document.getElementById("playBtn");
 
 if (playButton) {
-
     playButton.addEventListener(
         "click",
         playCurrentGame
     );
 }
 
-
-const closeButton =
-    document.getElementById(
-        "closeGameButton"
-    );
-
+const closeButton = document.getElementById(
+    "closeGameButton"
+);
 
 if (closeButton) {
-
     closeButton.addEventListener(
         "click",
         closeGame
     );
 }
 
-
-const modal =
-    document.getElementById(
-        "modal"
-    );
-
+const modal = document.getElementById("modal");
 
 if (modal) {
-
-    modal.addEventListener(
-        "click",
-        event => {
-
-            if (
-                event.target === modal &&
-                !anyGameActive()
-            ) {
-
-                closeGame();
-            }
+    modal.addEventListener("click", event => {
+        if (
+            event.target === modal &&
+            !anyGameActive()
+        ) {
+            closeGame();
         }
-    );
+    });
 }
 
 
 /* =========================================================
-   EXPOSE GAME FUNCTIONS
+   GLOBAL FUNCTIONS
 ========================================================= */
 
-window.blackjackHit =
-    blackjackHit;
-
-window.blackjackStand =
-    blackjackStand;
-
-window.highlowGuess =
-    highlowGuess;
-
-window.minesOpen =
-    minesOpen;
+window.blackjackHit = blackjackHit;
+window.blackjackStand = blackjackStand;
+window.highlowGuess = highlowGuess;
+window.minesOpen = minesOpen;
 
 
 /* =========================================================
